@@ -346,6 +346,78 @@ where they started. Days to a few weeks is the usual mesoscale range.
 
 ---
 
+## FSLE, and when to prefer it over FTLE
+
+Both find the same objects — Lagrangian coherent structures — but they ask
+inverse questions:
+
+| | FTLE | FSLE |
+|---|---|---|
+| You fix | the integration time `T` | the separation `δ_f` |
+| It reports | how far parcels separated | how long separation took |
+| Formula | `ln(√λ_max)/T` | `ln(δ_f/δ_0)/τ` |
+| Natural when | the *timescale* is meaningful | the *spatial scale* is |
+| Across energy regimes | confounded with flow speed | comparable |
+| Cost | fixed and bounded | variable; parcels may never reach `δ_f` |
+| Record needed | `T` | potentially much longer |
+
+### Why the difference matters ecologically
+
+**FSLE is scale-selective; FTLE is not.** `δ_f` targets structures at a chosen
+spatial scale, and organisms respond at particular scales — a predator's search
+radius, a patch, a survey's resolution. FTLE with fixed `T` returns whatever
+scale the local flow happens to produce in that time.
+
+**FSLE is comparable across a heterogeneous domain, and a shelf is
+heterogeneous.** An energetic shelf-break current and a sluggish interior, mapped
+with one fixed `T`, give crisp ridges in the fast region and washed-out structure
+in the slow one. Ridge intensity then partly encodes background current speed
+rather than frontal activity, and a model fed that covariate cannot tell the two
+apart. FSLE asks the same question everywhere, so the answer means the same thing
+everywhere.
+
+**FTLE's fixed window is an advantage when the timescale is known.** If the
+relevant duration can be named — a retention time, the window over which a cohort
+accumulates, time since a bloom — FTLE with `T` set to it answers exactly that
+question. FSLE has nowhere to put that knowledge.
+
+### Two caveats that outweigh the choice
+
+**Monthly fields undercut both.** A `P1M` product has already averaged away the
+mesoscale eddies that generate sharp LCS. Either diagnostic computed from monthly
+means describes the *mean circulation*, not the transient structures usually
+associated with aggregation. Moving to a `P1D` product matters more than the
+choice between them.
+
+**Plankton are not passive surface tracers.** *C. finmarchicus* CV overwinter at
+depth and ascend seasonally, and most copepods migrate vertically each day.
+Surface FTLE/FSLE describes surface transport, which is most defensible for
+surface-associated stages and seasons. Computing at the depth the modelled stage
+actually occupies is the more faithful approach, and is possible — Copernicus
+GLORYS carries `uo`/`vo` on 50 levels.
+
+### Implementation notes
+
+Each seed is advected together with two companions offset east and north by
+`δ_0`, and the separation of each pair is checked after every step; `τ` is the
+first time either reaches `δ_f`.
+
+**`δ_0` defaults to the smaller of the two cell dimensions**, so both companions
+start within one grid cell. At 42.5°N a 0.1° grid gives 8.2 km east-west and
+11.1 km north-south, so longitude sets it.
+
+**Parcels that never reach `δ_f` within `max_days` return `NA`, not `max_days`.**
+The question has no answer for them, and substituting the cap would report a slow
+separation rate where there was none — inventing weak structure everywhere the
+flow is quiet.
+
+**Converged parcels stop being advected.** Without that, every parcel integrates
+for the full `max_days` even after its answer is known, which dominates runtime:
+in a real field most pairs separate early and the long tail is a small minority.
+Parcels that drift off the grid lose their velocity and are retired unanswered.
+
+---
+
 ## Eddy kinetic energy
 
 **What:** `EKE = ½(u′² + v′²)`, the kinetic energy in the *departure* of the flow

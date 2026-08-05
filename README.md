@@ -96,10 +96,10 @@ list their points in the same order.
 - `distance_to_contour()` / `distance_to_isobath()` — distance to where a
   covariate crosses a value. Plankton track the shelf break, and "20 km inshore of
   the 100 m isobath" locates that better than "depth = 85 m".
-- `ftle()` — Finite-Time Lyapunov Exponent, forward or backward. **Backward** (the
+- `ftle()` / `fsle()` — Lyapunov exponents, forward or backward. **Backward** (the
   default) finds *attracting* structures, where water converges and material
   accumulates; **forward** finds *repelling* structures, the transport barriers.
-  Depth-resolved FTLE works today by fetching velocities at a chosen depth —
+  Depth-resolved versions work today by fetching velocities at a chosen depth —
   Copernicus GLORYS carries `uo`/`vo` on 50 levels.
 - `eke()` — eddy kinetic energy, with an explicit choice of what the anomaly is
   measured against (record mean, monthly climatology, or a rolling window),
@@ -107,8 +107,32 @@ list their points in the same order.
 - `current_speed()` — speed from u/v, reproducing the older pipeline's `uv`; pipe
   it through `horizontal_gradient()` for `uv_grad`.
 
-See [`docs/methods.md`](docs/methods.md) for how each quantity is computed, which
-choices were deliberate, and where results differ from the older pipeline.
+#### FTLE or FSLE?
+
+They ask inverse questions. **FTLE** fixes the integration time and measures how
+far parcels separate; **FSLE** fixes a separation and measures how long it takes.
+
+```r
+env <- ftle(env, integration_days = 14)   # "how much separation in 14 days?"
+env <- fsle(env, final_separation = 50)   # "how long to separate by 50 km?"
+```
+
+Prefer **FSLE** when the *spatial* scale is what matters, or when the domain spans
+very different flow speeds. An FTLE map with one fixed integration time resolves
+fine structure where the flow is fast and only coarse structure where it is slow,
+so across a shelf with an energetic break current and a sluggish interior, ridge
+intensity partly encodes current speed rather than frontal activity — and a model
+cannot separate the two. FSLE asks the same question everywhere.
+
+Prefer **FTLE** when the *timescale* is what matters and can be named — a
+retention time, a cohort's accumulation window, time since a bloom. FSLE has
+nowhere to encode that.
+
+Two caveats outweigh the choice: monthly fields have already averaged away the
+eddies that make sharp structures, and plankton are not passive surface tracers.
+[`docs/methods.md`](docs/methods.md) covers both, along with how each quantity is
+computed, which choices were deliberate, and where results differ from the older
+pipeline.
 
 ## Requirements on the input
 

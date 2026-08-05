@@ -1,23 +1,3 @@
-# Velocity fields as sf points, in the shape accessEnvDat() returns. `fun`
-# returns a two-column matrix of (u, v) in m/s for the given lon/lat.
-make_flow <- function(fun,
-                      lon = seq(-70, -68, by = 0.05),
-                      lat = seq(42, 43, by = 0.05),
-                      months = 1:2) {
-  frames <- list()
-  for (m in months) {
-    grid <- expand.grid(x = lon, y = lat)
-    uv <- fun(grid$x, grid$y)
-    grid$UO <- uv[, 1]
-    grid$VO <- uv[, 2]
-    grid$YEAR <- 2020
-    grid$MONTH <- m
-    grid$DAY <- 1L
-    frames[[length(frames) + 1]] <- grid
-  }
-  sf::st_as_sf(do.call(rbind, frames), coords = c("x", "y"), crs = 4326)
-}
-
 test_that("a motionless field has zero FTLE", {
   # Nothing moves, so nothing separates and the strain tensor is the identity.
   env <- make_flow(function(lon, lat) cbind(rep(0, length(lon)), rep(0, length(lon))))
