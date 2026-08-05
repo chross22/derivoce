@@ -6,3 +6,5 @@
 ^\.DS_Store$
 ^LICENSE\.md$
 ^\.claude$
+^\.github$
+^docs$

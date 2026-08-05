@@ -87,6 +87,29 @@ come from the same Copernicus dataset, so this needs no extra download. Pass a
 Locations are matched by coordinate rather than row order, so time steps need not
 list their points in the same order.
 
+### Fronts, contours, and flow structure
+
+- `distance_to_front()` — how far each point is from the nearest front. Usually a
+  better predictor than the local gradient: a station in a smooth patch has zero
+  gradient whether the nearest front is 2 km or 200 km away, and those are very
+  different places to be.
+- `distance_to_contour()` / `distance_to_isobath()` — distance to where a
+  covariate crosses a value. Plankton track the shelf break, and "20 km inshore of
+  the 100 m isobath" locates that better than "depth = 85 m".
+- `ftle()` — Finite-Time Lyapunov Exponent, forward or backward. **Backward** (the
+  default) finds *attracting* structures, where water converges and material
+  accumulates; **forward** finds *repelling* structures, the transport barriers.
+  Depth-resolved FTLE works today by fetching velocities at a chosen depth —
+  Copernicus GLORYS carries `uo`/`vo` on 50 levels.
+- `eke()` — eddy kinetic energy, with an explicit choice of what the anomaly is
+  measured against (record mean, monthly climatology, or a rolling window),
+  because that choice decides what counts as an eddy rather than as mean flow.
+- `current_speed()` — speed from u/v, reproducing the older pipeline's `uv`; pipe
+  it through `horizontal_gradient()` for `uv_grad`.
+
+See [`docs/methods.md`](docs/methods.md) for how each quantity is computed, which
+choices were deliberate, and where results differ from the older pipeline.
+
 ## Requirements on the input
 
 Spatial derivatives are only defined on a grid, so `horizontal_gradient()`
@@ -101,11 +124,9 @@ gradient.
 
 ## Still to come
 
-From `Goals.rtf`, not yet implemented:
-
-- **Eddy kinetic energy** — from u/v anomalies against a mean field
-- **Current velocity gradients** — the older pipeline's `uv` and `uv_grad`
-- **Lyapunov exponents** (FSLE/FTLE) — the largest piece, requiring particle
-  advection through the time-varying velocity field to find Lagrangian coherent
-  structures
+- **FSLE** — the finite-*size* counterpart to FTLE, resolving structures at a
+  chosen spatial scale rather than a chosen timescale. The advection machinery is
+  reusable; only the stopping criterion differs.
 - **Distance to shore** — static, needs a coastline source
+- **Climate indices** (NAO, AMO, Gulf Stream Index) — a retrieval problem rather
+  than a derivation, so probably better placed in `datamatch`
