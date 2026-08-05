@@ -1,0 +1,30 @@
+Package: derivoce
+Title: Derived Environmental Covariates for Ocean Species Distribution Models
+Version: 0.0.0.9000
+Authors@R:
+    person("Camille", "Ross", email = "camille.ross@maine.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-1428-2294"))
+Description: Computes derived environmental covariates from gridded ocean data -
+    spatial and temporal gradients, time-integrated variables, temporal lags,
+    eddy kinetic energy, and Lagrangian diagnostics. Takes the output of
+    datamatch::accessEnvDat() (an sf point object per time step) and returns the
+    same shape with derived columns added, so derived covariates flow into a
+    species distribution model alongside the variables they came from.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.1)
+Imports:
+    sf,
+    terra
+Suggests:
+    datamatch,
+    ggplot2,
+    testthat (>= 3.0.0)
+Remotes:
+    chross22/datamatch
+Config/testthat/edition: 3
+URL: https://github.com/chross22/derivoce
+BugReports: https://github.com/chross22/derivoce/issues
+Config/roxygen2/version: 8.1.0
