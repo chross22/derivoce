@@ -110,6 +110,11 @@ list their points in the same order.
   because that choice decides what counts as an eddy rather than as mean flow.
 - `current_speed()` — speed from u/v, reproducing the older pipeline's `uv`; pipe
   it through `horizontal_gradient()` for `uv_grad`.
+- `distance_to_shore()` — kilometres to the nearest coast, from Natural Earth.
+  Static, so it is computed once per location and shared across time steps. This
+  is the older pipeline's `dist`. A broad proxy for several things at once —
+  depth, terrestrial input, tidal mixing, larval retention all covary with it —
+  which makes it a useful covariate and a poor explanation.
 
 #### FTLE or FSLE?
 
@@ -152,9 +157,9 @@ gradient.
 
 ## Still to come
 
-- **FSLE** — the finite-*size* counterpart to FTLE, resolving structures at a
-  chosen spatial scale rather than a chosen timescale. The advection machinery is
-  reusable; only the stopping criterion differs.
-- **Distance to shore** — static, needs a coastline source
-- **Climate indices** (NAO, AMO, Gulf Stream Index) — a retrieval problem rather
-  than a derivation, so probably better placed in `datamatch`
+- **Vertical gradients from a depth profile** — the current one is
+  surface-minus-bottom; a true `dT/dz` needs multi-level data
+- **Gulf Stream Index** — unlike NAO and AMO (now in
+  [datamatch](https://github.com/chross22/datamatch)), it has several competing
+  definitions published in papers rather than at a stable URL, so it needs a
+  decision about which one
