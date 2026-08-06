@@ -4,7 +4,7 @@
 \name{derivoce-package}
 \alias{derivoce}
 \alias{derivoce-package}
-\title{derivoce: Derived Environmental Covariates for Ocean Species Distribution Models}
+\title{derivoce: Derived Oceanographic Covariates for Species Distribution Models}
 \description{
 Computes derived environmental covariates from gridded ocean data - spatial and temporal gradients, time-integrated variables, temporal lags, eddy kinetic energy, and Lagrangian diagnostics. Takes the output of datamatch::accessEnvDat() (an sf point object per time step) and returns the same shape with derived columns added, so derived covariates flow into a species distribution model alongside the variables they came from.
 }

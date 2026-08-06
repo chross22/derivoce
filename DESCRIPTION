@@ -1,5 +1,5 @@
 Package: derivoce
-Title: Derived Environmental Covariates for Ocean Species Distribution Models
+Title: Derived Oceanographic Covariates for Species Distribution Models
 Version: 0.0.0.9000
 Authors@R:
     person("Camille", "Ross", email = "camille.ross@maine.edu", role = c("aut", "cre"),
