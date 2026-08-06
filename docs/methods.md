@@ -5,6 +5,42 @@ calculated, which choices were deliberate, and where the results differ from the
 older pipeline they replace. The function documentation says *what*; this says
 *why*.
 
+<details>
+<summary><b>Contents</b></summary>
+
+- [Context](#context)
+- [The data shape](#the-data-shape)
+  - [Column names come from the catalog](#column-names-come-from-the-catalog)
+  - [Not every column is a covariate](#not-every-column-is-a-covariate)
+  - [Why this is a warning and not a narrower default](#why-this-is-a-warning-and-not-a-narrower-default)
+  - [Non-numeric columns are an error instead](#non-numeric-columns-are-an-error-instead)
+- [Horizontal gradients](#horizontal-gradients)
+  - [The unit question, which is the whole design](#the-unit-question-which-is-the-whole-design)
+  - [Why this is not `raster::terrain()`](#why-this-is-not-rasterterrain)
+- [Vertical gradients](#vertical-gradients)
+- [Temporal gradients](#temporal-gradients)
+- [Lags](#lags)
+- [Time integration](#time-integration)
+- [Distance to fronts and contours](#distance-to-fronts-and-contours)
+  - [What counts as a front](#what-counts-as-a-front)
+  - [Contours and isobaths](#contours-and-isobaths)
+- [FTLE](#ftle)
+  - [Details that matter](#details-that-matter)
+  - [On monthly data](#on-monthly-data)
+- [FSLE, and when to prefer it over FTLE](#fsle-and-when-to-prefer-it-over-ftle)
+  - [Why the difference matters ecologically](#why-the-difference-matters-ecologically)
+  - [Two caveats that outweigh the choice](#two-caveats-that-outweigh-the-choice)
+  - [Implementation notes](#implementation-notes)
+- [Eddy kinetic energy](#eddy-kinetic-energy)
+- [Requirements on the input, and what is rejected](#requirements-on-the-input-and-what-is-rejected)
+  - [Resampled input passes the check, and that is the problem](#resampled-input-passes-the-check-and-that-is-the-problem)
+- [How this is tested](#how-this-is-tested)
+- [Since resolved elsewhere](#since-resolved-elsewhere)
+- [Not yet implemented](#not-yet-implemented)
+- [FTLE at depth](#ftle-at-depth)
+
+</details>
+
 ## Context
 
 The pipeline these covariates feed —

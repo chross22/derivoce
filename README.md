@@ -15,12 +15,110 @@ added, so derived covariates flow into a model alongside the variables they came
 from — for example into
 [`taupatch`](https://github.com/chross22/taupatch).
 
+<details>
+<summary><b>Contents</b></summary>
+
+- [Installation](#installation)
+  - [datamatch, and why that line does not install it](#datamatch-and-why-that-line-does-not-install-it)
+  - [Downloading data needs a Python client](#downloading-data-needs-a-python-client)
+  - [Optional extras](#optional-extras)
+- [Usage](#usage)
+  - [Column names](#column-names)
+- [What it computes](#what-it-computes)
+  - [Horizontal gradients](#horizontal-gradients)
+  - [Vertical gradients](#vertical-gradients)
+  - [Temporal gradients, lags, and integrals](#temporal-gradients-lags-and-integrals)
+  - [Fronts, contours, and flow structure](#fronts-contours-and-flow-structure)
+    - [FTLE or FSLE?](#ftle-or-fsle)
+- [Requirements on the input](#requirements-on-the-input)
+  - [If the input was resampled](#if-the-input-was-resampled)
+  - [Combinations that don't make sense are flagged](#combinations-that-dont-make-sense-are-flagged)
+  - [If satellite gaps were filled](#if-satellite-gaps-were-filled)
+- [Still to come](#still-to-come)
+
+Longer form, with the reasoning behind each quantity:
+[`docs/methods.md`](docs/methods.md).
+
+</details>
+
 ## Installation
 
 ```r
 # install.packages("remotes")
 remotes::install_github("chross22/derivoce")
 ```
+
+### datamatch, and why that line does not install it
+
+[`datamatch`](https://github.com/chross22/datamatch) is what fetches the data
+these functions derive from, but it is a **suggested** dependency rather than a
+hard one, so it is not pulled in above. Install it separately — it is not on
+CRAN:
+
+```r
+remotes::install_github("chross22/datamatch")
+```
+
+Or get both at once — `dependencies = TRUE` includes suggested packages, and
+derivoce's `Remotes:` field tells `remotes` where datamatch lives:
+
+```r
+remotes::install_github("chross22/derivoce", dependencies = TRUE)
+```
+
+The reason it is only suggested: everything here operates on the *shape*
+`accessEnvDat()` returns — an `sf` POINT object with one row per (grid point,
+time step) and `YEAR`/`MONTH`/`DAY` columns — not on datamatch itself. An object
+of that shape from any source works, and the test suite builds its own without
+touching Copernicus. So derivoce runs without datamatch installed; you just
+usually don't want it to.
+
+One version note. The default column names here — `SST`, `BOTT`, `UO`, `VO`,
+`DEPTH` — are datamatch *catalog* names, which arrived with its variable
+dictionary. Against an older datamatch that returns raw Copernicus codes, the
+defaults will not match and you should pass column names explicitly:
+
+```r
+eke(env, u = "uo", v = "vo")
+```
+
+If `datamatch::variable_dictionary()` exists, you are on a new enough version.
+
+### Downloading data needs a Python client
+
+datamatch shells out to `copernicusmarine`, the official Copernicus client. It
+is not an R package and is not installed with either package:
+
+```bash
+pip install copernicusmarine
+copernicusmarine login
+```
+
+`login` needs a free [Copernicus Marine
+account](https://data.marine.copernicus.eu/register) and only has to be run
+once. If the client is installed but R cannot find it — common when it lives in
+a conda environment RStudio does not inherit the `PATH` of — point at it in
+`~/.Rprofile`:
+
+```r
+options(datamatch.copernicusmarine = "~/miniconda3/bin/copernicusmarine")
+```
+
+Nothing in derivoce contacts Copernicus. This is only needed to *get* the data;
+deriving from data you already have needs none of it.
+
+### Optional extras
+
+`distance_to_shore()` needs `rnaturalearth`, and `resolution = "large"`
+additionally needs `rnaturalearthhires`, which is not on CRAN:
+
+```r
+install.packages("rnaturalearth")
+install.packages("rnaturalearthhires", repos = "https://ropensci.r-universe.dev")
+```
+
+Both are optional: the functions that need them say so and name the install
+command if they are missing, rather than failing obscurely.
 
 ## Usage
 
