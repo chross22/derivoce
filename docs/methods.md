@@ -31,6 +31,7 @@ older pipeline they replace. The function documentation says *what*; this says
   - [Why the difference matters ecologically](#why-the-difference-matters-ecologically)
   - [Two caveats that outweigh the choice](#two-caveats-that-outweigh-the-choice)
   - [Implementation notes](#implementation-notes)
+- [The domain is smaller than it looks](#the-domain-is-smaller-than-it-looks)
 - [Eddy kinetic energy](#eddy-kinetic-energy)
 - [Requirements on the input, and what is rejected](#requirements-on-the-input-and-what-is-rejected)
   - [Resampled input passes the check, and that is the problem](#resampled-input-passes-the-check-and-that-is-the-problem)
@@ -559,6 +560,40 @@ flow is quiet.
 for the full `max_days` even after its answer is known, which dominates runtime:
 in a real field most pairs separate early and the long tail is a small minority.
 Parcels that drift off the grid lose their velocity and are retired unanswered.
+
+---
+
+## The domain is smaller than it looks
+
+Both diagnostics follow parcels through the velocity field, and a parcel that
+reaches the edge of the data has no velocity to follow. It is retired, and its
+cell returns `NA`. So the usable area is never the area fetched: it is the area
+fetched minus a margin of roughly **speed × integration time**, on the upstream
+edge for backward integration and the downstream edge for forward.
+
+That margin is larger than it sounds. A shelf speed of 0.15 m/s over the default
+14 days is about 180 km. On a 500 km box that is a third of the field. On a 1°
+box it is the whole thing, and the result is uniformly `NA`.
+
+The NAs are individually correct, and the arithmetic is easy to verify: in a
+uniform westward flow the boundary of the `NA` region sits exactly
+`speed × integration_days` from the upstream edge. What was wrong was returning
+an empty column in silence, which is indistinguishable from a broken function.
+
+So `ftle()` counts the particles whose trajectories left the field, and `fsle()`
+counts the two failures separately: pairs lost to the edge, and pairs that stayed
+inside but never reached `final_separation`. When almost everything is `NA` the
+warning reports those counts along with the median speed, the reach over the
+window, and the size of the box.
+
+**The two FSLE causes want opposite fixes**, which is why they are not merged.
+Parcels lost to the edge need a *shorter* `max_days`, so they finish before
+leaving. Parcels that never separated need a *longer* one, or a smaller
+`final_separation`, or a daily product with eddies still in it. A single message
+covering both would have to advise both directions at once, which is no advice.
+
+The threshold for warning is 0.9. Losing a margin is the normal condition, not an
+error, and a warning on every ordinary call is one the reader learns to skip.
 
 ---
 

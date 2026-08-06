@@ -26,6 +26,7 @@ added.
   - [Vertical gradients](#vertical-gradients)
   - [Temporal gradients, lags, and integrals](#temporal-gradients-lags-and-integrals)
   - [Fronts, contours, and flow structure](#fronts-contours-and-flow-structure)
+    - [Why FTLE and FSLE come back mostly NA](#why-ftle-and-fsle-come-back-mostly-na)
     - [FTLE or FSLE?](#ftle-or-fsle)
 - [Column names](#column-names)
 - [Requirements on the input](#requirements-on-the-input)
