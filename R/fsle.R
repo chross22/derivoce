@@ -58,7 +58,8 @@
 #' @examples
 #' \dontrun{
 #' # Structures at the 50 km scale, comparable across the whole shelf
-#' env <- fsle(env, u = "uo", v = "vo", final_separation = 50)
+#' env <- datamatch::accessEnvDat(vars = c("UO", "VO"), ...)
+#' env <- fsle(env, final_separation = 50)       # UO and VO are the defaults
 #'
 #' # A scale matched to a predator's search radius
 #' env <- fsle(env, final_separation = 10, max_days = 60)

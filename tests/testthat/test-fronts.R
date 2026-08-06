@@ -84,7 +84,8 @@ test_that("a time step with no front is NA rather than zero", {
   # "you are standing on a front", which is the opposite of the truth.
   env <- make_env(function(lon, lat, year, month) rep(10, length(lon)))
 
-  result <- distance_to_front(env, "SST", threshold = 0.001)
+  expect_warning(result <- distance_to_front(env, "SST", threshold = 0.001),
+                 "Spatially uniform")
 
   expect_true(all(is.na(result$SST_front_dist)))
 })

@@ -27,15 +27,19 @@
 #'   per `per`
 #' @examples
 #' \dontrun{
-#' env <- datamatch::accessEnvDat(...)
+#' env <- datamatch::accessEnvDat(vars = c("SST", "SSS"), ...)
 #' env <- horizontal_gradient(env, "SST")        # SST_grad, in degrees C per km
 #' env <- horizontal_gradient(env, "SST", components = TRUE)
+#'
+#' # `vars = NULL` does every covariate column, which is right for a plain fetch
+#' # and wrong once static or non-numeric columns have been attached.
+#' env <- horizontal_gradient(env)
 #' }
 #' @export
 horizontal_gradient <- function(env_dat, vars = NULL, per = c("km", "m"),
                                 components = FALSE, suffix = "_grad") {
   per <- match.arg(per)
-  vars <- resolve_vars(env_dat, vars)
+  vars <- resolve_vars(env_dat, vars, kind = "spatial")
 
   per_time_step(env_dat, vars, function(rast) {
     layers <- lapply(vars, function(v) {
@@ -108,22 +112,28 @@ cell_size <- function(layer, per = "km") {
 #' stratification index, large where a warm surface layer sits over cold deep
 #' water and near zero where the column is well mixed.
 #'
-#' Both variables come from the same Copernicus physics dataset (`thetao` and
-#' `bottomT`), so this needs no extra fetch — it is a difference between two
-#' columns already present.
+#' Both variables come from the same Copernicus physics dataset (`SST` and `BOTT`
+#' in the `datamatch` catalog, `thetao` and `bottomT` as Copernicus codes), so
+#' this needs no extra fetch — it is a difference between two columns already
+#' present.
 #'
 #' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
 #' @param surface name of the surface temperature column
 #' @param bottom name of the bottom temperature column
 #' @param depth optional depth column name; when given, the difference is divided
-#'   by depth to give a per-metre rate rather than a total difference
+#'   by depth to give a per-metre rate rather than a total difference.
+#'   `datamatch::attach_bathymetry()` supplies a `DEPTH` column.
 #' @param name name for the new column
 #' @return `env_dat` with the vertical gradient column added
 #' @examples
 #' \dontrun{
-#' env <- vertical_gradient(env, surface = "SST", bottom = "BOTT")
-#' # As a per-metre rate, if a depth column is available:
-#' env <- vertical_gradient(env, "SST", "BOTT", depth = "DEPTH")
+#' env <- datamatch::accessEnvDat(vars = c("SST", "BOTT"), ...)
+#' env <- vertical_gradient(env)                 # SST and BOTT are the defaults
+#'
+#' # As a per-metre rate, with depth from datamatch's bathymetry
+#' bathy <- datamatch::fetch_bathymetry(bounding_box = bb)
+#' env <- datamatch::attach_bathymetry(env, bathy, "DEPTH")
+#' env <- vertical_gradient(env, depth = "DEPTH")
 #' }
 #' @export
 vertical_gradient <- function(env_dat, surface = "SST", bottom = "BOTT",
@@ -167,6 +177,9 @@ vertical_gradient <- function(env_dat, surface = "SST", bottom = "BOTT",
 temporal_gradient <- function(env_dat, vars = NULL,
                               per = c("step", "day", "month"), suffix = "_tgrad") {
   per <- match.arg(per)
+  # No `kind` here on purpose: the lag_covariate() call below resolves the same
+  # vars as "temporal" and issues the one warning. Setting it here too would
+  # warn twice for a single user-facing call.
   vars <- resolve_vars(env_dat, vars)
 
   lagged <- lag_covariate(env_dat, vars, n = 1, suffix = "__prev")

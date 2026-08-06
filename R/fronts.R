@@ -44,9 +44,9 @@
 #' @examples
 #' \dontrun{
 #' # Distance to the sharpest 10% of thermal gradients
-#' env <- distance_to_front(env, "thetao")
+#' env <- distance_to_front(env, "SST")
 #' # A physically defined front: 0.05 degrees C per km
-#' env <- distance_to_front(env, "thetao", threshold = 0.05)
+#' env <- distance_to_front(env, "SST", threshold = 0.05)
 #' }
 #' @export
 distance_to_front <- function(env_dat, var, threshold = NULL, quantile = 0.9,
@@ -54,6 +54,8 @@ distance_to_front <- function(env_dat, var, threshold = NULL, quantile = 0.9,
                               name = NULL) {
   scope <- match.arg(scope)
   per <- match.arg(per)
+  # No `kind` here on purpose: the horizontal_gradient() call below resolves the
+  # same var as "spatial" and issues the one warning.
   resolve_vars(env_dat, var)
 
   if (!is.null(threshold) && threshold <= 0) {
@@ -119,13 +121,13 @@ distance_to_front <- function(env_dat, var, threshold = NULL, quantile = 0.9,
 #' # -> DEPTH_dist_50, DEPTH_dist_100, DEPTH_dist_200
 #'
 #' # Works on any field: distance to the 10 degree isotherm
-#' env <- distance_to_contour(env, "thetao", levels = 10)
+#' env <- distance_to_contour(env, "SST", levels = 10)
 #' }
 #' @export
 distance_to_contour <- function(env_dat, var, levels, per = c("km", "m"),
                                 prefix = NULL) {
   per <- match.arg(per)
-  resolve_vars(env_dat, var)
+  resolve_vars(env_dat, var, kind = "spatial")
 
   if (length(levels) == 0 || any(!is.finite(levels))) {
     stop("levels must be one or more finite values.", call. = FALSE)
@@ -168,13 +170,16 @@ distance_to_contour <- function(env_dat, var, levels, per = c("km", "m"),
 #' Convenience wrapper on [distance_to_contour()] for depth contours, the most
 #' common use.
 #'
-#' @param env_dat an `sf` POINT object carrying a depth column
+#' @param env_dat an `sf` POINT object carrying a depth column.
+#'   `datamatch::attach_bathymetry()` adds one, named `DEPTH`.
 #' @param depth name of the depth column, as a positive magnitude
 #' @param levels isobaths to measure to, in the units of `depth`
 #' @param per distance unit for the result
 #' @return `env_dat` with one distance column per isobath
 #' @examples
 #' \dontrun{
+#' bathy <- datamatch::fetch_bathymetry(bounding_box = bb)
+#' env <- datamatch::attach_bathymetry(env, bathy, "DEPTH")
 #' env <- distance_to_isobath(env, levels = c(50, 100, 200))
 #' }
 #' @export

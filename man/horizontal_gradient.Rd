@@ -49,8 +49,12 @@ magnitude here is a real rate of change with a real unit.
 }
 \examples{
 \dontrun{
-env <- datamatch::accessEnvDat(...)
+env <- datamatch::accessEnvDat(vars = c("SST", "SSS"), ...)
 env <- horizontal_gradient(env, "SST")        # SST_grad, in degrees C per km
 env <- horizontal_gradient(env, "SST", components = TRUE)
+
+# `vars = NULL` does every covariate column, which is right for a plain fetch
+# and wrong once static or non-numeric columns have been attached.
+env <- horizontal_gradient(env)
 }
 }

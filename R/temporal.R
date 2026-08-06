@@ -23,7 +23,7 @@
 #' }
 #' @export
 lag_covariate <- function(env_dat, vars = NULL, n = 1, suffix = NULL) {
-  vars <- resolve_vars(env_dat, vars)
+  vars <- resolve_vars(env_dat, vars, kind = "temporal")
   if (n < 1) stop("n must be at least 1.", call. = FALSE)
   suffix <- suffix %||% paste0("_lag", n)
 
@@ -75,7 +75,7 @@ lag_covariate <- function(env_dat, vars = NULL, n = 1, suffix = NULL) {
 #' @export
 integrate_covariate <- function(env_dat, vars = NULL, window = "year",
                                 suffix = "_int") {
-  vars <- resolve_vars(env_dat, vars)
+  vars <- resolve_vars(env_dat, vars, kind = "temporal")
   if (is.numeric(window) && window < 1) {
     stop("A numeric window must be at least 1.", call. = FALSE)
   }

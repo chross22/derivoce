@@ -72,8 +72,8 @@ choice when a physically meaningful cutoff is known.
 \examples{
 \dontrun{
 # Distance to the sharpest 10\% of thermal gradients
-env <- distance_to_front(env, "thetao")
+env <- distance_to_front(env, "SST")
 # A physically defined front: 0.05 degrees C per km
-env <- distance_to_front(env, "thetao", threshold = 0.05)
+env <- distance_to_front(env, "SST", threshold = 0.05)
 }
 }

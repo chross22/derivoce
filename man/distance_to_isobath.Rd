@@ -12,7 +12,8 @@ distance_to_isobath(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object carrying a depth column}
+\item{env_dat}{an \code{sf} POINT object carrying a depth column.
+\code{datamatch::attach_bathymetry()} adds one, named \code{DEPTH}.}
 
 \item{depth}{name of the depth column, as a positive magnitude}
 
@@ -29,6 +30,8 @@ common use.
 }
 \examples{
 \dontrun{
+bathy <- datamatch::fetch_bathymetry(bounding_box = bb)
+env <- datamatch::attach_bathymetry(env, bathy, "DEPTH")
 env <- distance_to_isobath(env, levels = c(50, 100, 200))
 }
 }

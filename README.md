@@ -28,23 +28,41 @@ remotes::install_github("chross22/derivoce")
 library(derivoce)
 
 env <- datamatch::accessEnvDat(
-  product_id = "GLOBAL_MULTIYEAR_PHY_001_030",
-  dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
-  vars = c("thetao", "bottomT"),
+  vars = c("SST", "BOTT"),               # product and dataset inferred
   years = 2003:2017, months = 1:12,
   bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
 )
 
 env <- env |>
-  horizontal_gradient("thetao") |>       # thetao_grad, degrees C per km
-  vertical_gradient("thetao", "bottomT") |>
-  temporal_gradient("thetao") |>
-  lag_covariate("thetao") |>             # thetao_lag1
-  integrate_covariate("thetao")          # thetao_int
+  horizontal_gradient("SST") |>          # SST_grad, degrees C per km
+  vertical_gradient() |>                 # SST - BOTT, the defaults
+  temporal_gradient("SST") |>
+  lag_covariate("SST") |>                # SST_lag1
+  integrate_covariate("SST")             # SST_int
 ```
 
 Every function takes and returns the same object, so they compose in a pipe and
 nothing has to be reassembled afterwards.
+
+### Column names
+
+Every default here is a
+[`datamatch::variable_dictionary()`](https://github.com/chross22/datamatch) name
+— `SST`, `BOTT`, `UO`, `VO`, `DEPTH` — because `accessEnvDat()` now returns
+columns under the names you requested rather than under Copernicus codes. So
+`vertical_gradient()`, `eke()`, `current_speed()`, `ftle()`, and `fsle()` need
+no column arguments on a dictionary fetch, and `distance_to_isobath()` needs
+none once `datamatch::attach_bathymetry()` has added `DEPTH`:
+
+```r
+env <- datamatch::accessEnvDat(vars = c("UO", "VO"), ...) |>
+  current_speed() |>                     # reads UO/VO
+  eke()
+
+# Raw Copernicus codes still work; name the columns if you used them
+env <- datamatch::accessEnvDat(vars = c("uo", "vo"), ...) |>
+  eke(u = "uo", v = "vo")
+```
 
 ## What it computes
 
@@ -70,9 +88,17 @@ real rate of change with a real unit.
 
 `vertical_gradient()` is the surface-minus-bottom difference in each cell: a
 stratification index, large where a warm surface layer sits over cold deep water
-and near zero where the column is well mixed. Both inputs (`thetao`, `bottomT`)
-come from the same Copernicus dataset, so this needs no extra download. Pass a
-`depth` column to get a per-metre rate instead of a total difference.
+and near zero where the column is well mixed. Both inputs (`SST`, `BOTT`) come
+from the same Copernicus dataset, so this needs no extra download.
+
+Pass a `depth` column to get a per-metre rate instead of a total difference.
+`datamatch::attach_bathymetry()` is where that column comes from:
+
+```r
+bathy <- datamatch::fetch_bathymetry(bounding_box = bb)
+env   <- datamatch::attach_bathymetry(env, bathy, "DEPTH")
+env   <- vertical_gradient(env, depth = "DEPTH")   # degrees C per metre
+```
 
 ### Temporal gradients, lags, and integrals
 
@@ -100,6 +126,9 @@ list their points in the same order.
 - `distance_to_contour()` / `distance_to_isobath()` — distance to where a
   covariate crosses a value. Plankton track the shelf break, and "20 km inshore of
   the 100 m isobath" locates that better than "depth = 85 m".
+  `distance_to_isobath()` reads the `DEPTH` column that
+  `datamatch::attach_bathymetry()` adds, so no separate bathymetry source is
+  needed.
 - `ftle()` / `fsle()` — Lyapunov exponents, forward or backward. **Backward** (the
   default) finds *attracting* structures, where water converges and material
   accumulates; **forward** finds *repelling* structures, the transport barriers.
@@ -155,11 +184,97 @@ Central differences are undefined at the grid edge, so boundary cells come back
 `NA`. So do the first *n* time steps of a lag, and the first step of a temporal
 gradient.
 
+### If the input was resampled
+
+`datamatch` can now put two products on one grid
+(`upscale_grid()`/`downscale_grid()`) or change the time step
+(`upscale_time()`/`downscale_time()`). Resampled output keeps the regular lattice
+and the `YEAR`/`MONTH`/`DAY` stamping, so everything here runs on it — but two of
+those directions change what a derivative means:
+
+- **A spatial gradient of a downscaled variable measures the source grid.**
+  Rendering a 0.25° field at 4 km gives it 4 km cells and no new information, so
+  `horizontal_gradient()` returns the steps between the original coarse cells,
+  divided by the new smaller spacing. With the default `nearest`/`step` methods
+  that is visibly blocky; with `bilinear` it is a smooth field that looks like a
+  measured gradient and is not. Compute gradients on the native grid and upscale
+  the *result* if you need it coarser.
+- **`temporal_gradient()` on time-interpolated data inherits the interpolation.**
+  `downscale_time(method = "linear")` puts a constant slope between each pair of
+  source steps, so the per-day rate of change is a property of the interpolant,
+  not of the ocean.
+
+Aggregating (`upscale_grid()`, `upscale_time()`) is the safe direction, and
+`min_coverage` matters for `integrate_covariate()`: a partial period returned as
+`NA` is excluded from the running total rather than counted as a low value.
+
+### Combinations that don't make sense are flagged
+
+`vars = NULL` means *every* covariate column, and `datamatch` now adds columns
+that are not covariates to differentiate. Asking for a derivative that cannot
+carry information gets a warning naming the column:
+
+```r
+lag_covariate(env, "DEPTH")
+#> Warning: Static covariate(s) in a temporal operation: DEPTH.
+#>   These hold the same value at each location in every time step, so a lag
+#>   reproduces the column, a temporal gradient is zero, and an integral is a
+#>   running multiple of it.
+#>   Seafloor terrain from datamatch::attach_bathymetry() (DEPTH, SLOPE, ASPECT,
+#>   TPI) is static in this way. Name the variables you meant, rather than
+#>   letting `vars = NULL` take every column.
+
+horizontal_gradient(env, "NAO")
+#> Warning: Spatially uniform covariate(s) in a spatial operation: NAO.
+#>   These take one value across the whole grid within each time step, so a
+#>   horizontal gradient is zero everywhere ...
+```
+
+Two degeneracies, checked independently and only against the operation they
+actually break:
+
+| | Temporal (`lag_covariate()`, `temporal_gradient()`, `integrate_covariate()`) | Spatial (`horizontal_gradient()`, `distance_to_contour()`) |
+|---|---|---|
+| **Static** — `DEPTH`, `SLOPE`, `ASPECT`, `TPI` | warns | fine — this is how you get slope |
+| **Spatially uniform** — `NAO`, `AO`, `AMO`, `PDO` | fine — a lagged index is a real covariate | warns |
+
+The test is on the data, not on a list of known column names, so a variable that
+happens to be constant in your particular extract is caught too, and a static
+covariate from some other source is caught without the package having heard of
+it.
+
+**Non-numeric columns behave differently**, because nothing can be computed at
+all rather than computed uselessly. `fill_satellite_gaps()` adds a
+`<var>_source` factor recording where each value came from; naming it explicitly
+is an error, while `vars = NULL` skips it silently — a caller who didn't name it
+didn't mean it, and failing the whole call would make the `NULL` default
+unusable on any gap-filled object.
+
+The warnings are a safety net, not a substitute for saying what you mean. Name
+your variables once the object carries anything beyond a plain `accessEnvDat()`
+fetch.
+
+### If satellite gaps were filled
+
+Satellite and model chlorophyll differ in mean and variance, so a gradient
+computed across a satellite/model boundary partly measures the change of source
+rather than a feature of the ocean. `rescale = TRUE` reduces that step; the
+`<var>_source` column is what tells you where the seams are.
+
+Leaving the gaps unfilled has the opposite cost: a central difference needs both
+neighbours, so every cloud hole erases a one-cell ring around itself, and
+`integrate_covariate()` accumulates over whatever steps survived. Neither is
+free — but the gap-filled version at least records which it is.
+
 ## Still to come
 
 - **Vertical gradients from a depth profile** — the current one is
-  surface-minus-bottom; a true `dT/dz` needs multi-level data
+  surface-minus-bottom. A true `dT/dz` needs several model levels in one object,
+  and `accessEnvDat()` returns one level per call: a `depth` range spanning
+  several levels is now refused with a clear error rather than mislabelling
+  columns. Stacking per-level fetches is the workaround, and doing it inside
+  `vertical_gradient()` is the work.
 - **Gulf Stream Index** — unlike NAO and AMO (now in
-  [datamatch](https://github.com/chross22/datamatch)), it has several competing
-  definitions published in papers rather than at a stable URL, so it needs a
-  decision about which one
+  [datamatch](https://github.com/chross22/datamatch), via
+  `attach_climate_index()`), it has several competing definitions published in
+  papers rather than at a stable URL, so it needs a decision about which one

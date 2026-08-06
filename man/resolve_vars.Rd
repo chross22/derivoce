@@ -2,19 +2,38 @@
 % Please edit documentation in R/grid.R
 \name{resolve_vars}
 \alias{resolve_vars}
-\title{Check that requested covariates exist}
+\title{Check that requested covariates exist and can be operated on}
 \usage{
-resolve_vars(env_dat, vars)
+resolve_vars(env_dat, vars, kind = c("any", "spatial", "temporal"))
 }
 \arguments{
 \item{env_dat}{an \code{sf} POINT object}
 
 \item{vars}{requested covariate names, or \code{NULL} for all of them}
+
+\item{kind}{the kind of operation the caller is about to perform, so the
+degeneracy relevant to it can be checked: \code{"temporal"}, \code{"spatial"}, or
+\code{"any"} (the default) for operations that are neither, such as a column-wise
+difference}
 }
 \value{
 the resolved covariate names
 }
 \description{
-Check that requested covariates exist
+Three checks, deliberately of different severities:
+}
+\details{
+A \strong{missing} column is an error: nothing can be done.
+
+A \strong{non-numeric} column is an error when named explicitly — a factor cannot be
+differentiated or summed, so the request cannot be honoured — but is skipped
+silently when \code{vars = NULL} swept it up. A caller who did not name
+\code{CHL_source} did not mean it, and failing the whole call over a column they
+never asked for would make the \code{NULL} default unusable on any object that has
+been through \code{datamatch::fill_satellite_gaps()}.
+
+A \strong{degenerate} column — static where the operation is temporal, spatially
+uniform where it is spatial — is only a warning, because the computation is
+well defined and the caller may have meant it. See \code{\link[=warn_degenerate]{warn_degenerate()}}.
 }
 \keyword{internal}

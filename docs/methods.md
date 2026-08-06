@@ -35,13 +35,94 @@ and `YEAR`/`MONTH`/`DAY` columns.
 Keeping input and output shapes identical is what lets the functions compose:
 
 ```r
-env |> horizontal_gradient("thetao") |> lag_covariate("thetao")
+env |> horizontal_gradient("SST") |> lag_covariate("SST")
 ```
 
 Internally, spatial operations need a grid, so each time step is rasterized,
 operated on, and sampled back to the points (`per_time_step()` in `R/grid.R`).
 Temporal operations work directly on the point table, matching locations by
 coordinate.
+
+### Column names come from the catalog
+
+`accessEnvDat()` returns columns under the names that were requested, so a fetch
+of `vars = c("SST", "BOTT")` yields columns `SST` and `BOTT` rather than the
+Copernicus codes `thetao` and `bottomT`. Every default column name here is a
+[`variable_dictionary()`](https://github.com/chross22/datamatch) name — `SST`
+and `BOTT` for `vertical_gradient()`, `UO`/`VO` for `eke()`, `current_speed()`,
+`ftle()`, and `fsle()`, `DEPTH` for `distance_to_isobath()`.
+
+That is a convenience, not an assumption: raw Copernicus codes still work at the
+fetch, and every function takes the column names as arguments. The defaults
+simply match what a dictionary fetch produces, so the common case needs no
+arguments.
+
+### Not every column is a covariate
+
+"Covariate" here means everything that is not `YEAR`/`MONTH`/`DAY` or the
+geometry — that is what `vars = NULL` expands to, via the internal
+`covariate_columns()`, and `datamatch::covariate_columns()` reports the same set
+if you want to see it. That set is now wider than it was when these functions
+were written, because `datamatch` attaches three other kinds of column:
+
+| Source | Columns | What they break | Response |
+|---|---|---|---|
+| `attach_bathymetry()` | `DEPTH`, `SLOPE`, `ASPECT`, `TPI` | static — no temporal derivative, no meaningful integral | warning |
+| `attach_climate_index()` | `NAO`, `AMO`, `PDO`, `AO` | no spatial dimension — horizontal gradient is identically zero | warning |
+| `fill_satellite_gaps()` | `<var>_source` | a factor, not a measurement | error, or skipped |
+
+The `vars = NULL` default — "all covariates" — dates from when the input was a
+plain Copernicus fetch and every column was a gridded time-varying field. It is
+still right for that case and wrong for an enriched object.
+
+### Why this is a warning and not a narrower default
+
+The tempting fix is to teach `vars = NULL` to skip these columns. It does not
+work, because whether a column belongs depends on the *operation*, not on the
+column. `DEPTH` is a perfectly sensible thing to take a horizontal gradient of —
+that is slope, a genuinely useful predictor — and a meaningless thing to lag.
+`NAO` is the mirror image: lagging it is real, and its horizontal gradient is
+zero by construction. Any rule that silently dropped columns would be right for
+one function and wrong for the other, and wrong *invisibly*: a covariate quietly
+absent from the output is much harder to notice than one that is present and
+useless.
+
+So `resolve_vars()` takes the operation as an argument and warns, rather than
+choosing for the caller:
+
+| | `kind = "temporal"` | `kind = "spatial"` |
+|---|---|---|
+| static — constant through time at each location | warns | fine |
+| spatially uniform — constant across the grid within each step | fine | warns |
+
+Both are the same test, `constant_within()`, differing only in what they group
+by: location for one, time step for the other. That is why the check is on the
+data rather than on a list of known column names — nothing here needs to know
+that `TPI` came from bathymetry, only that it does not change. A covariate that
+happens to be constant in a particular extract is caught on the same footing.
+
+Comparison is exact, so a nearly-flat field never trips it; only a genuinely
+constant one does. A column that is entirely `NA` returns `FALSE` rather than
+`TRUE` — it has a more obvious problem than this one, and reporting it here
+would bury that. A single-time-step object skips the temporal check entirely,
+since every column is trivially constant through time and the operation is
+already all-`NA`.
+
+Two functions are wrappers — `temporal_gradient()` delegates to
+`lag_covariate()`, `distance_to_front()` to `horizontal_gradient()` — and pass
+`kind = "any"` so the inner call issues exactly one warning per user-facing call.
+
+### Non-numeric columns are an error instead
+
+`fill_satellite_gaps()` adds a `<var>_source` factor. Unlike the degenerate
+cases, there is no well-defined computation to warn about: a factor cannot be
+differentiated or summed at all. Naming one explicitly is therefore an error.
+
+`vars = NULL` skips them silently, which is the asymmetry worth justifying: a
+caller who never mentioned `CHL_source` did not intend it, and erroring over a
+column they did not ask for would make the `NULL` default unusable on every
+gap-filled object. Explicit request, explicit failure; implicit sweep, implicit
+skip.
 
 ---
 
@@ -143,22 +224,49 @@ near zero where tide and wind have mixed the column through.
 
 There is no depth-profile interpolation here, and deliberately so. Copernicus
 serves `thetao` (surface) and `bottomT` (sea floor) as two separate variables in
-the *same* physics dataset, so both arrive in a single fetch and the difference is
-already the quantity of interest.
+the *same* physics dataset — `SST` and `BOTT` in the catalog — so both arrive in
+a single fetch and the difference is already the quantity of interest.
 
-This is worth stating because the obvious alternative is a genuine trap:
-`datamatch::accessEnvDat()` assigns its output column names **positionally**
-(`c("x", "y", vars, "YEAR", "MONTH", "DAY")`). If a depth *range* were requested
-spanning several model levels, the raster would come back with more layers than
-there are variable names, and that assignment would either error or silently
-mislabel columns. Requesting a multi-level profile to compute `dT/dz` properly
-would need a datamatch change first. The surface-to-bottom difference sidesteps
-that entirely.
+This is worth stating because the obvious alternative is still not available in
+one call. `accessEnvDat()` assigns its output column names **positionally**
+(`c("x", "y", vars, "YEAR", "MONTH", "DAY")`), so it can only handle one raster
+layer per requested variable. A `depth` range spanning several model levels
+returns more layers than that, and datamatch now checks the count and stops:
+
+```
+Expected 1 variable column(s) but the download returned 3. This usually means
+the depth range spans several model levels; request a single level, or one
+variable at a time.
+```
+
+That is the change worth knowing: the failure mode used to include *silently
+mislabelled columns*, where a caller could get a temperature field named as a
+salinity one. It is now a refusal with a diagnosis. A true `dT/dz` from
+intermediate levels still needs one fetch per level, stacked afterwards; the
+surface-to-bottom difference sidesteps that entirely.
 
 With a `depth` column supplied, the difference is divided by depth to give a
-per-metre rate rather than a total difference. Depths of zero or less become `NA`
-rather than `Inf` or a sign flip — a cell on land or at the waterline has no
-meaningful stratification rate.
+per-metre rate rather than a total difference. That column now has an obvious
+source — `datamatch::fetch_bathymetry()` and `attach_bathymetry()` return
+`DEPTH` from NOAA ETOPO, on whatever grid the environmental data is on:
+
+```r
+bathy <- datamatch::fetch_bathymetry(bounding_box = bb)
+env   <- datamatch::attach_bathymetry(env, bathy, "DEPTH")
+env   <- vertical_gradient(env, depth = "DEPTH")
+```
+
+ETOPO depth and the Copernicus model's own bathymetry are not the same number —
+the model has its own discretised sea floor, and `bottomT` is the temperature at
+*that* depth, not at ETOPO's. Over most of a shelf the difference is small
+relative to the stratification signal, but the rate is a ratio of two sources
+rather than one, which matters most where they disagree most: steep slopes and
+canyon walls, where a coarse model level and a finer terrain grid can differ by
+tens of metres.
+
+Depths of zero or less become `NA` rather than `Inf` or a sign flip — a cell on
+land or at the waterline has no meaningful stratification rate.
+`attach_bathymetry()` already masks land to `NA`, so the two agree.
 
 ---
 
@@ -466,6 +574,48 @@ that silently encodes the sampling pattern.
 Boundary cells are `NA`, as are the first `n` steps of a lag and the first step of
 a temporal gradient. These are genuine absences, not failures.
 
+### Resampled input passes the check, and that is the problem
+
+`datamatch` now resamples in both directions on both axes — `upscale_grid()` /
+`downscale_grid()` for space, `upscale_time()` / `downscale_time()` for time —
+and its output is a regular lattice with the usual `YEAR`/`MONTH`/`DAY`
+stamping. So `rasterize_step()` accepts it, correctly: it *is* a regular grid.
+The lattice check catches scattered observations, not data whose resolution
+overstates its information content.
+
+The two interpolating directions are where a derivative stops meaning what it
+says:
+
+**Spatial downscaling.** A 0.25° field rendered at 4 km has 4 km cells and still
+resolves nothing below 0.25°. `horizontal_gradient()` divides the difference
+between neighbouring cells by the new, smaller Δx — so with `nearest` or `step`,
+most neighbours are identical (gradient 0) and the cells at each source-cell
+boundary carry the entire step concentrated into one 4 km interval, giving a
+gradient several times larger than the real one. The output is a grid of zeros
+with a lattice of spurious fronts on it, at exactly the spacing of the source
+grid. `bilinear` spreads the step smoothly instead, which is worse for being
+plausible: a smooth gradient field whose structure is the interpolant's.
+
+The rule this implies: **derive on the native grid, then resample the
+derivative.** `upscale_grid()` on an `SST_grad` column is an average of real
+gradients; `horizontal_gradient()` on a downscaled `SST` is not.
+
+**Temporal downscaling.** `downscale_time(method = "linear")` places a constant
+slope between each pair of source steps, so `temporal_gradient(per = "day")`
+returns that slope — a property of the interpolation, exactly constant within
+each source interval and discontinuous at the joins. `method = "step"` is more
+honest here and more obviously wrong-looking, which is the point: it gives zero
+change on all but the transition days.
+
+Aggregation is the safe direction, with one interaction worth naming.
+`upscale_time()` returns `NA` for periods below `min_coverage` (0.5 by default),
+and `integrate_covariate()` treats a missing location-step as a *non-contributing
+step* rather than as a zero — so a partially-covered month drops out of the
+running total instead of dragging it down. That is the intended behaviour of both
+functions and they compose correctly, but it means an integral over a gappy
+series is a sum over fewer steps than the calendar suggests. `keep_counts = TRUE`
+on the upscale is how to see how many.
+
 ---
 
 ## How this is tested
@@ -491,25 +641,57 @@ Temporal functions are checked against fields with a planted linear trend, and
 lag matching is checked by **shuffling one time step's rows** and confirming the
 answer is unchanged.
 
+The degeneracy warnings are tested against a fixture carrying all three awkward
+column kinds at once — a static `DEPTH`, a basin-wide `NAO`, and a factor
+`SST_source`. What is checked is as much where the warning *does not* fire as
+where it does: `horizontal_gradient(env, "DEPTH")` must stay silent, since that
+is slope, and `lag_covariate(env, "NAO")` must stay silent, since a lagged index
+is a real covariate. A check that fired on both would be indistinguishable from
+one that simply recognised the column names.
+
+Two more absences are pinned down, because both would make the warning fire on
+correct input: a **single-time-step** object must not trip the static check, and
+an **all-`NA`** column must not trip either. The wrappers are tested to warn
+**once**, not once per internal call.
+
 ---
+
+## Since resolved elsewhere
+
+Two things this document once listed as missing are now `datamatch`'s, which is
+the right side of the line: they are retrieval problems, not derivation ones.
+
+- **Climate indices** — `attach_climate_index()` joins NAO, AO, AMO, and PDO on
+  year and month, broadcasting one basin-wide value across every point in a
+  step. Nothing here derives from them, and nothing should: a horizontal
+  gradient of a spatially constant field is zero, and a lag of one is just the
+  index lagged. They are model covariates that sit alongside these, not inputs
+  to them. The Gulf Stream Index is still outstanding, and for a reason that is
+  not about which package it belongs in — it has several competing published
+  definitions rather than one stable source.
+- **Bathymetry** — `fetch_bathymetry()` / `attach_bathymetry()` give `DEPTH`,
+  `SLOPE`, `ASPECT`, and `TPI` from NOAA ETOPO. This one does feed derivations:
+  `DEPTH` is what `distance_to_isobath()` contours and what
+  `vertical_gradient(depth = )` divides by.
+
+  Note the overlap. `SLOPE` from `attach_bathymetry()` is `terra::terrain()` on
+  the depth grid — a slope *angle* in degrees — while
+  `horizontal_gradient(env, "DEPTH")` on the same column gives metres of depth
+  per kilometre. For bathymetry specifically, unlike for temperature, the
+  `terrain()` answer is the dimensionally correct one, since depth and distance
+  are both lengths: this is precisely the case the [`raster::terrain()`
+  critique](#why-this-is-not-rasterterrain) above does *not* apply to. They are
+  monotonically related and either works as a covariate; do not use both, and do
+  not compare either to the other's units.
 
 ## Not yet implemented
 
-- **FSLE** — the finite-*size* counterpart to FTLE, integrating until parcels
-  reach a chosen separation rather than for a fixed time. It resolves structures
-  at a specified spatial scale rather than a specified timescale, which suits
-  comparing across regions with different flow speeds. The advection machinery in
-  `R/ftle.R` is reusable; the stopping criterion is what differs.
-- **Distance to shore** — static, like bathymetry. Needs a coastline source
-  (`rnaturalearth` or similar) and a decision about whether "shore" means the
-  mainland coast or includes islands.
 - **Vertical gradients from a depth profile** — the current implementation is
-  surface-minus-bottom. A true `dT/dz` from intermediate levels needs multi-level
-  data, which `datamatch::accessEnvDat()` cannot yet return (see above).
-- **Climate indices** (NAO, AMO, Gulf Stream Index) — time-only covariates with no
-  spatial dimension, broadcast across every point in a time step. These are a
-  retrieval problem rather than a derivation one, so they likely belong in
-  `datamatch` alongside `accessEnvDat()`.
+  surface-minus-bottom. A true `dT/dz` from intermediate levels needs several
+  levels in one object, and `accessEnvDat()` returns one level per call (see
+  above). Stacking per-level fetches is the missing piece.
+- **Depth-resolved FTLE in one call** — same constraint, same workaround; see
+  below.
 
 ## FTLE at depth
 
@@ -520,10 +702,20 @@ Copernicus does provide them: `GLOBAL_MULTIYEAR_PHY_001_030` (GLORYS12V1) carrie
 `uo` and `vo` on 50 vertical levels, so a fetch at a chosen `depth` returns the
 flow at that level and `ftle()` runs on it unmodified.
 
+```r
+deep <- datamatch::accessEnvDat(
+  vars = c("UO", "VO"), depth = c(100, 100),   # one level
+  years = 2010, months = 1:12, bounding_box = bb
+)
+deep <- ftle(deep, integration_days = 14)      # UO/VO are the defaults
+```
+
 The constraint is on the fetching side. `accessEnvDat()` names its output columns
-positionally, so it returns **one level per call**. Depth-resolved FTLE therefore
-means one fetch per level, each producing its own FTLE field — which works today,
-just not in a single call.
+positionally, so it returns **one level per call** — and a `depth` range spanning
+several levels is now refused outright, with an error naming the depth range as
+the likely cause, rather than returning mislabelled columns. Depth-resolved FTLE
+therefore means one fetch per level, each producing its own FTLE field, which
+works today and is not a single call.
 
 Worth knowing before doing it: horizontal velocities weaken and decorrelate with
 depth, so sub-surface FTLE ridges are generally weaker and less coherent than

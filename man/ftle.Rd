@@ -86,12 +86,16 @@ exists.
 \dontrun{
 env <- datamatch::accessEnvDat(
   dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
-  vars = c("uo", "vo"), ...
+  vars = c("UO", "VO"), ...
 )
 # Where water converges - candidate aggregation sites
-env <- ftle(env, u = "uo", v = "vo", integration_days = 14)
+env <- ftle(env, integration_days = 14)       # UO and VO are the defaults
 # Where water masses are pulled apart - transport barriers
-env <- ftle(env, u = "uo", v = "vo", direction = "forward")
+env <- ftle(env, direction = "forward")
+
+# At depth: one model level per fetch
+deep <- datamatch::accessEnvDat(vars = c("UO", "VO"), depth = c(100, 100), ...)
+deep <- ftle(deep, integration_days = 14)
 }
 }
 \references{

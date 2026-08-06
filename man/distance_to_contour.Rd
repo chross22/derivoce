@@ -39,6 +39,6 @@ env <- distance_to_contour(env, "DEPTH", levels = c(50, 100, 200))
 # -> DEPTH_dist_50, DEPTH_dist_100, DEPTH_dist_200
 
 # Works on any field: distance to the 10 degree isotherm
-env <- distance_to_contour(env, "thetao", levels = 10)
+env <- distance_to_contour(env, "SST", levels = 10)
 }
 }

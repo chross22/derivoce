@@ -1,7 +1,10 @@
-test_that("a uniform field has zero gradient", {
+test_that("a uniform field has zero gradient, and says so", {
   env <- make_env(function(lon, lat, year, month) rep(10, length(lon)))
 
-  result <- horizontal_gradient(env, "SST")
+  # A field with no spatial variation is exactly the degenerate case the
+  # warning exists for, so it has to fire here as well as on a climate index.
+  expect_warning(result <- horizontal_gradient(env, "SST"),
+                 "Spatially uniform")
 
   expect_true(all(abs(result$SST_grad[interior(env)]) < 1e-9))
 })
@@ -56,7 +59,10 @@ test_that("gradients are computed per time step, not across the whole record", {
   env <- make_env(function(lon, lat, year, month) rep(month * 10, length(lon)),
                   months = 1:3)
 
-  result <- horizontal_gradient(env, "SST")
+  # Uniform within each step, so the degeneracy warning is expected. It is
+  # grouped by time step, which is what lets it fire on a field that does vary
+  # between steps.
+  expect_warning(result <- horizontal_gradient(env, "SST"), "Spatially uniform")
 
   expect_true(all(abs(result$SST_grad[interior(env)]) < 1e-9))
   expect_equal(nrow(result), nrow(env))

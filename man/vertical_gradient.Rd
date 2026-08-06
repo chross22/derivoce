@@ -20,7 +20,8 @@ vertical_gradient(
 \item{bottom}{name of the bottom temperature column}
 
 \item{depth}{optional depth column name; when given, the difference is divided
-by depth to give a per-metre rate rather than a total difference}
+by depth to give a per-metre rate rather than a total difference.
+\code{datamatch::attach_bathymetry()} supplies a \code{DEPTH} column.}
 
 \item{name}{name for the new column}
 }
@@ -33,14 +34,19 @@ stratification index, large where a warm surface layer sits over cold deep
 water and near zero where the column is well mixed.
 }
 \details{
-Both variables come from the same Copernicus physics dataset (\code{thetao} and
-\code{bottomT}), so this needs no extra fetch — it is a difference between two
-columns already present.
+Both variables come from the same Copernicus physics dataset (\code{SST} and \code{BOTT}
+in the \code{datamatch} catalog, \code{thetao} and \code{bottomT} as Copernicus codes), so
+this needs no extra fetch — it is a difference between two columns already
+present.
 }
 \examples{
 \dontrun{
-env <- vertical_gradient(env, surface = "SST", bottom = "BOTT")
-# As a per-metre rate, if a depth column is available:
-env <- vertical_gradient(env, "SST", "BOTT", depth = "DEPTH")
+env <- datamatch::accessEnvDat(vars = c("SST", "BOTT"), ...)
+env <- vertical_gradient(env)                 # SST and BOTT are the defaults
+
+# As a per-metre rate, with depth from datamatch's bathymetry
+bathy <- datamatch::fetch_bathymetry(bounding_box = bb)
+env <- datamatch::attach_bathymetry(env, bathy, "DEPTH")
+env <- vertical_gradient(env, depth = "DEPTH")
 }
 }

@@ -12,9 +12,17 @@ time_columns <- function() c("YEAR", "MONTH", "DAY")
 
 #' Covariate column names in an environmental data object
 #'
+#' Deliberately internal, and a deliberate duplicate of
+#' `datamatch::covariate_columns()`, which is identical. Exporting it would mask
+#' datamatch's whenever both packages are attached, for no gain: callers who want
+#' it have it from datamatch already. It is not imported from there because
+#' datamatch is a suggested rather than a hard dependency — everything in this
+#' package operates on the *shape* `accessEnvDat()` returns, not on datamatch
+#' itself, so an object of that shape from any source works.
+#'
 #' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
 #' @return character vector of covariate column names
-#' @export
+#' @keywords internal
 covariate_columns <- function(env_dat) {
   setdiff(names(env_dat), c(time_columns(), attr(env_dat, "sf_column")))
 }
@@ -123,20 +131,58 @@ per_time_step <- function(env_dat, vars, fun) {
   env_dat
 }
 
-#' Check that requested covariates exist
+#' Check that requested covariates exist and can be operated on
+#'
+#' Three checks, deliberately of different severities:
+#'
+#' A **missing** column is an error: nothing can be done.
+#'
+#' A **non-numeric** column is an error when named explicitly — a factor cannot be
+#' differentiated or summed, so the request cannot be honoured — but is skipped
+#' silently when `vars = NULL` swept it up. A caller who did not name
+#' `CHL_source` did not mean it, and failing the whole call over a column they
+#' never asked for would make the `NULL` default unusable on any object that has
+#' been through `datamatch::fill_satellite_gaps()`.
+#'
+#' A **degenerate** column — static where the operation is temporal, spatially
+#' uniform where it is spatial — is only a warning, because the computation is
+#' well defined and the caller may have meant it. See [warn_degenerate()].
 #'
 #' @param env_dat an `sf` POINT object
 #' @param vars requested covariate names, or `NULL` for all of them
+#' @param kind the kind of operation the caller is about to perform, so the
+#'   degeneracy relevant to it can be checked: `"temporal"`, `"spatial"`, or
+#'   `"any"` (the default) for operations that are neither, such as a column-wise
+#'   difference
 #' @return the resolved covariate names
 #' @keywords internal
-resolve_vars <- function(env_dat, vars) {
+resolve_vars <- function(env_dat, vars, kind = c("any", "spatial", "temporal")) {
+  kind <- match.arg(kind)
   available <- covariate_columns(env_dat)
-  if (is.null(vars)) return(available)
+  is_numeric_column <- function(v) is.numeric(env_dat[[v]])
 
-  missing <- setdiff(vars, available)
-  if (length(missing) > 0) {
-    stop("Covariate(s) not present: ", paste(missing, collapse = ", "),
-         "\nAvailable: ", paste(available, collapse = ", "), call. = FALSE)
+  if (is.null(vars)) {
+    vars <- available[vapply(available, is_numeric_column, logical(1))]
+    if (length(vars) == 0) {
+      stop("No numeric covariate columns to work on.",
+           "\nColumns present: ", paste(available, collapse = ", "),
+           call. = FALSE)
+    }
+  } else {
+    missing <- setdiff(vars, available)
+    if (length(missing) > 0) {
+      stop("Covariate(s) not present: ", paste(missing, collapse = ", "),
+           "\nAvailable: ", paste(available, collapse = ", "), call. = FALSE)
+    }
+    non_numeric <- vars[!vapply(vars, is_numeric_column, logical(1))]
+    if (length(non_numeric) > 0) {
+      stop("Covariate(s) not numeric: ", paste(non_numeric, collapse = ", "),
+           "\nThese cannot be differentiated, lagged, or summed. ",
+           "datamatch::fill_satellite_gaps() adds a `<var>_source` factor of ",
+           "this kind, recording where each value came from.", call. = FALSE)
+    }
   }
+
+  warn_degenerate(env_dat, vars, kind)
   vars
 }
