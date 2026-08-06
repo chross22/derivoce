@@ -75,7 +75,7 @@ runs fine without datamatch installed. You just usually don't want it to.
 ### Downloading data needs a Python client
 
 datamatch downloads through `copernicusmarine`, the official Copernicus client.
-It is not an R package, and neither package installs it:
+It is not an R package, and needs to be installed via command line, like below:
 
 ```bash
 pip install copernicusmarine
