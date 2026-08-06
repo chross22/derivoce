@@ -1,5 +1,9 @@
 # derivoce
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/chross22/derivoce/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chross22/derivoce/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 Derived environmental covariates for ocean species distribution models — spatial
 and temporal gradients, time-integrated variables, and temporal lags, computed
 from gridded ocean data.
