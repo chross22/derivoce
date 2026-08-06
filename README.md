@@ -11,8 +11,7 @@ computed from gridded ocean data.
 It takes the output of
 [`datamatch::accessEnvDat()`](https://github.com/chross22/datamatch), an `sf`
 point object per time step. It returns the same shape, with derived columns
-added. Those derived covariates then flow into a model alongside the variables
-they came from, such as [`taupatch`](https://github.com/chross22/taupatch).
+added. 
 
 <details>
 <summary><b>Contents</b></summary>
