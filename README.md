@@ -113,8 +113,8 @@ list their points in the same order.
 
 #### FTLE or FSLE?
 
-They ask inverse questions. **FTLE** fixes the integration time and measures how
-far parcels separate; **FSLE** fixes a separation and measures how long it takes.
+They ask inverse questions. **F**inite**T**ime**L**yapunov**E**exponents fix the integration time and measure how
+far parcels separate; **F**inite**S**pace**L**yapunov**E**exponents fix a separation and measure how long it takes.
 
 ```r
 env <- ftle(env, integration_days = 14)   # "how much separation in 14 days?"
