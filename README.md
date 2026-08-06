@@ -72,15 +72,6 @@ calls datamatch itself. An object of that shape works no matter where it came
 from, and the test suite builds its own without touching Copernicus. So derivoce
 runs fine without datamatch installed. You just usually don't want it to.
 
-One version note. The default column names here are `SST`, `BOTT`, `UO`, `VO`,
-and `DEPTH`. These are datamatch *catalog* names, which arrived with its variable
-dictionary. An older datamatch returns raw Copernicus codes instead, so the
-defaults will not match. Pass the column names explicitly in that case:
-
-```r
-eke(env, u = "uo", v = "vo")
-```
-
 If `datamatch::variable_dictionary()` exists, you are on a new enough version.
 
 ### Downloading data needs a Python client
