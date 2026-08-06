@@ -57,8 +57,11 @@ removed correctly rather than being smeared into the anomaly.
 
 \examples{
 \dontrun{
-env <- eke(env, "uo", "vo")                          # against the record mean
-env <- eke(env, "uo", "vo", reference = "climatology") # seasonal cycle removed
-env <- eke(env, "uo", "vo", reference = 12)          # 12-step rolling mean
+env <- eke(env)                             # against the record mean
+env <- eke(env, reference = "climatology")  # seasonal cycle removed
+env <- eke(env, reference = 12)             # 12-step rolling mean
+
+# If the fetch used Copernicus codes rather than catalog names
+env <- eke(env, u = "uo", v = "vo")
 }
 }

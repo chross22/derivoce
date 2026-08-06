@@ -25,6 +25,10 @@ get its spatial gradient, the older pipeline's \code{uv_grad}.
 }
 \examples{
 \dontrun{
-env <- current_speed(env, "uo", "vo") |> horizontal_gradient("speed")
+# UO and VO are the defaults, so a dictionary fetch needs no column names
+env <- current_speed(env) |> horizontal_gradient("speed")
+
+# If the fetch used Copernicus codes instead
+env <- current_speed(env, u = "uo", v = "vo")
 }
 }

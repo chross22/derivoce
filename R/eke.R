@@ -11,7 +11,11 @@
 #' @return `env_dat` with a current speed column added, in the units of `u`/`v`
 #' @examples
 #' \dontrun{
-#' env <- current_speed(env, "uo", "vo") |> horizontal_gradient("speed")
+#' # UO and VO are the defaults, so a dictionary fetch needs no column names
+#' env <- current_speed(env) |> horizontal_gradient("speed")
+#'
+#' # If the fetch used Copernicus codes instead
+#' env <- current_speed(env, u = "uo", v = "vo")
 #' }
 #' @export
 current_speed <- function(env_dat, u = "UO", v = "VO", name = "speed") {
@@ -61,9 +65,12 @@ current_speed <- function(env_dat, u = "UO", v = "VO", name = "speed") {
 #' @return `env_dat` with an EKE column added, in m^2/s^2
 #' @examples
 #' \dontrun{
-#' env <- eke(env, "uo", "vo")                          # against the record mean
-#' env <- eke(env, "uo", "vo", reference = "climatology") # seasonal cycle removed
-#' env <- eke(env, "uo", "vo", reference = 12)          # 12-step rolling mean
+#' env <- eke(env)                             # against the record mean
+#' env <- eke(env, reference = "climatology")  # seasonal cycle removed
+#' env <- eke(env, reference = 12)             # 12-step rolling mean
+#'
+#' # If the fetch used Copernicus codes rather than catalog names
+#' env <- eke(env, u = "uo", v = "vo")
 #' }
 #' @export
 eke <- function(env_dat, u = "UO", v = "VO", reference = "record", name = "EKE") {
