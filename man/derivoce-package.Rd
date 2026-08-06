@@ -6,7 +6,7 @@
 \alias{derivoce-package}
 \title{derivoce: Derived Oceanographic Covariates for Species Distribution Models}
 \description{
-Computes derived environmental covariates from gridded ocean data - spatial and temporal gradients, time-integrated variables, temporal lags, eddy kinetic energy, and Lagrangian diagnostics. Takes the output of datamatch::accessEnvDat() (an sf point object per time step) and returns the same shape with derived columns added, so derived covariates flow into a species distribution model alongside the variables they came from.
+Computes derived oceanographic covariates from gridded ocean data, including spatial and temporal gradients, time-integrated variables, temporal lags, and fluid dynamics such as eddy kinetic energy and finite-time or finite-size Lyapunov exponents. Takes the output of datamatch::accessEnvDat() (an sf point object per time step) and returns the same shape with derived columns added, so derived covariates flow into a species distribution model alongside the variables they came from.
 }
 \seealso{
 Useful links:
