@@ -22,13 +22,13 @@ they came from, such as [`taupatch`](https://github.com/chross22/taupatch).
   - [Downloading data needs a Python client](#downloading-data-needs-a-python-client)
   - [Optional extras](#optional-extras)
 - [Usage](#usage)
-  - [Column names](#column-names)
 - [What it computes](#what-it-computes)
   - [Horizontal gradients](#horizontal-gradients)
   - [Vertical gradients](#vertical-gradients)
   - [Temporal gradients, lags, and integrals](#temporal-gradients-lags-and-integrals)
   - [Fronts, contours, and flow structure](#fronts-contours-and-flow-structure)
     - [FTLE or FSLE?](#ftle-or-fsle)
+- [Column names](#column-names)
 - [Requirements on the input](#requirements-on-the-input)
   - [If the input was resampled](#if-the-input-was-resampled)
   - [Combinations that don't make sense are flagged](#combinations-that-dont-make-sense-are-flagged)
@@ -141,34 +141,9 @@ env <- env |>
 Every function takes and returns the same object. So they compose in a pipe, and
 nothing has to be reassembled afterwards.
 
-### Column names
-
-`accessEnvDat()` now returns columns under the names you asked for, rather than
-under Copernicus codes. Every default here matches those names: `SST`, `BOTT`,
-`UO`, `VO`, and `DEPTH`.
-
-So `vertical_gradient()`, `eke()`, `current_speed()`, `ftle()`, and `fsle()`
-need no column arguments on a dictionary fetch. Neither does
-`distance_to_isobath()`, once `datamatch::attach_bathymetry()` has added
-`DEPTH`.
-
-Here is the same call twice. Only the fetch differs:
-
-```r
-bb <- list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
-
-# Asked for catalog names, so the columns are UO and VO.
-# That is exactly what eke() looks for by default.
-env <- datamatch::accessEnvDat(vars = c("UO", "VO"), years = 2010, months = 1:12,
-                               bounding_box = bb)
-env <- eke(env)
-
-# Asked for Copernicus codes, so the columns are uo and vo. Same data and
-# same function, but now the columns have to be named.
-env <- datamatch::accessEnvDat(vars = c("uo", "vo"), years = 2010, months = 1:12,
-                               bounding_box = bb)
-env <- eke(env, u = "uo", v = "vo")
-```
+Notice that `vertical_gradient()` above needed no arguments. [Column
+names](#column-names) explains why, once the functions it applies to have been
+introduced.
 
 ## What it computes
 
@@ -280,6 +255,37 @@ eddies that make sharp structures. And plankton are not passive surface tracers.
 [`docs/methods.md`](docs/methods.md) covers both. It also covers how each
 quantity is computed, which choices were deliberate, and where results differ
 from the older pipeline.
+
+## Column names
+
+Every default above is a datamatch catalog name: `SST` and `BOTT` for
+`vertical_gradient()`, `UO` and `VO` for `eke()`, `current_speed()`, `ftle()`,
+and `fsle()`, and `DEPTH` for `distance_to_isobath()`.
+
+That is not a coincidence. `accessEnvDat()` returns columns under the names you
+asked for, rather than under Copernicus codes. So a dictionary fetch needs no
+column arguments at all.
+
+Here is the same `eke()` call twice. Only the fetch differs:
+
+```r
+bb <- list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
+
+# Asked for catalog names, so the columns are UO and VO.
+# That is exactly what eke() looks for by default.
+env <- datamatch::accessEnvDat(vars = c("UO", "VO"), years = 2010, months = 1:12,
+                               bounding_box = bb)
+env <- eke(env)
+
+# Asked for Copernicus codes, so the columns are uo and vo. Same data and
+# same function, but now the columns have to be named.
+env <- datamatch::accessEnvDat(vars = c("uo", "vo"), years = 2010, months = 1:12,
+                               bounding_box = bb)
+env <- eke(env, u = "uo", v = "vo")
+```
+
+`distance_to_isobath()` is the one exception. Its `DEPTH` column does not come
+from `accessEnvDat()` at all, but from `datamatch::attach_bathymetry()`.
 
 ## Requirements on the input
 
