@@ -215,6 +215,40 @@ not list their points in the same order.
   things at once. Depth, terrestrial input, tidal mixing, and larval retention
   all covary with it. That makes it a useful covariate and a poor explanation.
 
+#### Why FTLE and FSLE come back mostly NA
+
+This is the most common surprise, and it is not a failure. Both work by
+following parcels through the velocity field. A parcel that reaches the edge of
+the data has no velocity to follow, so it is retired and its cell returns `NA`.
+
+That costs a margin around the domain of roughly **speed × integration time**. A
+typical shelf speed of 0.15 m/s over the default 14 days is about 180 km. On a
+500 km box that removes a third of the field. On a 1° box it removes all of it:
+
+```r
+ftle(env, integration_days = 14)
+#> Warning: ftle() returned no values at all: every point is NA.
+#>   A 14-day integration at this field's median speed (0.2 m/s) carries a
+#>   parcel about 250 km, and the domain is 82 by 110 km. 507 of 507 particles
+#>   left the velocity field before the window was up.
+#>   Shorten integration_days, or fetch a larger bounding box. Either way a
+#>   margin of roughly speed x integration_days is lost along the upstream
+#>   edge, so the usable area is always smaller than the area fetched.
+```
+
+So **fetch a bounding box larger than your study area**, by about that margin.
+Backward integration loses the upstream edge, forward the downstream one.
+
+FSLE has a second way to return nothing: parcels that stay in the domain but
+never separate by `final_separation`. A near-uniform flow carries pairs along
+together rather than pulling them apart, and monthly means have already averaged
+away the eddies that do the pulling. Its warning distinguishes the two causes,
+because they call for opposite fixes — a shorter `max_days` for parcels lost to
+the edge, a longer one for parcels that never separated.
+
+The warning fires only when almost everything is `NA`. Losing a margin is normal
+and is not worth interrupting for.
+
 #### FTLE or FSLE?
 
 They ask inverse questions. **F**inite-**T**ime **L**yapunov **E**xponents fix
@@ -340,7 +374,7 @@ operation it actually breaks:
 | | Temporal (`lag_covariate()`, `temporal_gradient()`, `integrate_covariate()`) | Spatial (`horizontal_gradient()`, `distance_to_contour()`) |
 |---|---|---|
 | **Static**: `DEPTH`, `SLOPE`, `ASPECT`, `TPI` | warns | fine, this is how you get slope |
-| **Spatially uniform**: `NAO`, `AO`, `AMO`, `PDO` | fine, a lagged index is real | warns |
+| **Spatially uniform**: `NAO`, `AO`, `AMO`, `PDO`, `LCR` | fine, a lagged index is real | warns |
 
 The test looks at the data, not at a list of known column names. So a variable
 that happens to be constant in your particular extract is caught too. And a

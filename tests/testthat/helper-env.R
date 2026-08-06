@@ -35,6 +35,12 @@ interior <- function(env, margin = 0.5) {
           coords[, 2] < max(coords[, 2]) - margin + 1e-9)
 }
 
+# TRUE if evaluating `expr` raised a warning. Lets a test assert that a check
+# stayed quiet, which is as much a part of its contract as when it speaks.
+warned <- function(expr) {
+  tryCatch({ expr; FALSE }, warning = function(w) TRUE)
+}
+
 # Velocity fields as sf points, in the shape accessEnvDat() returns. `fun`
 # returns a two-column matrix of (u, v) in m/s for the given lon/lat.
 make_flow <- function(fun,

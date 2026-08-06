@@ -65,7 +65,10 @@ test_that("parcels that never separate far enough are NA, not slow", {
   # non-zero exponent, inventing structure where there is none.
   env <- make_flow(function(lon, lat) cbind(rep(0.2, length(lon)), rep(0, length(lon))))
 
-  result <- fsle(env, final_separation = 50, max_days = 10)
+  # An all-NA field is the correct answer here, and it must also be an explained
+  # one: this is exactly the case the diagnostic exists for.
+  expect_warning(result <- fsle(env, final_separation = 50, max_days = 10),
+                 "returned no values at all")
 
   expect_true(all(is.na(result$backward_fsle)))
 })
@@ -78,11 +81,15 @@ test_that("direction is recorded in the default column name", {
     cbind(0.1 * x / 86400, rep(0, length(lon)))
   })
 
-  expect_true("backward_fsle" %in% names(fsle(env, final_separation = 20)))
-  expect_true("forward_fsle" %in%
-                names(fsle(env, final_separation = 20, direction = "forward")))
-  expect_true("scale20" %in%
-                names(fsle(env, final_separation = 20, name = "scale20")))
+  # Only the column name is under test. This small fixture loses most parcels to
+  # the domain edge, which is its own (tested) warning and not this one's concern.
+  suppressWarnings({
+    expect_true("backward_fsle" %in% names(fsle(env, final_separation = 20)))
+    expect_true("forward_fsle" %in%
+                  names(fsle(env, final_separation = 20, direction = "forward")))
+    expect_true("scale20" %in%
+                  names(fsle(env, final_separation = 20, name = "scale20")))
+  })
 })
 
 test_that("the initial separation defaults to about one grid cell", {

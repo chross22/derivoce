@@ -1,3 +1,67 @@
+#' Typical flow speed and domain size, for diagnosing empty Lagrangian output
+#'
+#' FTLE and FSLE both fail the same way: a domain that is small relative to how
+#' far the flow carries a parcel leaves nothing to report. The numbers needed to
+#' say so are the median speed and the extent, so they are gathered once here.
+#'
+#' @param env_dat an `sf` POINT object
+#' @param u,v velocity column names, in m/s
+#' @return list with `speed` (m/s), `width_km`, and `height_km`
+#' @keywords internal
+flow_scale <- function(env_dat, u, v) {
+  speed <- sqrt(env_dat[[u]]^2 + env_dat[[v]]^2)
+  xy <- sf::st_coordinates(env_dat)
+  metres_per_degree <- 111320
+  mean_lat <- mean(range(xy[, 2], na.rm = TRUE))
+
+  list(
+    speed = stats::median(speed, na.rm = TRUE),
+    width_km = diff(range(xy[, 1], na.rm = TRUE)) * metres_per_degree *
+      cos(mean_lat * pi / 180) / 1000,
+    height_km = diff(range(xy[, 2], na.rm = TRUE)) * metres_per_degree / 1000
+  )
+}
+
+#' Displacement a parcel undergoes over a window, in km
+#'
+#' @param speed speed in m/s
+#' @param days window length in days
+#' @return distance in km
+#' @keywords internal
+displacement_km <- function(speed, days) speed * 86400 * days / 1000
+
+#' Warn when a Lagrangian diagnostic returns almost nothing
+#'
+#' A field that is nearly all `NA` is the expected result of asking for a longer
+#' trajectory than the domain can hold, and every individual `NA` is correct.
+#' What is not acceptable is returning that silently: the caller sees an empty
+#' column and cannot tell an unsuitable domain from a broken function.
+#'
+#' The threshold is deliberately high. Losing a margin to the domain edge is
+#' normal and does not need saying every time. Losing essentially everything
+#' does.
+#'
+#' @param fn name of the calling function, for the message
+#' @param na_fraction fraction of the output that is `NA`
+#' @param detail one or more sentences diagnosing the cause
+#' @param advice what the caller can change
+#' @param threshold warn at or above this fraction
+#' @return invisibly `NULL`
+#' @keywords internal
+warn_lagrangian <- function(fn, na_fraction, detail, advice, threshold = 0.9) {
+  if (!is.finite(na_fraction) || na_fraction < threshold) return(invisible(NULL))
+
+  headline <- if (na_fraction >= 1) {
+    paste0(fn, "() returned no values at all: every point is NA.")
+  } else {
+    paste0(fn, "() returned almost nothing: ",
+           format(round(100 * na_fraction, 1), nsmall = 1), "% of points are NA.")
+  }
+
+  warning(headline, "\n  ", detail, "\n  ", advice, call. = FALSE)
+  invisible(NULL)
+}
+
 #' Is a column constant within every group?
 #'
 #' The shared test behind both degeneracy warnings: group by location and a
@@ -73,7 +137,7 @@ warn_degenerate <- function(env_dat, vars, kind) {
               "step, so a horizontal gradient is zero everywhere and a distance ",
               "to a contour of them is undefined.\n",
               "  Climate indices from datamatch::attach_climate_index() (NAO, ",
-              "AO, AMO, PDO) are uniform in this way: they carry information ",
+              "AO, AMO, PDO, LCR) are uniform in this way: they carry information ",
               "about when, none about where.",
               call. = FALSE)
     }

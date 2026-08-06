@@ -91,6 +91,9 @@ fsle <- function(env_dat, u = "UO", v = "VO", final_separation = 50,
 
   sign <- if (direction == "backward") -1 else 1
   result <- rep(NA_real_, nrow(env_dat))
+  lost <- 0
+  unseparated <- 0
+  delta_0 <- NA_real_
 
   for (i in seq_len(nrow(steps))) {
     rows <- step_rows(env_dat, steps[i, ])
@@ -111,8 +114,41 @@ fsle <- function(env_dat, u = "UO", v = "VO", final_separation = 50,
                                step_days = step_hours / 24,
                                velocity = velocity, times = step_times)
 
+    lost <- lost + attr(elapsed, "lost")
+    unseparated <- unseparated + attr(elapsed, "unseparated")
+
     result[rows] <- log(final_separation / delta_0) / elapsed
   }
+
+  scale <- flow_scale(env_dat, u, v)
+  reach <- displacement_km(scale$speed, max_days)
+
+  warn_lagrangian(
+    "fsle", mean(is.na(result)),
+    detail = paste0(
+      unseparated, " parcel pairs never reached the ", final_separation,
+      " km target within max_days = ", max_days, ", and ", lost,
+      " drifted out of the velocity field first. Over ", max_days,
+      " days this field's median speed (", signif(scale$speed, 2),
+      " m/s) carries a parcel about ", signif(reach, 2),
+      " km, against a domain of ", signif(scale$width_km, 2), " by ",
+      signif(scale$height_km, 2), " km."),
+    advice = if (lost > unseparated) {
+      paste0(
+        "Most were lost to the domain rather than to a lack of strain, so the ",
+        "binding constraint is max_days against the size of the box. Shorten ",
+        "max_days, or fetch a larger bounding box. A smaller final_separation ",
+        "also helps, because pairs then finish sooner and travel less far.")
+    } else {
+      paste0(
+        "Most stayed in the domain and simply never separated, which is what a ",
+        "near-uniform flow does: pairs are carried along together rather than ",
+        "pulled apart. Try a smaller final_separation (the default ",
+        final_separation, " km is a mesoscale target), a longer max_days, or a ",
+        "daily P1D product, since monthly means have already averaged away the ",
+        "eddies that separate parcels.")
+    }
+  )
 
   env_dat[[name %||% paste0(direction, "_fsle")]] <- result
   env_dat
@@ -167,6 +203,9 @@ separation_time <- function(seeds, delta_0, delta_f, start_time, sign, max_days,
   n_steps <- ceiling(max_days / step_days)
   dt <- sign * step_days
   time <- start_time
+  # The two ways a parcel goes unanswered call for different fixes, so they are
+  # counted apart rather than both just becoming NA.
+  lost_count <- 0
 
   # Only parcels still short of the target are advected. Without this, every
   # parcel is integrated for the full max_days even after its answer is known,
@@ -190,10 +229,14 @@ separation_time <- function(seeds, delta_0, delta_f, start_time, sign, max_days,
     lost <- is.na(separation)
     reached <- !lost & separation >= delta_f
     elapsed[active[reached]] <- step * step_days
+    lost_count <- lost_count + sum(lost)
 
     active <- active[!reached & !lost]
     if (length(active) == 0) break
   }
+
+  attr(elapsed, "lost") <- lost_count
+  attr(elapsed, "unseparated") <- length(active)
   elapsed
 }
 

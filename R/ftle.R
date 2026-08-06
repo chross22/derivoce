@@ -97,6 +97,8 @@ ftle <- function(env_dat, u = "UO", v = "VO", integration_days = 14,
 
   sign <- if (direction == "backward") -1 else 1
   result <- rep(NA_real_, nrow(env_dat))
+  left_domain <- 0
+  particles <- 0
 
   for (i in seq_len(nrow(steps))) {
     rows <- step_rows(env_dat, steps[i, ])
@@ -107,8 +109,32 @@ ftle <- function(env_dat, u = "UO", v = "VO", integration_days = 14,
                     step_days = step_hours / 24,
                     velocity = velocity, times = step_times)
 
+    # A particle whose trajectory ran outside the velocity field comes back NA,
+    # and poisons the central differences of its neighbours too. Counting them
+    # is what lets an empty result be explained rather than just returned.
+    left_domain <- left_domain + sum(!stats::complete.cases(final))
+    particles <- particles + nrow(final)
+
     result[rows] <- ftle_from_flow_map(seeds, final, integration_days)
   }
+
+  scale <- flow_scale(env_dat, u, v)
+  reach <- displacement_km(scale$speed, integration_days)
+  edge <- if (direction == "backward") "upstream" else "downstream"
+
+  warn_lagrangian(
+    "ftle", mean(is.na(result)),
+    detail = paste0(
+      "A ", integration_days, "-day integration at this field's median speed (",
+      signif(scale$speed, 2), " m/s) carries a parcel about ", signif(reach, 2),
+      " km, and the domain is ", signif(scale$width_km, 2), " by ",
+      signif(scale$height_km, 2), " km. ", left_domain, " of ", particles,
+      " particles left the velocity field before the window was up."),
+    advice = paste0(
+      "Shorten integration_days, or fetch a larger bounding box. Either way a ",
+      "margin of roughly speed x integration_days is lost along the ", edge,
+      " edge, so the usable area is always smaller than the area fetched.")
+  )
 
   env_dat[[name %||% paste0(direction, "_ftle")]] <- result
   env_dat
