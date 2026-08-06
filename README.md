@@ -72,8 +72,6 @@ calls datamatch itself. An object of that shape works no matter where it came
 from, and the test suite builds its own without touching Copernicus. So derivoce
 runs fine without datamatch installed. You just usually don't want it to.
 
-If `datamatch::variable_dictionary()` exists, you are on a new enough version.
-
 ### Downloading data needs a Python client
 
 datamatch downloads through `copernicusmarine`, the official Copernicus client.
