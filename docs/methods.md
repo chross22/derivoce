@@ -105,7 +105,7 @@ were written, because `datamatch` attaches three other kinds of column:
 | Source | Columns | What they break | Response |
 |---|---|---|---|
 | `attach_bathymetry()` | `DEPTH`, `SLOPE`, `ASPECT`, `TPI` | static — no temporal derivative, no meaningful integral | warning |
-| `attach_climate_index()` | `NAO`, `AO`, `AMO`, `PDO`, `LCR` | no spatial dimension — horizontal gradient is identically zero | warning |
+| `attach_climate_index()` | `NAO`, `AO`, `AMO`, `PDO`, `LCR`, `AMOC` | no spatial dimension — horizontal gradient is identically zero | warning |
 | `fill_satellite_gaps()` | `<var>_source` | a factor, not a measurement | error, or skipped |
 
 The `vars = NULL` default — "all covariates" — dates from when the input was a
@@ -732,7 +732,8 @@ an **all-`NA`** column must not trip either. The wrappers are tested to warn
 Two things this document once listed as missing are now `datamatch`'s, which is
 the right side of the line: they are retrieval problems, not derivation ones.
 
-- **Climate indices** — `attach_climate_index()` joins NAO, AO, AMO, PDO, and LCR
+- **Climate indices** — `attach_climate_index()` joins NAO, AO, AMO, PDO, LCR,
+  and AMOC
   (Labrador Current retroflection) on
   year and month, broadcasting one basin-wide value across every point in a
   step. Nothing here derives from them, and nothing should: a horizontal

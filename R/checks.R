@@ -137,8 +137,8 @@ warn_degenerate <- function(env_dat, vars, kind) {
               "step, so a horizontal gradient is zero everywhere and a distance ",
               "to a contour of them is undefined.\n",
               "  Climate indices from datamatch::attach_climate_index() (NAO, ",
-              "AO, AMO, PDO, LCR) are uniform in this way: they carry information ",
-              "about when, none about where.",
+              "AO, AMO, PDO, LCR, AMOC) are uniform in this way: they carry ",
+              "information about when, none about where.",
               call. = FALSE)
     }
   }

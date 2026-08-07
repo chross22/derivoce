@@ -25,8 +25,10 @@ added.
   - [Horizontal gradients](#horizontal-gradients)
   - [Vertical gradients](#vertical-gradients)
   - [Temporal gradients, lags, and integrals](#temporal-gradients-lags-and-integrals)
+    - [Lag by calendar time, not by position](#lag-by-calendar-time-not-by-position)
   - [Fronts, contours, and flow structure](#fronts-contours-and-flow-structure)
   - [FTLE or FSLE?](#ftle-or-fsle)
+  - [Regional indices](#regional-indices)
 - [Column names](#column-names)
 - [Requirements on the input](#requirements-on-the-input)
 - [Warnings you may see](#warnings-you-may-see)
@@ -175,6 +177,34 @@ env   <- vertical_gradient(env, depth = "DEPTH")   # degrees C per metre
 Locations are matched by coordinate, not row order, so time steps need not list
 their points in the same order.
 
+#### Lag by calendar time, not by position
+
+`lag_covariate()` counts steps by default, which is only unambiguous when the
+series is evenly spaced and complete. `by` counts calendar time instead:
+
+```r
+lag_covariate(env, "CHL", n = 3, by = "month")   # CHL_lag3month
+lag_covariate(env, "SST", n = 1, by = "year")    # same month, last year
+lag_covariate(env, "SST", n = 30, by = "day")    # daily products
+```
+
+Prefer a calendar unit whenever the lag means something biological. "Three
+months ago" is a claim about the organism. "Three steps ago" is a claim about
+how the data was fetched, and the two stop agreeing the moment a month is
+missing. In a monthly series missing April, `by = "step"` makes March the
+predecessor of May, so a one-step lag is quietly a two-month one. `by = "month"`
+returns `NA` there instead.
+
+`n` may be a vector, which is what an autoregressive design needs:
+
+```r
+lag_covariate(env, "SST", n = 1:3, by = "year")
+# adds SST_lag1year, SST_lag2year, SST_lag3year
+```
+
+With `by = "year"` this holds the calendar month fixed and varies only the year,
+so the seasonal cycle drops out and what remains is interannual.
+
 ### Fronts, contours, and flow structure
 
 - `distance_to_front()` measures how far each point is from the nearest front,
@@ -224,6 +254,58 @@ nowhere to put that.
 Two caveats outweigh the choice. Monthly fields have already averaged away the
 eddies that make sharp structures, and plankton are not passive surface tracers.
 [`docs/methods.md`](docs/methods.md) covers both.
+
+### Regional indices
+
+Some quantities describe a region rather than a cell: transport across a
+section, how much of the water came from somewhere, whether a basin was fresher
+than usual. These return **one value per time step**, broadcast to every row, so
+they behave like a climate index rather than a map.
+
+```r
+derived_indices()                      # the catalogue, with sources
+cat(derived_indices(markdown = TRUE))  # as a markdown table
+```
+
+Scotian Shelf inflow to the Gulf of Maine appears three times, because the
+literature measures it three ways and they answer different questions:
+
+| Index | Method | Needs | Measures |
+|---|---|---|---|
+| `scotian_shelf_inflow()` | transport across a fixed line off Cape Sable | `UO`, `VO` | the crossing itself, with a direction |
+| `water_mass_fraction()` | T-S endmember mixing | `SST`, `SSS` | how much of the water present came from there |
+| `eastern_gom_salinity()` | box salinity anomaly | `SSS` | the most visible consequence, freshening |
+
+A transport is the only one that gives a flux. A water-mass fraction is what
+matters for nutrients and works where velocities do not. A box anomaly is the
+most robust and the least specific: it says conditions changed, not that water
+moved. They disagree in useful ways, since a strong inflow with a normal
+salinity anomaly means the arriving water was not unusually fresh.
+
+`northeast_channel_inflow()` is a separate index, not a variant. The Channel is
+the deep route by which slope water enters the Gulf, and it alternates
+episodically with the shallow, fresh Cape Sable inflow. The contrast is the
+point.
+
+The named sections are fixed rather than arguments, since an index named for a
+place is defined by that place. `section_transport()` is the general function,
+and `scotian_shelf_inflow_section()` reports the geometry so it can be plotted
+or checked.
+
+```r
+env <- scotian_shelf_inflow(env)         # m^2/s, positive into the Gulf
+env <- northeast_channel_inflow(env)
+env <- water_mass_fraction(env, endmembers = list(
+  LSW = c(temperature = 6,  salinity = 34.4),
+  WSW = c(temperature = 12, salinity = 35.4)
+), residual = TRUE)
+```
+
+Two cautions. A surface velocity field integrated along a line is a **proxy
+for** depth-integrated transport, not a measurement of it, and the Northeast
+Channel in particular is baroclinic enough that the surface can run opposite to
+the deep flow. And `water_mass_fraction()` always returns a fraction, even for
+water that is not a mixture of those two masses at all, so check the residual.
 
 ## Column names
 
@@ -314,7 +396,7 @@ Two degeneracies, each checked only against the operation it actually breaks:
 | | Temporal (`lag_covariate()`, `temporal_gradient()`, `integrate_covariate()`) | Spatial (`horizontal_gradient()`, `distance_to_contour()`) |
 |---|---|---|
 | **Static**: `DEPTH`, `SLOPE`, `ASPECT`, `TPI` | warns | fine, this is how you get slope |
-| **Spatially uniform**: `NAO`, `AO`, `AMO`, `PDO`, `LCR` | fine, a lagged index is real | warns |
+| **Spatially uniform**: `NAO`, `AO`, `AMO`, `PDO`, `LCR`, `AMOC` | fine, a lagged index is real | warns |
 
 The test looks at the data, not at a list of known names, so a variable that
 happens to be constant in your extract is caught too.
@@ -358,7 +440,7 @@ neighbours, so every cloud hole erases a ring around itself.
   surface-minus-bottom. A true `dT/dz` needs several model levels in one object,
   and `accessEnvDat()` returns one level per call. Stacking per-level fetches is
   the workaround. Doing that inside `vertical_gradient()` is the work.
-- **Gulf Stream Index.** NAO, AO, AMO, PDO, and LCR are all in
+- **Gulf Stream Index.** NAO, AO, AMO, PDO, LCR, and AMOC are all in
   [datamatch](https://github.com/chross22/datamatch) via
   `attach_climate_index()`. The Gulf Stream Index is harder: it has several
   competing definitions published in papers rather than at a stable URL, so it
