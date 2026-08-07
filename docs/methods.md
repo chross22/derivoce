@@ -359,7 +359,10 @@ absorbs float noise from coordinates written and re-read at different precisions
 
 The first `n` steps have no predecessor and are `NA`.
 
-`n = 1` reproduces the older pipeline's `lag_sst` exactly.
+`n = 1` reproduces the `lag_sst` of Ross et al. (2023) exactly, which was a
+one-month lag of sea surface temperature. On a gapless monthly series `n = 1` and
+`n = 1, by = "month"` agree; where a month is missing they do not, and the
+calendar form is the faithful one.
 
 ---
 
@@ -881,8 +884,14 @@ removed correctly rather than smeared into the anomaly. A domain-wide mean would
 leave a large spurious anomaly wherever the mean flow differs from the domain
 average — which, on a shelf with opposing currents, is everywhere.
 
-`current_speed()` gives `sqrt(u² + v²)`, reproducing the older pipeline's `uv`;
-passing it through `horizontal_gradient()` reproduces `uv_grad`.
+`current_speed()` gives `sqrt(u² + v²)`, reproducing the `uv` of Ross et al.
+(2023). Their `uv_grad` is the spatial derivative of that speed field, so it is
+`current_speed()` followed by `horizontal_gradient()` on the result.
+
+The order is not interchangeable. Speed is a non-linear function of the
+components, so the gradient of the speed is not the speed of the gradients, and
+differentiating `u` and `v` separately then combining gives a different
+covariate.
 
 ---
 

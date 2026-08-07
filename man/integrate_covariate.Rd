@@ -27,13 +27,19 @@ built up since the season began, which is what the original pipeline's
 \code{int_chl} captured for chlorophyll.
 }
 \details{
-The default \code{window = "year"} reproduces \code{int_chl}: a running sum from January
+The default \code{window = "year"} reproduces \code{int_chl} of Ross et al. (2023),
+which integrated chlorophyll from January: a running sum from January
 of each year, reset at the year boundary. A numeric window instead sums over
 that many trailing time steps, giving a rolling total that does not reset.
 }
 \examples{
 \dontrun{
-env <- integrate_covariate(env, "CHL")               # the original's int_chl
+env <- integrate_covariate(env, "CHL")               # int_chl, Ross et al. 2023
 env <- integrate_covariate(env, "CHL", window = 3)   # trailing 3-step total
 }
+}
+\references{
+Ross C, Runge J, Roberts J, Brady D, Tupper B, Record N (2023). Estimating
+North Atlantic right whale prey based on Calanus finmarchicus thresholds.
+\emph{Marine Ecology Progress Series} \strong{703}, 1-16. \doi{10.3354/meps14204}
 }

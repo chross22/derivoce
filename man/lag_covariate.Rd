@@ -69,6 +69,20 @@ Locations are matched by coordinate, so this assumes a fixed grid across time
 steps, which is what gridded products give.
 }
 
+\section{Reproducing the published lag}{
+
+Ross et al. (2023) used a \strong{one-month} lag of sea surface temperature. On a
+complete monthly series that is \code{n = 1} either way, but the faithful form is
+the calendar one:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{lag_covariate(env, "SST", n = 1, by = "month")
+}\if{html}{\out{</div>}}
+
+The two part company the moment a month is missing from the record, where
+\code{by = "step"} reaches back to whatever step precedes the gap and calls it one
+month. Use \code{by = "month"} when the intent is the published lag.
+}
+
 \section{Several lags at once}{
 
 \code{n} may be a vector, which adds one column per lag. This is what an
@@ -98,4 +112,9 @@ env <- lag_covariate(env, "SST", n = 30, by = "day")  # daily products
 # An autoregressive set: the same month in each of the last three years
 env <- lag_covariate(env, "SST", n = 1:3, by = "year")
 }
+}
+\references{
+Ross C, Runge J, Roberts J, Brady D, Tupper B, Record N (2023). Estimating
+North Atlantic right whale prey based on Calanus finmarchicus thresholds.
+\emph{Marine Ecology Progress Series} \strong{703}, 1-16. \doi{10.3354/meps14204}
 }

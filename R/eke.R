@@ -1,14 +1,29 @@
 #' Current speed from velocity components
 #'
 #' The magnitude of the horizontal velocity vector, `sqrt(u^2 + v^2)`. Reproduces
-#' the older pipeline's `uv`. Pass the result through [horizontal_gradient()] to
-#' get its spatial gradient, the older pipeline's `uv_grad`.
+#' the `uv` covariate of Ross et al. (2023).
+#'
+#' Their `uv_grad` is the spatial derivative of *that speed field*, not of the
+#' velocity components, so it is two steps:
+#'
+#' ```
+#' env <- current_speed(env)                    # uv
+#' env <- horizontal_gradient(env, "speed")     # uv_grad
+#' ```
+#'
+#' The order matters. Differentiating `u` and `v` separately and combining
+#' afterwards gives a different quantity: speed is a non-linear function of the
+#' components, so the gradient of the speed is not the speed of the gradients.
 #'
 #' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
 #' @param u name of the eastward velocity column
 #' @param v name of the northward velocity column
 #' @param name name for the new column
 #' @return `env_dat` with a current speed column added, in the units of `u`/`v`
+#' @references
+#' Ross C, Runge J, Roberts J, Brady D, Tupper B, Record N (2023). Estimating
+#' North Atlantic right whale prey based on Calanus finmarchicus thresholds.
+#' *Marine Ecology Progress Series* **703**, 1-16. \doi{10.3354/meps14204}
 #' @examples
 #' \dontrun{
 #' # UO and VO are the defaults, so a dictionary fetch needs no column names

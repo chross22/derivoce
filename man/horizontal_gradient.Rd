@@ -42,7 +42,8 @@ per-degree units is stretched by latitude and not comparable across a study
 area.
 
 This is a deliberate departure from \code{raster::terrain()}, which the original
-pipeline used for \code{sst_grad} and \code{uv_grad}. \code{terrain()} treats its input as an
+pipeline of Ross et al. (2023) used for \code{sst_grad} and \code{uv_grad}.
+\code{terrain()} treats its input as an
 elevation in the same units as the coordinates and returns a slope angle, which
 is dimensionally meaningless for a field measured in degrees Celsius. The
 magnitude here is a real rate of change with a real unit.
@@ -57,4 +58,9 @@ env <- horizontal_gradient(env, "SST", components = TRUE)
 # and wrong once static or non-numeric columns have been attached.
 env <- horizontal_gradient(env)
 }
+}
+\references{
+Ross C, Runge J, Roberts J, Brady D, Tupper B, Record N (2023). Estimating
+North Atlantic right whale prey based on Calanus finmarchicus thresholds.
+\emph{Marine Ecology Progress Series} \strong{703}, 1-16. \doi{10.3354/meps14204}
 }

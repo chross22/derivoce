@@ -20,8 +20,19 @@ current_speed(env_dat, u = "UO", v = "VO", name = "speed")
 }
 \description{
 The magnitude of the horizontal velocity vector, \code{sqrt(u^2 + v^2)}. Reproduces
-the older pipeline's \code{uv}. Pass the result through \code{\link[=horizontal_gradient]{horizontal_gradient()}} to
-get its spatial gradient, the older pipeline's \code{uv_grad}.
+the \code{uv} covariate of Ross et al. (2023).
+}
+\details{
+Their \code{uv_grad} is the spatial derivative of \emph{that speed field}, not of the
+velocity components, so it is two steps:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{env <- current_speed(env)                    # uv
+env <- horizontal_gradient(env, "speed")     # uv_grad
+}\if{html}{\out{</div>}}
+
+The order matters. Differentiating \code{u} and \code{v} separately and combining
+afterwards gives a different quantity: speed is a non-linear function of the
+components, so the gradient of the speed is not the speed of the gradients.
 }
 \examples{
 \dontrun{
@@ -31,4 +42,9 @@ env <- current_speed(env) |> horizontal_gradient("speed")
 # If the fetch used Copernicus codes instead
 env <- current_speed(env, u = "uo", v = "vo")
 }
+}
+\references{
+Ross C, Runge J, Roberts J, Brady D, Tupper B, Record N (2023). Estimating
+North Atlantic right whale prey based on Calanus finmarchicus thresholds.
+\emph{Marine Ecology Progress Series} \strong{703}, 1-16. \doi{10.3354/meps14204}
 }

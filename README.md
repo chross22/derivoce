@@ -32,7 +32,7 @@ added.
     - [Three ways to measure the same inflow](#three-ways-to-measure-the-same-inflow)
     - [Using your own line or box](#using-your-own-line-or-box)
     - [Before you use these](#before-you-use-these)
-    - [References](#references)
+    - [A note on "Follows"](#a-note-on-follows)
 - [Column names](#column-names)
 - [Requirements on the input](#requirements-on-the-input)
 - [Warnings you may see](#warnings-you-may-see)
@@ -40,6 +40,10 @@ added.
   - [A derivative that cannot carry information](#a-derivative-that-cannot-carry-information)
 - [Resampled and gap-filled input](#resampled-and-gap-filled-input)
 - [Still to come](#still-to-come)
+- [References](#references)
+  - [Data sources](#data-sources)
+  - [Software](#software)
+  - [Citing derivoce](#citing-derivoce)
 
 Longer form, with the reasoning behind each quantity:
 [`docs/methods.md`](docs/methods.md).
@@ -144,8 +148,8 @@ a degree of longitude is about 83 km at 42°N but 111 km at the equator, so a
 per-degree gradient is stretched by latitude and not comparable across a study
 area. The longitude spacing is recomputed for every grid row.
 
-This is a deliberate departure from the `raster::terrain()` call the older
-pipeline used for `sst_grad` and `uv_grad`. `terrain()` returns a slope *angle*,
+This is a deliberate departure from the `raster::terrain()` call the original
+pipeline used for `sst_grad` and `uv_grad` (Ross et al. 2023). `terrain()` returns a slope *angle*,
 which is dimensionally meaningless for a field in °C. This returns a real rate of
 change with a real unit.
 
@@ -172,11 +176,13 @@ env   <- vertical_gradient(env, depth = "DEPTH")   # degrees C per metre
   what they are.
 - `lag_covariate()` gives the value *n* steps back. Populations respond with a
   delay: a bloom feeds the animals sampled a month later, not those sampled
-  during it. `n = 1` reproduces the older pipeline's `lag_sst`.
+  during it. Ross et al. (2023) used a one-month SST lag, which is
+  `by = "month"` here.
 - `integrate_covariate()` accumulates over preceding steps. A survey samples the
   food built up since the season began, not the food present at that instant. The
-  default `window = "year"` reproduces `int_chl`, a running sum from January that
-  resets each year. A numeric window rolls without resetting.
+  default `window = "year"` reproduces the `int_chl` of Ross et al. (2023),
+  chlorophyll integrated from January and reset each year. A numeric window rolls
+  without resetting.
 
 Locations are matched by coordinate, not row order, so time steps need not list
 their points in the same order.
@@ -212,13 +218,15 @@ so the seasonal cycle drops out and what remains is interannual.
 ### Fronts, contours, and flow structure
 
 - `distance_to_front()` measures how far each point is from the nearest front,
-  usually a better predictor than the local gradient. A station in a smooth patch
+  usually a better predictor than the local gradient. Fronts are found by
+  thresholding the gradient, after Belkin and O'Reilly (2009). A station in a smooth patch
   has zero gradient whether the nearest front is 2 km or 200 km away, and those
   are very different places to be.
 - `distance_to_contour()` and `distance_to_isobath()` measure distance to where a
   covariate crosses a value. Plankton track the shelf break, and "20 km inshore of
   the 100 m isobath" locates that better than "depth = 85 m".
-- `ftle()` and `fsle()` compute Lyapunov exponents. **Backward** (the default)
+- `ftle()` and `fsle()` compute Lyapunov exponents (Haller 2015; d'Ovidio et al.
+  2004). **Backward** (the default)
   finds *attracting* structures, where water converges and material accumulates.
   **Forward** finds *repelling* structures, the transport barriers. For
   depth-resolved versions, fetch velocities at a chosen depth: Copernicus GLORYS
@@ -226,10 +234,12 @@ so the seasonal cycle drops out and what remains is interannual.
 - `eke()` computes eddy kinetic energy. You choose what the anomaly is measured
   against: the record mean, a monthly climatology, or a rolling window. That
   choice decides what counts as an eddy rather than mean flow.
-- `current_speed()` gives speed from u and v, the older pipeline's `uv`. Pipe it
-  through `horizontal_gradient()` for `uv_grad`.
-- `distance_to_shore()` gives kilometres to the nearest coast, from Natural
-  Earth. Static, so it is computed once per location and shared across time steps.
+- `current_speed()` gives speed from u and v, the `uv` of Ross et al. (2023).
+  Their `uv_grad` is the spatial derivative of that speed field, so it is
+  `current_speed()` then `horizontal_gradient()` on the result. Differentiating
+  `u` and `v` separately and combining afterwards is a different quantity.
+- `distance_to_shore()` gives kilometres to the nearest coast, from [Natural
+  Earth](https://www.naturalearthdata.com/). Static, so it is computed once per location and shared across time steps.
   A broad proxy for several things at once: depth, terrestrial input, tidal
   mixing, and larval retention all covary with it. Useful as a covariate, poor as
   an explanation.
@@ -349,39 +359,13 @@ they are not from any paper.
 and [`docs/section-placement-diagnostics.R`](docs/section-placement-diagnostics.R)
 re-runs the test on your own data.
 
-#### References
+#### A note on "Follows"
 
-"Follows" above means we implemented the idea, not that we reproduce the
-published series. Each function computes from whatever data you give it, so the
-numbers will differ from the paper's. Cite the paper for the concept and describe
-your own inputs. Also available as
-`as.data.frame(derived_indices())$source`.
-
-- Du J, Zhang WG, Li Y (2022). Impact of Gulf Stream warm-core rings on slope
-  water intrusion into the Gulf of Maine. *Journal of Physical Oceanography*
-  **52**(8). [doi:10.1175/JPO-D-21-0288.1](https://doi.org/10.1175/JPO-D-21-0288.1)
-- Feng H, Vandemark D, Wilkin J (2016). Gulf of Maine salinity variation and its
-  correlation with upstream Scotian Shelf currents at seasonal and interannual
-  time scales. *Journal of Geophysical Research: Oceans* **121**.
-  [doi:10.1002/2016JC012337](https://doi.org/10.1002/2016JC012337)
-- Grodsky SA, Vandemark D, Levin J (2025). An eastern Gulf of Maine salinity
-  index for monitoring winter Scotian Shelf inflow and its relation to coastal
-  and interior pathways. *Journal of Geophysical Research: Oceans* **130**(5).
-  [doi:10.1029/2024JC021891](https://doi.org/10.1029/2024JC021891)
-- Ramp SR, Schlitz RJ, Wright WR (1985). The deep flow through the Northeast
-  Channel, Gulf of Maine. *Journal of Physical Oceanography* **15**(12),
-  1790–1808.
-- Silver A, Gangopadhyay A, Gawarkiewicz G, Fratantoni P, Clark J (2023).
-  Increased Gulf Stream warm core ring formations contributes to an observed
-  increase in salinity maximum intrusions on the Northeast Shelf. *Scientific
-  Reports* **13**, 7538.
-  [doi:10.1038/s41598-023-34494-0](https://doi.org/10.1038/s41598-023-34494-0)
-- Townsend DW, Pettigrew NR, Thomas MA, Neary MG, McGillicuddy DJ, O'Donnell J
-  (2015). Water masses and nutrient sources to the Gulf of Maine. *Journal of
-  Marine Research* **73**, 93–122.
-- Wang et al. (2022). Freshwater transport in the Scotian Shelf and its impacts
-  on the Gulf of Maine salinity. *Journal of Geophysical Research: Oceans*
-  **127**. [doi:10.1029/2021JC017663](https://doi.org/10.1029/2021JC017663)
+It means we implemented the idea, not that we reproduce the published series.
+Each function computes from whatever data you give it, so the numbers will differ
+from the paper's. Cite the paper for the concept and describe your own inputs.
+Sources are also available as `as.data.frame(derived_indices())$source`, and all
+work cited anywhere here is listed under [References](#references) at the end.
 
 ## Column names
 
@@ -521,3 +505,94 @@ neighbours, so every cloud hole erases a ring around itself.
   `attach_climate_index()`. The Gulf Stream Index is harder: it has several
   competing definitions published in papers rather than at a stable URL, so it
   needs a decision about which one.
+
+## References
+
+Work cited anywhere above, alphabetical. Each function's own `?help` carries the
+references relevant to it, and `as.data.frame(derived_indices())$source` gives
+them for the regional indices at runtime.
+
+Where a function "follows" a paper, it implements that paper's idea and computes
+it from whatever data you supply. None reproduces a published time series, so
+cite the paper for the concept and describe your own inputs.
+
+- Belkin IM, O'Reilly JE (2009). An algorithm for oceanic front detection in
+  chlorophyll and SST satellite imagery. *Journal of Marine Systems* **78**(3),
+  319–326.
+  [doi:10.1016/j.jmarsys.2008.11.018](https://doi.org/10.1016/j.jmarsys.2008.11.018)
+- d'Ovidio F, Fernández V, Hernández-García E, López C (2004). Mixing structures
+  in the Mediterranean Sea from finite-size Lyapunov exponents. *Geophysical
+  Research Letters* **31**(17).
+  [doi:10.1029/2004GL020328](https://doi.org/10.1029/2004GL020328)
+- Du J, Zhang WG, Li Y (2022). Impact of Gulf Stream warm-core rings on slope
+  water intrusion into the Gulf of Maine. *Journal of Physical Oceanography*
+  **52**(8).
+  [doi:10.1175/JPO-D-21-0288.1](https://doi.org/10.1175/JPO-D-21-0288.1)
+- Feng H, Vandemark D, Wilkin J (2016). Gulf of Maine salinity variation and its
+  correlation with upstream Scotian Shelf currents at seasonal and interannual
+  time scales. *Journal of Geophysical Research: Oceans* **121**.
+  [doi:10.1002/2016JC012337](https://doi.org/10.1002/2016JC012337)
+- Grodsky SA, Vandemark D, Levin J (2025). An eastern Gulf of Maine salinity
+  index for monitoring winter Scotian Shelf inflow and its relation to coastal
+  and interior pathways. *Journal of Geophysical Research: Oceans* **130**(5).
+  [doi:10.1029/2024JC021891](https://doi.org/10.1029/2024JC021891)
+- Haller G (2015). Lagrangian coherent structures. *Annual Review of Fluid
+  Mechanics* **47**, 137–162.
+  [doi:10.1146/annurev-fluid-010313-141322](https://doi.org/10.1146/annurev-fluid-010313-141322)
+- Ramp SR, Schlitz RJ, Wright WR (1985). The deep flow through the Northeast
+  Channel, Gulf of Maine. *Journal of Physical Oceanography* **15**(12),
+  1790–1808.
+- Ross C, Runge J, Roberts J, Brady D, Tupper B, Record N (2023). Estimating
+  North Atlantic right whale prey based on *Calanus finmarchicus* thresholds.
+  *Marine Ecology Progress Series* **703**, 1–16.
+  [doi:10.3354/meps14204](https://doi.org/10.3354/meps14204)
+- Silver A, Gangopadhyay A, Gawarkiewicz G, Fratantoni P, Clark J (2023).
+  Increased Gulf Stream warm core ring formations contributes to an observed
+  increase in salinity maximum intrusions on the Northeast Shelf. *Scientific
+  Reports* **13**, 7538.
+  [doi:10.1038/s41598-023-34494-0](https://doi.org/10.1038/s41598-023-34494-0)
+- Townsend DW, Pettigrew NR, Thomas MA, Neary MG, McGillicuddy DJ, O'Donnell J
+  (2015). Water masses and nutrient sources to the Gulf of Maine. *Journal of
+  Marine Research* **73**, 93–122.
+- Wang et al. (2022). Freshwater transport in the Scotian Shelf and its impacts
+  on the Gulf of Maine salinity. *Journal of Geophysical Research: Oceans*
+  **127**.
+  [doi:10.1029/2021JC017663](https://doi.org/10.1029/2021JC017663)
+
+### Data sources
+
+- **Copernicus Marine Service** supplies the gridded fields these covariates are
+  derived from, chiefly the GLORYS12V1 global ocean reanalysis
+  (`GLOBAL_MULTIYEAR_PHY_001_030`). Copernicus asks that products be credited in
+  any publication using them; see
+  <https://marine.copernicus.eu/> for the current wording and the DOI of the
+  specific product and version you fetched. `datamatch::index_dictionary()` and
+  `datamatch::variable_dictionary()` report which product each variable came
+  from.
+- **Natural Earth** provides the coastlines behind `distance_to_shore()`. Public
+  domain, via `rnaturalearth`. <https://www.naturalearthdata.com/>
+- **NOAA ETOPO**, via `marmap`, is the source of the depth grid used to place and
+  check the named sections, and of `DEPTH` when it comes from
+  `datamatch::fetch_bathymetry()`.
+
+### Software
+
+These do the geometric and raster work, and are worth citing alongside this
+package. `citation("sf")` and so on give the current form.
+
+- Pebesma E (2018). Simple features for R: standardized support for spatial
+  vector data. *The R Journal* **10**(1), 439–446.
+  [doi:10.32614/RJ-2018-009](https://doi.org/10.32614/RJ-2018-009)
+- Pebesma E, Bivand R (2023). *Spatial Data Science: With Applications in R*.
+  Chapman and Hall/CRC.
+  [doi:10.1201/9780429459016](https://doi.org/10.1201/9780429459016)
+- Hijmans R (2025). *terra: Spatial Data Analysis*. R package.
+  <https://CRAN.R-project.org/package=terra>
+- Massicotte P, South A (2023). *rnaturalearth: World Map Data from Natural
+  Earth*. R package. <https://CRAN.R-project.org/package=rnaturalearth>
+
+### Citing derivoce
+
+`citation("derivoce")` gives the current form. If a specific covariate follows a
+published method, cite that paper too: the list above says which, and each
+function's `?help` repeats it.

@@ -11,7 +11,8 @@
 #' area.
 #'
 #' This is a deliberate departure from `raster::terrain()`, which the original
-#' pipeline used for `sst_grad` and `uv_grad`. `terrain()` treats its input as an
+#' pipeline of Ross et al. (2023) used for `sst_grad` and `uv_grad`.
+#' `terrain()` treats its input as an
 #' elevation in the same units as the coordinates and returns a slope angle, which
 #' is dimensionally meaningless for a field measured in degrees Celsius. The
 #' magnitude here is a real rate of change with a real unit.
@@ -25,6 +26,10 @@
 #' @param suffix suffix for the magnitude column
 #' @return `env_dat` with a `<var>_grad` column per covariate, in covariate units
 #'   per `per`
+#' @references
+#' Ross C, Runge J, Roberts J, Brady D, Tupper B, Record N (2023). Estimating
+#' North Atlantic right whale prey based on Calanus finmarchicus thresholds.
+#' *Marine Ecology Progress Series* **703**, 1-16. \doi{10.3354/meps14204}
 #' @examples
 #' \dontrun{
 #' env <- datamatch::accessEnvDat(vars = c("SST", "SSS"), ...)

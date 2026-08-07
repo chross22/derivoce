@@ -35,6 +35,19 @@
 #' Locations are matched by coordinate, so this assumes a fixed grid across time
 #' steps, which is what gridded products give.
 #'
+#' @section Reproducing the published lag:
+#' Ross et al. (2023) used a **one-month** lag of sea surface temperature. On a
+#' complete monthly series that is `n = 1` either way, but the faithful form is
+#' the calendar one:
+#'
+#' ```
+#' lag_covariate(env, "SST", n = 1, by = "month")
+#' ```
+#'
+#' The two part company the moment a month is missing from the record, where
+#' `by = "step"` reaches back to whatever step precedes the gap and calls it one
+#' month. Use `by = "month"` when the intent is the published lag.
+#'
 #' @section Several lags at once:
 #' `n` may be a vector, which adds one column per lag. This is what an
 #' autoregressive design needs: a covariate's own past at a series of offsets,
@@ -61,6 +74,10 @@
 #'   confused for each other. Supply one entry per lag when `n` has several.
 #' @return `env_dat` with a lagged column per covariate and lag. Steps with no
 #'   predecessor are `NA`.
+#' @references
+#' Ross C, Runge J, Roberts J, Brady D, Tupper B, Record N (2023). Estimating
+#' North Atlantic right whale prey based on Calanus finmarchicus thresholds.
+#' *Marine Ecology Progress Series* **703**, 1-16. \doi{10.3354/meps14204}
 #' @examples
 #' \dontrun{
 #' env <- lag_covariate(env, "SST")                      # SST_lag1, previous step
@@ -161,7 +178,8 @@ lag_source_step <- function(steps, n, by) {
 #' built up since the season began, which is what the original pipeline's
 #' `int_chl` captured for chlorophyll.
 #'
-#' The default `window = "year"` reproduces `int_chl`: a running sum from January
+#' The default `window = "year"` reproduces `int_chl` of Ross et al. (2023),
+#' which integrated chlorophyll from January: a running sum from January
 #' of each year, reset at the year boundary. A numeric window instead sums over
 #' that many trailing time steps, giving a rolling total that does not reset.
 #'
@@ -172,9 +190,13 @@ lag_source_step <- function(steps, n, by) {
 #'   rolling window of that many time steps
 #' @param suffix suffix for the new columns
 #' @return `env_dat` with an integrated column per covariate
+#' @references
+#' Ross C, Runge J, Roberts J, Brady D, Tupper B, Record N (2023). Estimating
+#' North Atlantic right whale prey based on Calanus finmarchicus thresholds.
+#' *Marine Ecology Progress Series* **703**, 1-16. \doi{10.3354/meps14204}
 #' @examples
 #' \dontrun{
-#' env <- integrate_covariate(env, "CHL")               # the original's int_chl
+#' env <- integrate_covariate(env, "CHL")               # int_chl, Ross et al. 2023
 #' env <- integrate_covariate(env, "CHL", window = 3)   # trailing 3-step total
 #' }
 #' @export
