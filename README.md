@@ -501,6 +501,12 @@ neighbours, so every cloud hole erases a ring around itself.
   surface-minus-bottom. A true `dT/dz` needs several model levels in one object,
   and `accessEnvDat()` returns one level per call. Stacking per-level fetches is
   the workaround. Doing that inside `vertical_gradient()` is the work.
+- **Extending the LCR index past 2014.** Tried and shelved: recomputing it from
+  monthly Copernicus fields does not work, because monthly averaging removes the
+  narrow Labrador Current jet and the Grand Banks bifurcation the index depends
+  on. [`docs/lcr-extension-experiment.md`](docs/lcr-extension-experiment.md)
+  records the diagnosis. Daily fields and a purpose-built Lagrangian framework
+  would be needed.
 - **Gulf Stream Index.** NAO, AO, AMO, PDO, LCR, and AMOC are all in
   [datamatch](https://github.com/chross22/datamatch) via
   `attach_climate_index()`. The Gulf Stream Index is harder: it has several
