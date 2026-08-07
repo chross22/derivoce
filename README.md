@@ -29,6 +29,7 @@ added.
   - [Fronts, contours, and flow structure](#fronts-contours-and-flow-structure)
   - [FTLE or FSLE?](#ftle-or-fsle)
   - [Regional indices](#regional-indices)
+    - [References](#references)
 - [Column names](#column-names)
 - [Requirements on the input](#requirements-on-the-input)
 - [Warnings you may see](#warnings-you-may-see)
@@ -270,11 +271,12 @@ cat(derived_indices(markdown = TRUE))  # as a markdown table
 Scotian Shelf inflow to the Gulf of Maine appears three times, because the
 literature measures it three ways and they answer different questions:
 
-| Index | Method | Needs | Measures |
-|---|---|---|---|
-| `scotian_shelf_inflow()` | transport across a fixed line off Cape Sable | `UO`, `VO` | the crossing itself, with a direction |
-| `water_mass_fraction()` | T-S endmember mixing | `SST`, `SSS` | how much of the water present came from there |
-| `eastern_gom_salinity()` | box salinity anomaly | `SSS` | the most visible consequence, freshening |
+| Index | Method | Needs | Measures | Follows |
+|---|---|---|---|---|
+| `scotian_shelf_inflow()` | transport across a fixed line off Cape Sable | `UO`, `VO` | the crossing itself, with a direction | Feng et al. 2016; Wang et al. 2022 |
+| `water_mass_fraction()` | T-S endmember mixing | `SST`, `SSS` | how much of the water present came from there | Townsend et al. 2015 |
+| `eastern_gom_salinity()` | box salinity anomaly | `SSS` | the most visible consequence, freshening | Grodsky et al. 2025 |
+| `northeast_channel_inflow()` | transport across the Northeast Channel | `UO`, `VO` | slope water entering by the deep route | Ramp et al. 1985 |
 
 A transport is the only one that gives a flux. A water-mass fraction is what
 matters for nutrients and works where velocities do not. A box anomaly is the
@@ -286,6 +288,18 @@ salinity anomaly means the arriving water was not unusually fresh.
 the deep route by which slope water enters the Gulf, and it alternates
 episodically with the shallow, fresh Cape Sable inflow. The contrast is the
 point.
+
+**"Follows" means the approach, not the series.** Each function follows the idea in
+the cited work but computes it from whatever gridded field you supply, so none
+reproduces a published time series and none should be compared to one value for
+value. `eastern_gom_salinity()` is the clearest case: Grodsky et al. built their
+index from SMAP satellite salinity, and this will give you something different
+from a model reanalysis. Cite the paper for the concept, and describe your own
+inputs.
+
+The section endpoints are ours, not theirs. No published section is being
+reproduced, and how they were arrived at is in
+[`docs/methods.md`](docs/methods.md#how-the-named-sections-were-placed).
 
 The named sections are fixed rather than arguments, since an index named for a
 place is defined by that place. `section_transport()` is the general function,
@@ -321,6 +335,29 @@ for** depth-integrated transport, not a measurement of it, and the Northeast
 Channel in particular is baroclinic enough that the surface can run opposite to
 the deep flow. And `water_mass_fraction()` always returns a fraction, even for
 water that is not a mixture of those two masses at all, so check the residual.
+
+#### References
+
+Also available at runtime, as
+`as.data.frame(derived_indices())$source`, and in each function's `?help`.
+
+- Feng H, Vandemark D, Wilkin J (2016). Gulf of Maine salinity variation and its
+  correlation with upstream Scotian Shelf currents at seasonal and interannual
+  time scales. *Journal of Geophysical Research: Oceans* **121**.
+  [doi:10.1002/2016JC012337](https://doi.org/10.1002/2016JC012337)
+- Grodsky SA, Vandemark D, Levin J (2025). An eastern Gulf of Maine salinity
+  index for monitoring winter Scotian Shelf inflow and its relation to coastal
+  and interior pathways. *Journal of Geophysical Research: Oceans* **130**(5).
+  [doi:10.1029/2024JC021891](https://doi.org/10.1029/2024JC021891)
+- Ramp SR, Schlitz RJ, Wright WR (1985). The deep flow through the Northeast
+  Channel, Gulf of Maine. *Journal of Physical Oceanography* **15**(12),
+  1790–1808.
+- Townsend DW, Pettigrew NR, Thomas MA, Neary MG, McGillicuddy DJ, O'Donnell J
+  (2015). Water masses and nutrient sources to the Gulf of Maine. *Journal of
+  Marine Research* **73**, 93–122.
+- Wang et al. (2022). Freshwater transport in the Scotian Shelf and its impacts
+  on the Gulf of Maine salinity. *Journal of Geophysical Research: Oceans*
+  **127**. [doi:10.1029/2021JC017663](https://doi.org/10.1029/2021JC017663)
 
 ## Column names
 
