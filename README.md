@@ -292,11 +292,15 @@ place is defined by that place. `section_transport()` is the general function,
 and `scotian_shelf_inflow_section()` reports the geometry so it can be plotted
 or checked.
 
-Those endpoints were measured against real GLORYS velocities rather than chosen
-from a map: 99% of the local flow crosses the Cape Sable section and 93% the
-Northeast Channel one, and both go to near zero at their ends. An earlier pair
-picked by eye managed 65% and 27%, the second running nearly along the channel
-instead of across it.
+Those endpoints were measured against 60 months of real GLORYS velocities rather
+than chosen from a map. Around 80% of the local flow crosses each section, against
+65% and 27% for an earlier pair picked by eye, the second of which ran nearly
+along the channel instead of across it.
+
+Both transports **reverse sign in summer**: positive into the Gulf through
+winter, negative from June to September, at both sections independently. That is
+the surface circulation, not a bug, so read these as seasonal indices and not as
+a year-round inflow.
 [`docs/methods.md`](docs/methods.md#how-the-named-sections-were-placed) records
 how, with figures, and
 [`docs/section-placement-diagnostics.R`](docs/section-placement-diagnostics.R)

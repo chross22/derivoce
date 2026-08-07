@@ -37,7 +37,10 @@ older pipeline they replace. The function documentation says *what*; this says
   - [What the first placement showed](#what-the-first-placement-showed)
   - [How the replacements were found](#how-the-replacements-were-found)
   - [The bathymetric cross-check](#the-bathymetric-cross-check)
-  - [After](#after)
+  - [After, on the window it was fitted to](#after-on-the-window-it-was-fitted-to)
+  - [The seasonal re-check, which found the fit was too narrow](#the-seasonal-re-check-which-found-the-fit-was-too-narrow)
+  - [A limit no placement can fix](#a-limit-no-placement-can-fix)
+  - [The transport reverses in summer, and that is the signal](#the-transport-reverses-in-summer-and-that-is-the-signal)
   - [The sign convention, checked rather than assumed](#the-sign-convention-checked-rather-than-assumed)
   - [What this does not settle](#what-this-does-not-settle)
 - [Eddy kinetic energy](#eddy-kinetic-energy)
@@ -681,17 +684,80 @@ Georges Bank. That is a crossing. The original line stayed inside the deep water
 for its whole length, which is the geometric signature of running along a
 channel rather than across it.
 
-### After
+### After, on the window it was fitted to
 
 | | Cape Sable | Northeast Channel |
 |---|---|---|
 | Flow vs. normal | 50° → **9°** | 75° → **21°** |
 | Capture fraction | 0.65 → **0.99** | 0.27 → **0.93** |
 | Endpoint normal velocity | → −0.012 / +0.020 m/s | → +0.002 / −0.002 m/s |
-| Peak normal velocity | 0.099 m/s | 0.052 m/s |
 
-The Channel endpoints now sit at ±0.002 m/s against a 0.052 m/s peak, about 4%.
-The section spans the flow.
+Those numbers are from January–April 2010, the same four months the search
+scored on, and they are too good. See the next section.
+
+### The seasonal re-check, which found the fit was too narrow
+
+Four months sounded like enough to avoid fitting one month's circulation. It was
+not, because all four came from the same year. Re-scoring on **60 months**
+(2008–2012) told a different story:
+
+| | fitted window (2010) | five winters | five summers |
+|---|---|---|---|
+| Cape Sable capture | 0.99 | 0.75 | 0.65 |
+| Northeast Channel capture | 0.93 | **0.59** | 0.80 |
+
+The Channel section had been tuned to a single winter and lost a third of its
+capture on the others. So the search was re-run over all 60 months, scoring
+`capture − 0.5·sd(capture) − 0.5·endpoint`, which rewards a section that works
+consistently rather than one that peaks somewhere.
+
+**The Northeast Channel section moved.** The replacement is better on every
+measure:
+
+| | before | after |
+|---|---|---|
+| Capture, five winters | 0.59 | **0.84** |
+| Capture, all 60 months | 0.67 | **0.80** |
+| Endpoint ratio | 0.45 | **0.36** |
+| Winter transport | +456 | **+1,688** m²/s |
+| Winters with positive transport | 70% | **80%** |
+
+Depth along it runs 60, 126, 222, 253, 253, 201, 82, 81, 73 m: bank, channel,
+bank, so it is still a crossing and not merely a better-scoring line.
+
+**The Cape Sable section did not move**, and the reason is worth recording. The
+60-month search found an orientation scoring higher on capture, 0.78 against
+0.72. It was rejected: its winter transport collapsed from about +1,400 to +160
+m²/s, and only 45% of winters came out positive against 75% before. It aligned
+better with the *total* flow while nearly cancelling the *inflow*, which is the
+thing the index exists to measure. Capturing the signal beats capturing the flow.
+
+### A limit no placement can fix
+
+Capture has a standard deviation of about 0.25 in every candidate tested. The
+flow direction itself rotates through the year, so no fixed line can be
+perpendicular to it in every month. A section is a compromise across seasons, and
+0.8 sustained is close to the practical ceiling here.
+
+### The transport reverses in summer, and that is the signal
+
+| | winter (Jan–Apr) | summer (Jun–Sep) |
+|---|---|---|
+| Cape Sable | +1,404 ± 2,869 | **−2,989** ± 2,939 |
+| Northeast Channel | +1,688 ± 2,339 | **−2,744** ± 2,454 |
+| Months positive | 75–80% | 10–20% |
+
+Surface transport at both sections runs *out* of the Gulf through summer. This is
+not a placement error and not a sign convention bug: it is what the surface layer
+does once the winter inflow weakens, and both sections agree on it independently.
+
+The convention stays anchored on winter, when inflow dominates, so positive
+continues to mean into the Gulf. A summer value is a real negative rather than a
+failure, and the search was written to allow it: requiring every month to be
+positive would have selected a section incapable of seeing the reversal.
+
+The standard deviations are as large as the means, so a single month's value
+carries little. These are seasonal indices.
 
 ![Section placement over GLORYS velocities](figures/section-placement.png)
 
@@ -721,9 +787,10 @@ baroclinic, and Ramp et al. (1985) measured a persistent *deep* inflow there. A
 surface section can run opposite to it. If depth-resolved velocities are
 available, fetch them at channel depth and pass them to `section_transport()`.
 
-**Four months of one year.** January–April 2010 is a winter-into-spring
-circulation. An orientation that suits winter need not suit summer, and the
-diagnostics are worth re-running on the period actually being modelled.
+**Five years, monthly.** 2008–2012 covers seasonal and some interannual
+variation, but not a regime shift, and monthly means have averaged away the
+storm-driven pulses that move a lot of water. The diagnostics are worth re-running
+on the period actually being modelled.
 
 **A model, not measurements.** GLORYS is a reanalysis. The sections are placed
 correctly relative to *its* circulation.

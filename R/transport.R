@@ -267,9 +267,11 @@ scotian_shelf_inflow_section <- function() {
   # to, the right-hand normal points west, which is the way water rounding the
   # cape enters the Gulf, so inflow is positive.
   #
-  # Placement was checked against GLORYS velocities rather than chosen by eye:
-  # this orientation puts 91% of the local flow through the section, against 65%
-  # for an earlier diagonal line that also had strong flow at one endpoint.
+  # Kept after a 60-month re-check, in preference to an orientation that scored
+  # higher on capture. That one aligned better with the total flow but nearly
+  # cancelled the winter inflow, dropping the seasonal transport from about
+  # +1,400 to +160 m^2/s and leaving only 45% of winters positive. Capturing the
+  # signal matters more than capturing the flow.
   list(from = c(-66.15, 43.54), to = c(-65.95, 42.76))
 }
 
@@ -277,14 +279,16 @@ scotian_shelf_inflow_section <- function() {
 #' @export
 northeast_channel_section <- function() {
   # Across the channel at about 66.4 W, from the Browns Bank side down to
-  # Georges Bank. Depth along it runs roughly 120 m, 250 m, 80 m, so it starts
-  # on a bank, crosses the deep channel, and ends on the other bank, which is
-  # what makes it a crossing rather than a chord.
+  # Georges Bank. Depth along it runs roughly 75 m, 250 m, 75 m, so it starts on
+  # a bank, crosses the deep channel, and ends on the other bank, which is what
+  # makes it a crossing rather than a chord.
   #
-  # The earlier endpoints ran nearly along the channel axis instead, putting
-  # only 27% of the flow through the section and splitting it into opposing
-  # halves whose difference was the reported transport. This carries 73%.
-  list(from = c(-66.52, 42.79), to = c(-66.28, 41.81))
+  # Placed on 60 months rather than one season. An earlier version tuned on four
+  # months of 2010 scored 0.93 on capture for that window and only 0.59 across
+  # five winters; this scores 0.84 there and 0.80 over all 60 months, with a
+  # winter transport nearly four times larger, so it is measuring the inflow
+  # rather than a residual of it.
+  list(from = c(-66.19, 42.72), to = c(-66.61, 41.88))
 }
 
 #' Validate a section endpoint
