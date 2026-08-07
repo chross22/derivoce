@@ -16,3 +16,10 @@ jobs:
     uses: chross22/distsamp/.github/workflows/r-cmd-check-reusable.yaml@main
     with:
       apt-packages: 'libgdal-dev libgeos-dev libproj-dev libudunits2-dev'
+      # rnaturalearthhires is not on CRAN.
+      extra-repositories: 'https://ropensci.r-universe.dev'
+      # copernicus is not on CRAN either; pak resolves the github:: ref, which
+      # replaces the hand-written remotes::install_github step this workflow
+      # used to carry.
+      extra-packages: 'any::rcmdcheck, github::BigelowLab/copernicus'
+      build-args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
