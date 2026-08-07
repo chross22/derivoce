@@ -6,6 +6,7 @@ size is fragile. Already-fetched years are skipped, so this is resumable.
 import argparse
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 DATASET = "cmems_mod_glo_phy_my_0.083deg_P1D-m"
@@ -16,10 +17,21 @@ BOX = dict(lon=(-70.0, -45.0), lat=(40.0, 58.0))
 
 DATA = Path(__file__).parent / "data"
 
+# GLORYS levels are fixed and unevenly spaced, and a window falling between two
+# of them returns nothing. Ask for a narrow band around the level itself rather
+# than a round number: 0.494 is the surface, 92.326 is the one nearest 100 m.
+SURFACE = 0.494
+DEPTH_TOLERANCE = 0.02
+
+
+def velocity_file(year: int, depth: float) -> Path:
+    """Depth is part of the name, so runs at different levels do not collide."""
+    return DATA / f"glorys_{year}_{depth:g}m.nc"
+
 
 def fetch_year(year: int, depth: float, overwrite: bool = False) -> Path:
     DATA.mkdir(exist_ok=True)
-    out = DATA / f"glorys_{year}.nc"
+    out = velocity_file(year, depth)
     if out.exists() and out.stat().st_size > 0 and not overwrite:
         print(f"  {year}: already have it, skipping")
         return out
@@ -32,7 +44,8 @@ def fetch_year(year: int, depth: float, overwrite: bool = False) -> Path:
         "--maximum-longitude", str(BOX["lon"][1]),
         "--minimum-latitude", str(BOX["lat"][0]),
         "--maximum-latitude", str(BOX["lat"][1]),
-        "--minimum-depth", str(depth), "--maximum-depth", str(depth + 1),
+        "--minimum-depth", str(depth * (1 - DEPTH_TOLERANCE)),
+        "--maximum-depth", str(depth * (1 + DEPTH_TOLERANCE)),
         "--start-datetime", f"{year}-01-01",
         "--end-datetime", f"{year}-12-31",
         "-o", str(DATA), "--output-filename", out.name, "--overwrite",
@@ -50,15 +63,33 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--start", required=True, help="YYYY-MM-DD")
     p.add_argument("--end", required=True, help="YYYY-MM-DD")
-    p.add_argument("--depth", type=float, default=0.49,
-                   help="metres; 0.49 is the surface level")
+    p.add_argument("--depth", type=float, default=SURFACE,
+                   help="metres; must be a GLORYS level. 0.494 is the surface, "
+                        "92.326 is the level nearest 100 m")
     p.add_argument("--overwrite", action="store_true")
+    p.add_argument("--jobs", type=int, default=4,
+                   help="years to fetch at once; each is a separate request")
     args = p.parse_args()
 
-    years = range(int(args.start[:4]), int(args.end[:4]) + 1)
-    print(f"fetching {len(list(years))} year(s) at {args.depth} m")
-    for year in years:
-        fetch_year(year, args.depth, args.overwrite)
+    years = list(range(int(args.start[:4]), int(args.end[:4]) + 1))
+    print(f"fetching {len(years)} year(s) at {args.depth} m, {args.jobs} at a time")
+
+    # The years are independent requests, so they overlap. Failures are collected
+    # rather than raised, so one bad year does not discard the others' downloads.
+    failed = []
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        futures = {pool.submit(fetch_year, y, args.depth, args.overwrite): y
+                   for y in years}
+        for future in as_completed(futures):
+            year = futures[future]
+            try:
+                future.result()
+            except SystemExit as err:
+                failed.append(year)
+                print(f"  {year}: FAILED ({err})", file=sys.stderr)
+
+    if failed:
+        raise SystemExit(f"failed years: {sorted(failed)}. Rerun to resume.")
     print("done")
 
 

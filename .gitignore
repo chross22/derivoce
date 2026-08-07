@@ -13,3 +13,5 @@
 # LCR pipeline: velocity downloads and trajectory output are large and regenerable
 /lcr-pipeline/data/glorys_*.nc
 /lcr-pipeline/output/
+__pycache__/
+.pytest_cache/

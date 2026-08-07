@@ -31,18 +31,30 @@ copernicusmarine login       # once
 ## Running
 
 ```bash
-# 1. Daily velocities. Start small: two years is enough to validate the machinery.
-python fetch.py --start 1995-01-01 --end 1997-12-31
+# 1. Daily velocities, fetched in parallel across years.
+python fetch.py --start 1995-01-01 --end 1998-12-31 --depth 47.374 --jobs 4
 
 # 2. Track particles and count arrivals
-python track.py --start 1995-01-01 --end 1996-12-31 --particles 200
+python track.py --start 1995-01-01 --end 1995-12-31 --particles 100 --depth 47.374
 
-# 3. Compare against the published series over the overlap
-python validate.py
+# 3. Where did the particles actually go?
+python diagnose.py --depth 47.374
+
+# 4. Compare against the published series over the overlap
+python validate.py --depth 47.374
 ```
 
-`fetch.py` writes one NetCDF per year to `data/`. The full 1993-present record is
-roughly 4 GB, so fetch the years you need.
+`fetch.py` writes one NetCDF per year per depth to `data/`. Trajectories run
+three years past the last release, so releases in year Y need Y through Y+3.
+
+Step 3 is not optional. A correlation says a configuration is wrong but not why;
+`diagnose.py` reports particle survival, which boundary the losses crossed, and
+how the arrival counts respond to moving the boxes. Run `compare.py` to put
+several configurations side by side.
+
+```bash
+pytest tests/
+```
 
 ## The method, and where it departs from the paper
 
@@ -59,8 +71,12 @@ This follows that, and differs in ways that matter:
   Their sections are not published as coordinates, so boxes stand in. This is the
   largest source of disagreement and the first thing to revisit if validation is
   poor.
-- **Surface velocities** by default. The current has structure with depth;
-  `--depth` exists to test that.
+- **Advection on one level, at 47.374 m.** Depth turned out to matter more than
+  anything else. At the surface, Ekman drift carries particles offshore and
+  almost none reach the Scotian Shelf. Below about 65 m the shelf is land:
+  GLORYS masks each level against the bathymetry, so at 92 m most of the Grand
+  Banks is dry and particles stall against the mask. 47 m is below the Ekman
+  layer and above the shelf. See `STATUS.md` for the comparison.
 
 So this is a reimplementation, not their series. It has to be validated on the
 overlap before the extension means anything, and if published, cite them for the
