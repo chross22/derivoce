@@ -33,6 +33,15 @@
 #'   tightly to the bounding box would overstate distances at the edges.
 #' @param name name for the new column
 #' @return `env_dat` with a distance-to-shore column, in km
+#' @source
+#' Coastlines are Natural Earth, via `rnaturalearth`
+#' (<https://www.naturalearthdata.com/>). Public domain, and the `resolution`
+#' argument selects between their 1:110m, 1:50m, and 1:10m physical coastline
+#' layers.
+#'
+#' The resolution is a real choice rather than a detail. A deeply indented coast
+#' like Maine's is shortened by a coarse layer, so distances near shore come out
+#' too large. `"large"` is the 1:10m layer and needs `rnaturalearthhires`.
 #' @examples
 #' \dontrun{
 #' env <- distance_to_shore(env)

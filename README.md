@@ -29,6 +29,9 @@ added.
   - [Fronts, contours, and flow structure](#fronts-contours-and-flow-structure)
   - [FTLE or FSLE?](#ftle-or-fsle)
   - [Regional indices](#regional-indices)
+    - [Three ways to measure the same inflow](#three-ways-to-measure-the-same-inflow)
+    - [Using your own line or box](#using-your-own-line-or-box)
+    - [Before you use these](#before-you-use-these)
     - [References](#references)
 - [Column names](#column-names)
 - [Requirements on the input](#requirements-on-the-input)
@@ -258,112 +261,109 @@ eddies that make sharp structures, and plankton are not passive surface tracers.
 
 ### Regional indices
 
-Some quantities describe a region rather than a cell: transport across a
-section, how much of the water came from somewhere, whether a basin was fresher
-than usual. These return **one value per time step**, broadcast to every row, so
-they behave like a climate index rather than a map.
+Most functions here give you a value for every grid cell. These four give you one
+number per month for a whole region, like a climate index. They answer "how much
+water came in this month", not "what was it like here".
+
+Two currents feed the Gulf of Maine, and they carry very different water:
+
+![Two doorways into the Gulf of Maine](docs/figures/water-mass-origins.png)
+
+Cold, fresh, nutrient-poor water rounds Cape Sable from the Scotian Shelf. Warm,
+salty, nutrient-rich water comes in deep through the Northeast Channel. The two
+take turns, so which one is dominant changes what the Gulf is like that season.
+That is why they are two indices and not one.
 
 ```r
-derived_indices()                      # the catalogue, with sources
-cat(derived_indices(markdown = TRUE))  # as a markdown table
+env <- scotian_shelf_inflow(env)       # m^2/s, positive = into the Gulf
+env <- northeast_channel_inflow(env)
 ```
 
-Scotian Shelf inflow to the Gulf of Maine appears three times, because the
-literature measures it three ways and they answer different questions:
+#### Three ways to measure the same inflow
 
-| Index | Method | Needs | Measures | Follows |
-|---|---|---|---|---|
-| `scotian_shelf_inflow()` | transport across a fixed line off Cape Sable | `UO`, `VO` | the crossing itself, with a direction | Feng et al. 2016; Wang et al. 2022 |
-| `water_mass_fraction()` | T-S endmember mixing | `SST`, `SSS` | how much of the water present came from there | Townsend et al. 2015 |
-| `eastern_gom_salinity()` | box salinity anomaly | `SSS` | the most visible consequence, freshening | Grodsky et al. 2025 |
-| `northeast_channel_inflow()` | transport across the Northeast Channel | `UO`, `VO` | slope water entering by the deep route | Ramp et al. 1985; Du et al. 2022; Silver et al. 2023 |
+You can ask three different questions about Scotian Shelf water arriving, and the
+literature asks all three. They are not interchangeable:
 
-A transport is the only one that gives a flux. A water-mass fraction is what
-matters for nutrients and works where velocities do not. A box anomaly is the
-most robust and the least specific: it says conditions changed, not that water
-moved. They disagree in useful ways, since a strong inflow with a normal
-salinity anomaly means the arriving water was not unusually fresh.
+| Question | Function | Needs | Follows |
+|---|---|---|---|
+| How much water crossed this line? | `scotian_shelf_inflow()` | `UO`, `VO` | Feng et al. 2016; Wang et al. 2022 |
+| How much of the water here came from there? | `water_mass_fraction()` | `SST`, `SSS` | Townsend et al. 2015 |
+| Did the water here get fresher? | `eastern_gom_salinity()` | `SSS` | Grodsky et al. 2025 |
 
-`northeast_channel_inflow()` is a separate index, not a variant. The Channel is
-the deep route by which slope water enters the Gulf, and it alternates
-episodically with the shallow, fresh Cape Sable inflow. The contrast is the
-point.
+The first measures the flow itself, and is the only one that gives you a
+direction. The second measures what is present rather than what moved, which is
+what matters for nutrients, and it works on data with no currents in it. The
+third is the simplest and the least specific: it tells you conditions changed,
+not that water moved. Freshening could equally be rain or runoff.
 
-**"Follows" means the approach, not the series.** Each function follows the idea in
-the cited work but computes it from whatever gridded field you supply, so none
-reproduces a published time series and none should be compared to one value for
-value. `eastern_gom_salinity()` is the clearest case: Grodsky et al. built their
-index from SMAP satellite salinity, and this will give you something different
-from a model reanalysis. Cite the paper for the concept, and describe your own
-inputs.
-
-The section endpoints are ours, not theirs. No published section is being
-reproduced, and how they were arrived at is in
-[`docs/methods.md`](docs/methods.md#how-the-named-sections-were-placed).
-
-The named sections are fixed rather than arguments, since an index named for a
-place is defined by that place. `section_transport()` is the general function,
-and `scotian_shelf_inflow_section()` reports the geometry so it can be plotted
-or checked.
-
-Those endpoints were measured against 60 months of real GLORYS velocities rather
-than chosen from a map. Around 80% of the local flow crosses each section, against
-65% and 27% for an earlier pair picked by eye, the second of which ran nearly
-along the channel instead of across it.
-
-Both transports **reverse sign in summer**: positive into the Gulf through
-winter, negative from June to September, at both sections independently. That is
-the surface circulation, not a bug, so read these as seasonal indices and not as
-a year-round inflow.
-[`docs/methods.md`](docs/methods.md#how-the-named-sections-were-placed) records
-how, with figures, and
-[`docs/section-placement-diagnostics.R`](docs/section-placement-diagnostics.R)
-re-runs the check on your own extract — worth doing for a different season or
-region.
+Use more than one and disagreement is informative. Strong inflow with no
+freshening means the water that arrived was not unusually fresh, which tells you
+something about the Scotian Shelf that year.
 
 ```r
-env <- scotian_shelf_inflow(env)         # m^2/s, positive into the Gulf
-env <- northeast_channel_inflow(env)
 env <- water_mass_fraction(env, endmembers = list(
   LSW = c(temperature = 6,  salinity = 34.4),
   WSW = c(temperature = 12, salinity = 35.4)
 ), residual = TRUE)
 
-# The general forms, for any line or box
-env <- section_transport(env, from = c(-66.5, 43.3), to = c(-65.6, 42.6))
-env <- box_anomaly(env, "SSS", box = eastern_gom_box())
+env <- eastern_gom_salinity(env)
 ```
 
-Two cautions. A surface velocity field integrated along a line is a **proxy
-for** depth-integrated transport, not a measurement of it, and the Northeast
-Channel in particular is baroclinic enough that the surface can run opposite to
-the deep flow. And `water_mass_fraction()` always returns a fraction, even for
-water that is not a mixture of those two masses at all, so check the residual.
+`derived_indices()` lists all of them with their sources.
+`derived_indices(markdown = TRUE)` gives you a table to paste elsewhere.
 
-**The Northeast Channel inflow regime is not stationary.** Slope water entering
-there is modulated by Gulf Stream warm-core rings (Du et al. 2022), and the
-forcing itself changed: ring formation nearly doubled after 2000, from about 18
-a year to 33, and salinity-maximum intrusions onto the Northeast Shelf
-quadrupled, 72% of them coinciding with a ring offshore (Silver et al. 2023).
+#### Using your own line or box
 
-A long record of this index therefore spans two regimes. For anything
-interannual, check whether a relationship holds before and after 2000
-separately rather than assuming it is stable. It also changes what a high value
-means: the same circulation can carry more slope water simply because more rings
-are present.
+The named indices have fixed geometry, because an index named after a place is
+defined by that place. For anywhere else, use the general versions:
+
+```r
+env <- section_transport(env, from = c(-66.5, 43.3), to = c(-65.6, 42.6))
+env <- box_anomaly(env, "SSS", box = list(xmin = -68, xmax = -66,
+                                          ymin = 43, ymax = 44.5))
+```
+
+#### Before you use these
+
+**They flip sign in summer.** Positive through winter, negative from June to
+September, at both sections. That is the real surface circulation, not a bug.
+Treat them as winter indices.
+
+**The numbers are not comparable to published transports.** These integrate one
+surface layer along a line. A mooring array integrates the full depth of the
+section, so the figures differ by orders of magnitude. Read these as "more or
+less than usual", not as a flux.
+
+**The Northeast Channel changed after 2000.** Gulf Stream warm-core rings drive
+slope water in, and ring formation nearly doubled around then (Silver et al.
+2023). A record spanning 2000 covers two different regimes, so check any
+long-term relationship on each side separately.
+
+**Check the residual on `water_mass_fraction()`.** It always returns a fraction,
+even for water that is not a mix of your two endmembers at all. `residual = TRUE`
+is how you find out whether the answer means anything.
+
+We chose the section endpoints ourselves by testing them against real currents;
+they are not from any paper.
+[`docs/methods.md`](docs/methods.md#how-the-named-sections-were-placed) shows how,
+and [`docs/section-placement-diagnostics.R`](docs/section-placement-diagnostics.R)
+re-runs the test on your own data.
 
 #### References
 
-Also available at runtime, as
-`as.data.frame(derived_indices())$source`, and in each function's `?help`.
+"Follows" above means we implemented the idea, not that we reproduce the
+published series. Each function computes from whatever data you give it, so the
+numbers will differ from the paper's. Cite the paper for the concept and describe
+your own inputs. Also available as
+`as.data.frame(derived_indices())$source`.
 
+- Du J, Zhang WG, Li Y (2022). Impact of Gulf Stream warm-core rings on slope
+  water intrusion into the Gulf of Maine. *Journal of Physical Oceanography*
+  **52**(8). [doi:10.1175/JPO-D-21-0288.1](https://doi.org/10.1175/JPO-D-21-0288.1)
 - Feng H, Vandemark D, Wilkin J (2016). Gulf of Maine salinity variation and its
   correlation with upstream Scotian Shelf currents at seasonal and interannual
   time scales. *Journal of Geophysical Research: Oceans* **121**.
   [doi:10.1002/2016JC012337](https://doi.org/10.1002/2016JC012337)
-- Du J, Zhang WG, Li Y (2022). Impact of Gulf Stream warm-core rings on slope
-  water intrusion into the Gulf of Maine. *Journal of Physical Oceanography*
-  **52**(8). [doi:10.1175/JPO-D-21-0288.1](https://doi.org/10.1175/JPO-D-21-0288.1)
 - Grodsky SA, Vandemark D, Levin J (2025). An eastern Gulf of Maine salinity
   index for monitoring winter Scotian Shelf inflow and its relation to coastal
   and interior pathways. *Journal of Geophysical Research: Oceans* **130**(5).

@@ -41,6 +41,18 @@
 #' @return `env_dat` with a distance-to-front column. Cells on a front are `0`. A
 #'   time step containing no front is `NA` throughout, since "distance to nothing"
 #'   has no value.
+#' @references
+#' Identifying fronts by thresholding a gradient field follows the standard
+#' approach, of which Belkin and O'Reilly's is the reference implementation for
+#' satellite SST and chlorophyll. Theirs adds a contextual median filter that
+#' preserves front shape before the gradient is taken, which matters on noisy
+#' satellite retrievals and less on a model field that is already smooth. What is
+#' done here is the plain gradient threshold, with `scope` deciding whether the
+#' threshold is one value for the record or one per time step.
+#'
+#' Belkin IM, O'Reilly JE (2009). An algorithm for oceanic front detection in
+#' chlorophyll and SST satellite imagery. *Journal of Marine Systems* **78**(3),
+#' 319-326. \doi{10.1016/j.jmarsys.2008.11.018}
 #' @examples
 #' \dontrun{
 #' # Distance to the sharpest 10% of thermal gradients

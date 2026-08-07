@@ -3,6 +3,16 @@
 \name{distance_to_shore}
 \alias{distance_to_shore}
 \title{Distance to the nearest shoreline}
+\source{
+Coastlines are Natural Earth, via \code{rnaturalearth}
+(\url{https://www.naturalearthdata.com/}). Public domain, and the \code{resolution}
+argument selects between their 1:110m, 1:50m, and 1:10m physical coastline
+layers.
+
+The resolution is a real choice rather than a detail. A deeply indented coast
+like Maine's is shortened by a coarse layer, so distances near shore come out
+too large. \code{"large"} is the 1:10m layer and needs \code{rnaturalearthhires}.
+}
 \usage{
 distance_to_shore(
   env_dat,
