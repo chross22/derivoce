@@ -57,7 +57,7 @@ derived_indices <- function(markdown = FALSE) {
       needs = "UO, VO",
       units = "m^2/s",
       sign = "positive into the Gulf of Maine",
-      source = "Ramp et al. 1985; Townsend et al. 2015",
+      source = "Ramp et al. 1985; Du et al. 2022; Silver et al. 2023",
       description = paste(
         "Volume transport per unit depth across the Northeast Channel, between",
         "Georges Bank and Browns Bank. The Channel is the Gulf's deep",
@@ -65,7 +65,9 @@ derived_indices <- function(markdown = FALSE) {
         "nutrients. A separate index from the Cape Sable inflow rather than a",
         "variant of it: the two alternate episodically, and the contrast is the",
         "point. Note that the classic estimates are of the deep flow, and a",
-        "surface field can run the other way.")
+        "surface field can run the other way. The inflow is also modulated by",
+        "Gulf Stream warm-core rings, whose formation rate nearly doubled after",
+        "2000, so a long record spans two regimes rather than one.")
     ),
     list(
       name = "water_mass_fraction",

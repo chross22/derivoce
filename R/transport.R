@@ -194,6 +194,26 @@ scotian_shelf_inflow <- function(env_dat, u = "UO", v = "VO", spacing = NULL,
 #' velocities are available, fetch them at channel depth and pass them here
 #' instead.
 #'
+#' @section The inflow regime is not stationary:
+#' Slope water entering here is modulated by Gulf Stream warm-core rings. Du et
+#' al. (2022) found interannual ring activity off the Gulf tracks bottom salinity
+#' in the Northeast Channel, through coastal-trapped waves excited when a ring
+#' meets the shelf edge.
+#'
+#' Silver et al. (2023) then showed the forcing itself changed: ring formation
+#' nearly doubled after 2000, from about 18 a year to 33, and salinity-maximum
+#' intrusions onto the Northeast Shelf quadrupled, with 72% of observed
+#' intrusions coinciding with a ring offshore.
+#'
+#' So a long record of this index spans two regimes rather than one, and a model
+#' fitted across the break may be averaging over a change in the mechanism. This
+#' matters most for anything interannual: check whether a relationship holds
+#' before and after 2000 separately, rather than assuming it is stable.
+#'
+#' It also bears on interpretation. A high value here can mean the same
+#' circulation carrying more slope water because more rings are present, rather
+#' than the circulation itself having strengthened.
+#'
 #' @inheritParams section_transport
 #' @param name name for the new column
 #' @return `env_dat` with a `channel_inflow` column, in m^2/s, positive into the
@@ -206,6 +226,15 @@ scotian_shelf_inflow <- function(env_dat, u = "UO", v = "VO", spacing = NULL,
 #' Townsend DW, Pettigrew NR, Thomas MA, Neary MG, McGillicuddy DJ, O'Donnell J
 #' (2015). Water masses and nutrient sources to the Gulf of Maine. *Journal of
 #' Marine Research* **73**, 93-122.
+#'
+#' Du J, Zhang WG, Li Y (2022). Impact of Gulf Stream warm-core rings on slope
+#' water intrusion into the Gulf of Maine. *Journal of Physical Oceanography*
+#' **52**(8). \doi{10.1175/JPO-D-21-0288.1}
+#'
+#' Silver A, Gangopadhyay A, Gawarkiewicz G, Fratantoni P, Clark J (2023).
+#' Increased Gulf Stream warm core ring formations contributes to an observed
+#' increase in salinity maximum intrusions on the Northeast Shelf. *Scientific
+#' Reports* **13**, 7538. \doi{10.1038/s41598-023-34494-0}
 #' @examples
 #' \dontrun{
 #' env <- northeast_channel_inflow(env)

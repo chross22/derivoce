@@ -276,7 +276,7 @@ literature measures it three ways and they answer different questions:
 | `scotian_shelf_inflow()` | transport across a fixed line off Cape Sable | `UO`, `VO` | the crossing itself, with a direction | Feng et al. 2016; Wang et al. 2022 |
 | `water_mass_fraction()` | T-S endmember mixing | `SST`, `SSS` | how much of the water present came from there | Townsend et al. 2015 |
 | `eastern_gom_salinity()` | box salinity anomaly | `SSS` | the most visible consequence, freshening | Grodsky et al. 2025 |
-| `northeast_channel_inflow()` | transport across the Northeast Channel | `UO`, `VO` | slope water entering by the deep route | Ramp et al. 1985 |
+| `northeast_channel_inflow()` | transport across the Northeast Channel | `UO`, `VO` | slope water entering by the deep route | Ramp et al. 1985; Du et al. 2022; Silver et al. 2023 |
 
 A transport is the only one that gives a flux. A water-mass fraction is what
 matters for nutrients and works where velocities do not. A box anomaly is the
@@ -336,6 +336,18 @@ Channel in particular is baroclinic enough that the surface can run opposite to
 the deep flow. And `water_mass_fraction()` always returns a fraction, even for
 water that is not a mixture of those two masses at all, so check the residual.
 
+**The Northeast Channel inflow regime is not stationary.** Slope water entering
+there is modulated by Gulf Stream warm-core rings (Du et al. 2022), and the
+forcing itself changed: ring formation nearly doubled after 2000, from about 18
+a year to 33, and salinity-maximum intrusions onto the Northeast Shelf
+quadrupled, 72% of them coinciding with a ring offshore (Silver et al. 2023).
+
+A long record of this index therefore spans two regimes. For anything
+interannual, check whether a relationship holds before and after 2000
+separately rather than assuming it is stable. It also changes what a high value
+means: the same circulation can carry more slope water simply because more rings
+are present.
+
 #### References
 
 Also available at runtime, as
@@ -345,6 +357,9 @@ Also available at runtime, as
   correlation with upstream Scotian Shelf currents at seasonal and interannual
   time scales. *Journal of Geophysical Research: Oceans* **121**.
   [doi:10.1002/2016JC012337](https://doi.org/10.1002/2016JC012337)
+- Du J, Zhang WG, Li Y (2022). Impact of Gulf Stream warm-core rings on slope
+  water intrusion into the Gulf of Maine. *Journal of Physical Oceanography*
+  **52**(8). [doi:10.1175/JPO-D-21-0288.1](https://doi.org/10.1175/JPO-D-21-0288.1)
 - Grodsky SA, Vandemark D, Levin J (2025). An eastern Gulf of Maine salinity
   index for monitoring winter Scotian Shelf inflow and its relation to coastal
   and interior pathways. *Journal of Geophysical Research: Oceans* **130**(5).
@@ -352,6 +367,11 @@ Also available at runtime, as
 - Ramp SR, Schlitz RJ, Wright WR (1985). The deep flow through the Northeast
   Channel, Gulf of Maine. *Journal of Physical Oceanography* **15**(12),
   1790–1808.
+- Silver A, Gangopadhyay A, Gawarkiewicz G, Fratantoni P, Clark J (2023).
+  Increased Gulf Stream warm core ring formations contributes to an observed
+  increase in salinity maximum intrusions on the Northeast Shelf. *Scientific
+  Reports* **13**, 7538.
+  [doi:10.1038/s41598-023-34494-0](https://doi.org/10.1038/s41598-023-34494-0)
 - Townsend DW, Pettigrew NR, Thomas MA, Neary MG, McGillicuddy DJ, O'Donnell J
   (2015). Water masses and nutrient sources to the Gulf of Maine. *Journal of
   Marine Research* **73**, 93–122.
