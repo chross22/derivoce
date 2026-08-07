@@ -13,7 +13,14 @@ DATASET = "cmems_mod_glo_phy_my_0.083deg_P1D-m"
 
 # Spans the release line on the Labrador Shelf and the Scotian Shelf, with room
 # for particles to wander. Trimming this is the easiest way to lose trajectories.
-BOX = dict(lon=(-70.0, -45.0), lat=(40.0, 58.0))
+#
+# The eastern edge was at 45W and that was too close. Particles crossing it did
+# so at a median of 130 days, while arrivals on the Scotian Shelf take 410, and
+# 72% of those losses left at or below 48N -- slope water that could still have
+# turned southwest, not North Atlantic Current export. Losing them truncated the
+# Scotian term while leaving the Labrador term complete, which biases the
+# difference rather than just thinning it.
+BOX = dict(lon=(-70.0, -30.0), lat=(36.0, 58.0))
 
 DATA = Path(__file__).parent / "data"
 

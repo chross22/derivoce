@@ -259,7 +259,10 @@ def main() -> None:
     check_coverage(fieldset, dates)
     print(f"{len(dates)} releases of {args.particles} particles, "
           f"every {args.every_days} days")
+    # The span is part of the name so that blocks run in parallel over
+    # different years do not overwrite one another's output.
     tag = f"_{args.depth:g}m"
+    span = f"_{dates[0]:%Y%m}_{dates[-1]:%Y%m}"
     zarr_path = run_all(fieldset, dates, args.particles, OUT, tag)
 
     per_release = tally_releases(xr.open_zarr(zarr_path), dates)
@@ -269,8 +272,8 @@ def main() -> None:
               f"labrador {row.labrador}  scotian {row.scotian}  "
               f"index {row.index:.3f}")
 
-    per_release.to_csv(OUT / f"lcr_releases{tag}.csv", index=False)
-    csv = OUT / f"lcr_extended{tag}.csv"
+    per_release.to_csv(OUT / f"lcr_releases{span}{tag}.csv", index=False)
+    csv = OUT / f"lcr_extended{span}{tag}.csv"
     df.to_csv(csv, index=False)
     print(f"\nwrote {csv}  ({len(df)} months from {len(per_release)} releases)")
 

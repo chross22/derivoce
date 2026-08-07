@@ -45,31 +45,47 @@ are dry, so particles stall against the mask instead of crossing. 47 m sits
 below the Ekman layer and above the shelf. `track.py` now prints the masked
 fraction of both boxes on every run; do not ignore it.
 
-## What is still wrong
+## The domain: tested, and it did not matter
 
-**The domain is too small on the east.** `BOX` in `fetch.py` stops at 45W. At
-47 m, 3246 of 5300 particles leave early and 2165 of those cross the eastern
-edge -- **72% of them at or below 48N**, peaking at 44-46N. That is the Grand
-Banks slope water, not the North Atlantic Current: particles that could still
-have turned southwest onto the shelf.
+`BOX` was extended east from 45W to 30W and south from 40N to 36N, and the 1995
+pilot rerun on both. **The index barely moved.** Monthly Scotian counts differ
+by 0-3 particles, the largest change in the index is 0.006, and the two series
+correlate at 1.000.
 
-This biases the index rather than merely thinning it:
+| | median life | completed | LAB | SCO |
+|---|---|---|---|---|
+| 45W edge | 600 d | 39% | 55.8% | 25.3% |
+| 30W edge | 900 d | 44% | 55.8% | 25.5% |
 
-- Labrador arrivals are complete -- 99% of them happen within **165 days**.
-- Scotian arrivals need **410 days** (median), 620 at the 90th percentile.
-- Particles that reached neither box and left early lasted a median of **130 days**.
+This refuted a plausible-looking argument, which is worth recording so it is not
+re-derived. Losses looked like a bias: Labrador arrivals complete within 165
+days, Scotian arrivals need 410 (median), and particles reaching neither box
+left at a median of 130 days -- so the Labrador term appeared to be counted in
+full while the Scotian term was truncated. Empirically it is not. Given 15 more
+degrees of ocean, those particles still reach neither box; they are being
+exported, not cut off.
 
-So the Labrador term is counted in full and the Scotian term is truncated before
-most of its arrivals could occur, by an amount that varies month to month with
-the flow. Fix the domain before reading anything into a correlation.
+Two things did improve, and are why the larger box is kept: retention rose from
+600 to 900 days, and the Scotian-band distribution now **closes** inside the
+domain (counts decay to 5.8% at the eastern edge) instead of still climbing at
+the boundary. A distribution that peaks at the edge is measuring the edge.
 
-Suggested: extend `BOX` east to about 30W and south to about 35N, and rerun the
-pilot before committing to the full record.
+The cost is real: 186 MB per year against 95 MB, so about 4.6 GB for 1993-2017,
+and ~1.5 GB per worker. If that becomes the binding constraint, the smaller box
+is defensible on this evidence -- it gives the same answer.
 
-**Also unresolved:** the Labrador box sits next to the release line. Median
-time-to-arrival is 30 days, and sweeping the box south gives a smooth
-distance-decay curve (75% → 4%). It is measuring "drifted a bit south", not a
-section crossing. Consider moving it well downstream once the domain is fixed.
+## What is still open
+
+**The Labrador box sits next to the release line.** Median time-to-arrival is
+30 days, and sweeping the box south gives a smooth distance-decay curve
+(75% → 4%) rather than a plateau. It is measuring "drifted a bit south", not a
+section crossing, and it carries most of the index's magnitude. Moving it well
+downstream is the next methodological change worth testing, and `tally_releases`
+takes both regions as arguments so a sweep costs a re-tally, not a re-advection.
+
+**Nothing is validated yet.** Only 1995 has been computed, and `validate.py`
+withholds both the deseasonalized correlation and any verdict on one year, on
+purpose.
 
 ## Running it
 
@@ -85,15 +101,25 @@ releases in year Y wants Y through Y+3 fetched.
 
 ## Scaling to the full record
 
-Not yet attempted. Two known obstacles:
+`run_record.py` does this and has not yet been run in anger.
 
-1. `FieldSet.from_data` holds every field in memory. Four years at the current
-   box is ~760 MB; the full 1993-2017 record at an enlarged box would be ~10 GB.
-   Either switch to `FieldSet.from_netcdf`, which streams, or run in **blocks**:
-   releases in year Y need only Y..Y+3, so each year is an independent job. That
-   parallelises across cores and keeps each fieldset small. Blocks are the
-   cheaper change and the machine has 10 cores.
-2. Download is ~185 MB per year at the enlarged box, so ~4.6 GB for 1993-2017.
+Releases in year Y need velocities for Y..Y+3 and nothing else, so each year is
+an independent job. It runs them as separate processes, which keeps every
+fieldset to one four-year window rather than the whole record, and merges the
+per-release output at the end.
+
+```bash
+python fetch.py --start 1993-01-01 --end 2017-12-31 --depth 47.374 --jobs 4
+python run_record.py --start 1993 --end 2014 --depth 47.374 --jobs 4
+python validate.py --depth 47.374
+```
+
+`--jobs` is limited by memory, not cores: each worker holds four years of daily
+velocities, about 1.5 GB at the current box. Four workers is roughly 6 GB on a
+34 GB machine. Separate processes rather than a thread pool because parcels
+compiles a kernel per ParticleSet and writes C to a scratch directory.
+
+Budget: ~4.6 GB of downloads for 1993-2017, and 22 blocks of ~5300 particles.
 
 ## What would count as success
 

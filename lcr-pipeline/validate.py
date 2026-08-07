@@ -32,9 +32,15 @@ MIN_YEARS_FOR_CLIMATOLOGY = 5
 
 
 def load_pair(published: Path, recomputed: Path) -> pd.DataFrame:
-    for path in (published, recomputed):
-        if not Path(path).exists():
-            raise SystemExit(f"missing {path}")
+    if not Path(published).exists():
+        raise SystemExit(f"missing {published}")
+    if not Path(recomputed).exists():
+        # Single runs are named for the span they cover; the unspanned name is
+        # the merged record that run_record.py writes.
+        near = sorted(Path(recomputed).parent.glob("lcr_extended*.csv"))
+        hint = ("\n  available:\n    " + "\n    ".join(f.name for f in near)
+                if near else "\n  nothing in output/ yet; run track.py first")
+        raise SystemExit(f"missing {recomputed}{hint}")
 
     pub = pd.read_csv(published)
     new = pd.read_csv(recomputed)

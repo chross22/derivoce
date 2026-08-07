@@ -10,8 +10,10 @@
 /inst/doc/
 /build/
 
-# LCR pipeline: velocity downloads and trajectory output are large and regenerable
-/lcr-pipeline/data/glorys_*.nc
+# LCR pipeline: velocity downloads and trajectory output are large and regenerable.
+# Unanchored so that subdirectories of data/ are covered too: these are hundreds
+# of megabytes each and a stray one committed is not easily undone.
+glorys_*.nc
 /lcr-pipeline/output/
 __pycache__/
 .pytest_cache/
