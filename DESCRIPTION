@@ -30,7 +30,10 @@ Suggests:
     rnaturalearthhires,
     datamatch,
     ggplot2,
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
+VignetteBuilder: knitr
 Remotes:
     chross22/datamatch
 Additional_repositories: https://ropensci.r-universe.dev

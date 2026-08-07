@@ -1,0 +1,260 @@
+---
+title: "Deriving covariates from gridded ocean data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Deriving covariates from gridded ocean data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
+                      fig.height = 4)
+library(derivoce)
+```
+
+Copernicus gives you temperature, salinity, and currents. What concentrates
+plankton is usually not those values but how they are *arranged* and how they are
+*changing*: a front rather than a temperature, food accumulated since spring
+rather than food present today. This package computes that second kind of
+quantity.
+
+Everything here is real output. The vignette builds a small synthetic field so
+the examples run without a Copernicus account, and every number and figure below
+was produced by the code shown.
+
+## The shape
+
+Every function takes and returns the same thing: an `sf` POINT object with one
+row per grid point and time step, a column per covariate, and `YEAR`, `MONTH`,
+`DAY` columns. That is what `datamatch::accessEnvDat()` returns.
+
+```{r fetch, eval = FALSE}
+env <- datamatch::accessEnvDat(
+  vars = c("SST", "SSS"), years = 2010, months = 1:6,
+  bounding_box = list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+)
+```
+
+Because input and output shapes are identical, the functions compose in a pipe
+and nothing has to be reassembled.
+
+For this vignette we build the same shape by hand: a temperature field with a
+warm tongue that drifts west through the spring, on a small grid.
+
+```{r field}
+lon <- seq(-70, -66, by = 0.2)
+lat <- seq(41, 44, by = 0.2)
+
+frames <- lapply(1:6, function(month) {
+  grid <- expand.grid(x = lon, y = lat)
+  # A warm tongue centred at a longitude that moves west as the season goes on
+  centre <- -67.5 - 0.25 * month
+  grid$SST <- 8 + 6 * exp(-((grid$x - centre)^2) / 0.6) + 0.35 * (grid$y - 41)
+  grid$CHL <- 0.4 + 0.25 * month
+  grid$YEAR <- 2010
+  grid$MONTH <- month
+  grid$DAY <- 1L
+  grid
+})
+
+env <- sf::st_as_sf(do.call(rbind, frames), coords = c("x", "y"), crs = 4326)
+dim(env)
+```
+
+## Gradients
+
+`horizontal_gradient()` gives the rate of change with distance, which is what
+picks out fronts.
+
+```{r gradient}
+env <- horizontal_gradient(env, "SST")
+round(range(env$SST_grad, na.rm = TRUE), 3)
+```
+
+The units are **covariate units per kilometre**, not per degree. That is the
+whole design. A degree of longitude is about 83 km at 42°N and 111 km at the
+equator, so a per-degree gradient is stretched by latitude and not comparable
+across a study area. Boundary cells are `NA`, because a central difference needs
+a neighbour on both sides.
+
+```{r gradient-plot, echo = FALSE}
+january <- env[env$MONTH == 1, ]
+xy <- sf::st_coordinates(january)
+op <- par(mar = c(4, 4, 2, 1))
+plot(xy[, 1], january$SST_grad, pch = 16, cex = 0.4, col = "#1f78b4",
+     xlab = "longitude", ylab = "SST gradient (°C/km)",
+     main = "The front shows up as two peaks")
+par(op)
+```
+
+Two peaks, because the tongue is warm in the middle: the gradient is steep on
+both flanks and flat at the crest. A gradient finds edges, not values.
+
+## Lags and accumulation
+
+Populations respond with a delay, and a survey samples the food built up since
+the season began rather than the food present that instant.
+
+```{r temporal}
+env <- lag_covariate(env, "SST", n = 1, by = "month")
+env <- integrate_covariate(env, "CHL", window = "year")
+
+first_cell <- env[!duplicated(paste(env$MONTH)), ]
+data.frame(
+  month = first_cell$MONTH,
+  CHL = round(first_cell$CHL, 2),
+  CHL_int = round(first_cell$CHL_int, 2)
+)
+```
+
+`CHL_int` is the running sum from January, which is what a copepod integrates.
+
+Note `by = "month"`. Counting *steps* is only unambiguous when the series is
+complete: in a monthly record missing April, a one-step lag makes March the
+predecessor of May and says nothing about it. Counting calendar months returns
+`NA` there instead.
+
+```{r lag-gap}
+gappy <- env[env$MONTH != 4, ]
+
+by_step <- lag_covariate(gappy, "SST", n = 1, by = "step")
+by_month <- lag_covariate(gappy, "SST", n = 1, by = "month")
+
+c(step = mean(is.na(by_step$SST_lag1)),
+  month = mean(is.na(by_month$SST_lag1month)))
+```
+
+The calendar version has more `NA` because May genuinely has no April to look
+back to. That is the honest answer.
+
+A vector of lags builds an autoregressive set in one call:
+
+```{r ar, eval = FALSE}
+env <- lag_covariate(env, "SST", n = 1:3, by = "year")
+# adds SST_lag1year, SST_lag2year, SST_lag3year
+```
+
+## Distance to a front
+
+The local gradient is a blunt predictor of frontal influence. A station in a
+smooth patch has zero gradient whether the nearest front is 2 km away or 200 km
+away, and those are very different places to be.
+
+```{r fronts}
+env <- distance_to_front(env, "SST", quantile = 0.9)
+round(summary(env$SST_front_dist), 1)
+```
+
+`scope` decides what "a front" means. The default takes one threshold across the
+whole record, so a front means the same physical sharpness every month and a
+quiet month may contain none. That is a real result rather than something to
+suppress: a step with no front returns `NA`, not `0`, because reporting zero
+would assert "you are standing on a front".
+
+## Flow structure
+
+With velocities you can compute eddy kinetic energy and Lyapunov exponents. A
+small steady field is enough to show the machinery.
+
+```{r flow}
+flow <- lapply(1:2, function(month) {
+  grid <- expand.grid(x = seq(-69, -68, by = 0.05),
+                      y = seq(42, 43, by = 0.05))
+  # A westward current with a saddle on top: parcels are carried along, and
+  # also separate along one axis while converging on the other.
+  grid$UO <- -0.06 + 0.04 * (grid$x + 68.5)
+  grid$VO <- -0.04 * (grid$y - 42.5)
+  grid$YEAR <- 2010; grid$MONTH <- month; grid$DAY <- 1L
+  grid
+})
+flow <- sf::st_as_sf(do.call(rbind, flow), coords = c("x", "y"), crs = 4326)
+
+flow <- current_speed(flow)
+flow <- ftle(flow, integration_days = 5, step_hours = 12)
+
+round(c(speed = median(flow$speed),
+        ftle = median(flow$backward_ftle, na.rm = TRUE)), 4)
+```
+
+**FTLE is often mostly `NA`, and that is expected.** Parcels are followed through
+the velocity field, and one that reaches the edge of the data has nothing left to
+follow, so its cell returns `NA`. The cost is a margin of roughly
+speed × integration time around the domain. At a shelf speed of 0.15 m/s the
+default 14 days is about 180 km, which removes a third of a 500 km box and all of
+a small one. Fetch a bounding box larger than your study area by about that
+margin. If almost everything comes back `NA`, the function says so and shows the
+arithmetic.
+
+## Regional indices
+
+Some quantities describe an area rather than a cell. These return one value per
+time step, broadcast to every row, so they behave like a climate index.
+
+```{r transport}
+flow <- section_transport(flow, from = c(-68.8, 42.2), to = c(-68.2, 42.8))
+tapply(flow$transport, flow$MONTH, function(x) round(unique(x)))
+```
+
+One number per month, as intended: the index describes the section, not the cell,
+so a horizontal gradient of it would be identically zero and `horizontal_gradient()`
+would say so.
+
+Sign follows the direction of travel. Walking the section from `from` to `to`,
+flow crossing left to right counts positive, so swapping the endpoints flips it.
+Worth checking once against a field whose direction you know, because a sign
+error here is invisible: the magnitudes stay plausible and only the
+interpretation inverts.
+
+The named cases `scotian_shelf_inflow()` and `northeast_channel_inflow()` are the
+same calculation on fixed sections, placed by testing candidate lines against
+real GLORYS currents rather than by eye. `docs/methods.md` records how.
+
+`derived_indices()` lists them with the work each follows:
+
+```{r indices}
+as.data.frame(derived_indices())[, c("name", "method", "units")]
+```
+
+## When the package argues back
+
+Two checks exist because the failure they catch is invisible in the output.
+
+A derivative that cannot carry information gets a warning. Depth does not change
+between months, so lagging it returns the column unchanged:
+
+```{r degenerate}
+env$DEPTH <- 100 + 20 * (sf::st_coordinates(env)[, 1] + 70)
+result <- tryCatch(lag_covariate(env, "DEPTH"),
+                   warning = function(w) conditionMessage(w))
+cat(substr(result, 1, 180))
+```
+
+The check is on the data, not on a list of known column names, so a variable that
+happens to be constant in your particular extract is caught too. A horizontal
+gradient of `DEPTH` is *not* warned about, because that is slope and a perfectly
+sensible covariate. Whether a column belongs depends on the operation, not the
+column.
+
+Irregular input is refused outright:
+
+```{r irregular, error = TRUE}
+set.seed(1)
+scattered <- sf::st_as_sf(
+  data.frame(x = runif(50, -70, -66), y = runif(50, 41, 44),
+             SST = runif(50), YEAR = 2010, MONTH = 1, DAY = 1L),
+  coords = c("x", "y"), crs = 4326
+)
+horizontal_gradient(scattered, "SST")
+```
+
+Gridding scattered points first would produce a gradient field that looks
+completely plausible and mostly measures the interpolation.
+
+## Where to go next
+
+`docs/methods.md` in the repository covers how each quantity is computed and why
+each choice was made, including the units question behind gradients, the
+direction convention for Lyapunov exponents, and how the named sections were
+placed and tested. The README summarises the same ground more briefly, with the
+reference list.
