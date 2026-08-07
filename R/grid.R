@@ -80,20 +80,64 @@ rasterize_step <- function(points, vars) {
          "scattered observations are not.", call. = FALSE)
   }
 
-  values <- as.data.frame(sf::st_drop_geometry(points)[vars])
-  frame <- cbind(x = coords[, 1], y = coords[, 2], values)
-  terra::rast(frame, type = "xyz", crs = sf::st_crs(points)$wkt)
+  # The raster is built from the lattice's dimensions rather than handed the raw
+  # coordinates, because terra::rast(type = "xyz") runs its own regularity check
+  # and rejects the same float32 quantisation that is_regular() has just decided
+  # to tolerate. Constructing the grid explicitly puts the two in agreement:
+  # having established the spacing is uniform, the median is what it is.
+  nx <- length(lon)
+  ny <- length(lat)
+  dx <- stats::median(diff(lon))
+  dy <- stats::median(diff(lat))
+
+  grid <- terra::rast(
+    nrows = ny, ncols = nx,
+    xmin = min(lon) - dx / 2, xmax = max(lon) + dx / 2,
+    ymin = min(lat) - dy / 2, ymax = max(lat) + dy / 2,
+    crs = sf::st_crs(points)$wkt, nlyrs = length(vars)
+  )
+
+  # terra numbers rows from the top, so the northernmost latitude is row 1.
+  column <- match(coords[, 1], lon)
+  row <- ny - match(coords[, 2], lat) + 1
+  cell <- (row - 1) * nx + column
+
+  values <- sf::st_drop_geometry(points)[vars]
+  for (i in seq_along(vars)) {
+    layer <- rep(NA_real_, nx * ny)
+    layer[cell] <- as.numeric(values[[vars[i]]])
+    grid[[i]] <- layer
+  }
+  names(grid) <- vars
+  grid
 }
 
 #' Check whether coordinates are evenly spaced
+#'
+#' The tolerance has to clear the quantisation in the coordinates themselves.
+#' Copernicus stores longitude and latitude as **float32**, whose spacing near
+#' 67 degrees resolves to about 8e-6, so a nominally uniform 1/12-degree grid
+#' arrives with spacings varying by around 1e-4 of a cell. That is a property of
+#' the file format, not of the grid, and a tolerance tight enough to reject it
+#' rejects every real Copernicus download.
+#'
+#' 1e-3 is loose enough for that and still far tighter than any genuine
+#' irregularity. Scattered observations have spacings that differ by order one,
+#' and a grid missing a row or column has one interval of double width, so both
+#' are still caught by a wide margin.
+#'
+#' The comparison is against the median spacing rather than the first, so a
+#' single odd interval at the start cannot set the reference for everything else.
 #'
 #' @param values sorted unique coordinate values
 #' @param tolerance relative tolerance on the spacing
 #' @return `TRUE` if the spacing is constant within tolerance
 #' @keywords internal
-is_regular <- function(values, tolerance = 1e-6) {
+is_regular <- function(values, tolerance = 1e-3) {
   spacing <- diff(values)
-  max(abs(spacing - spacing[1])) <= tolerance * abs(spacing[1])
+  reference <- stats::median(spacing)
+  if (!is.finite(reference) || reference == 0) return(FALSE)
+  max(abs(spacing - reference)) <= tolerance * abs(reference)
 }
 
 #' Apply a raster-valued function to every time step

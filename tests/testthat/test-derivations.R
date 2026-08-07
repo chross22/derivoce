@@ -180,3 +180,61 @@ test_that("front distance is zero on a front and grows away from it", {
   expect_lt(stats::median(distance[on_front], na.rm = TRUE), 10)
   expect_gt(stats::median(distance[far_away], na.rm = TRUE), 50)
 })
+
+# ---- float32 coordinates ----------------------------------------------------
+
+test_that("a grid with float32 coordinates is accepted, as Copernicus supplies", {
+  # Copernicus stores longitude and latitude as float32. Near 67 degrees that
+  # resolves to about 8e-6, so a nominally uniform 1/12-degree grid arrives with
+  # spacings varying by roughly 1e-4 of a cell. Every synthetic fixture in this
+  # suite uses exact seq() doubles and cannot show this, which is how a tolerance
+  # that rejected every real download survived until someone ran one.
+  round_trip <- function(x) as.numeric(as.vector(writeBin(
+    as.numeric(x), raw(), size = 4) |> readBin("numeric", n = length(x), size = 4)))
+
+  lon <- round_trip(seq(-67.17, -64.83, by = 1 / 12))
+  lat <- round_trip(seq(42, 44.17, by = 1 / 12))
+
+  # The quantisation is real and larger than the old 1e-6 tolerance allowed.
+  expect_gt(max(abs(diff(lon) - stats::median(diff(lon)))) /
+              stats::median(diff(lon)), 1e-6)
+  expect_true(is_regular(lon))
+  expect_true(is_regular(lat))
+
+  grid <- expand.grid(x = lon, y = lat)
+  grid$SST <- grid$x + grid$y
+  grid$YEAR <- 2010; grid$MONTH <- 1; grid$DAY <- 1L
+  env <- sf::st_as_sf(grid, coords = c("x", "y"), crs = 4326)
+
+  # terra::rast(type = "xyz") applies its own regularity check, so the raster is
+  # built from the lattice dimensions instead. This is what proves the two agree.
+  expect_no_error(result <- horizontal_gradient(env, "SST"))
+  expect_gt(sum(is.finite(result$SST_grad)), 0)
+})
+
+test_that("genuinely irregular spacing is still rejected", {
+  # The looser tolerance must not let real irregularity through. Both of these
+  # are off by orders of magnitude more than float32 noise.
+  expect_false(is_regular(c(0, 1, 2, 4, 5)))          # a missing column
+  expect_false(is_regular(sort(runif(20))))            # scattered
+  expect_true(is_regular(seq(0, 1, by = 0.1)))         # exact
+})
+
+test_that("values land in the right cells after the explicit rasterization", {
+  # Building the raster by index rather than from coordinates could transpose or
+  # flip it, and a gradient would still look plausible. A field that varies only
+  # with latitude pins the orientation.
+  lon <- seq(-70, -68, by = 0.25)
+  lat <- seq(42, 43, by = 0.25)
+  grid <- expand.grid(x = lon, y = lat)
+  grid$SST <- grid$y * 10
+  grid$YEAR <- 2020; grid$MONTH <- 1; grid$DAY <- 1L
+  env <- sf::st_as_sf(grid, coords = c("x", "y"), crs = 4326)
+
+  result <- horizontal_gradient(env, "SST", components = TRUE)
+  interior_rows <- interior(env, margin = 0.25)
+
+  # All signal northward, none eastward, and the value is the analytic one.
+  expect_true(all(abs(result$SST_grad_x[interior_rows]) < 1e-9))
+  expect_true(all(abs(result$SST_grad_y[interior_rows] - 10 / 111.32) < 1e-6))
+})

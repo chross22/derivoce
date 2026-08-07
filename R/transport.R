@@ -1,10 +1,13 @@
 #' Volume transport across a section
 #'
 #' Integrates the component of the flow normal to a line, giving transport per
-#' unit depth in m^2/s. Multiply by a layer thickness for a volume flux. These
-#' are the units the moored-array literature reports, so a result here is
-#' directly comparable to, for example, the Northeast Channel estimates of Ramp
-#' et al. (1985).
+#' unit depth in m^2/s. Multiply by a layer thickness for a volume flux.
+#'
+#' The units match what the moored-array literature reports, but the quantity
+#' does not: those estimates integrate over the full depth of a section, and this
+#' integrates one model level along its length. Expect magnitudes an order of
+#' magnitude or more apart, and read the output as relative variability rather
+#' than as a flux to be compared with a published figure.
 #'
 #' Unlike most of this package the result is **one number per time step**,
 #' broadcast to every row. It describes the section, not the cell, in the same
