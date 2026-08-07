@@ -292,6 +292,17 @@ place is defined by that place. `section_transport()` is the general function,
 and `scotian_shelf_inflow_section()` reports the geometry so it can be plotted
 or checked.
 
+Those endpoints were measured against real GLORYS velocities rather than chosen
+from a map: 99% of the local flow crosses the Cape Sable section and 93% the
+Northeast Channel one, and both go to near zero at their ends. An earlier pair
+picked by eye managed 65% and 27%, the second running nearly along the channel
+instead of across it.
+[`docs/methods.md`](docs/methods.md#how-the-named-sections-were-placed) records
+how, with figures, and
+[`docs/section-placement-diagnostics.R`](docs/section-placement-diagnostics.R)
+re-runs the check on your own extract — worth doing for a different season or
+region.
+
 ```r
 env <- scotian_shelf_inflow(env)         # m^2/s, positive into the Gulf
 env <- northeast_channel_inflow(env)

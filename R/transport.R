@@ -224,27 +224,67 @@ northeast_channel_inflow <- function(env_dat, u = "UO", v = "VO",
 #' Endpoints of the named sections
 #'
 #' Exposed so the geometry behind each index can be inspected, plotted, or
-#' adjusted, rather than sitting as a constant inside a function body. Both are
-#' approximate, and neither reproduces a specific published section.
+#' adjusted, rather than sitting as a constant inside a function body. Neither
+#' reproduces a specific published section.
+#'
+#' @section How these were placed:
+#' Not by eye. Both were measured against GLORYS monthly surface velocities for
+#' January to April 2010 on two diagnostics:
+#'
+#' \itemize{
+#'   \item **capture fraction**, `|mean flow . n|` over `|mean flow|`, which is 1
+#'     when the current crosses the section squarely and 0 when it runs along it
+#'   \item **endpoint ratio**, the larger endpoint normal velocity over the peak
+#'     along the section, which is near zero when the section spans the current
+#'     rather than cutting through it
+#' }
+#'
+#' An earlier pair chosen from a map scored 0.65 and 0.27 on capture. The
+#' Northeast Channel one ran nearly along the channel axis, so its transport was
+#' the difference between two opposing halves. The current pair score 0.99 and
+#' 0.93, with Channel endpoints at about 4% of the peak.
+#'
+#' The Northeast Channel line was then cross-checked against ETOPO depth, since
+#' bathymetry is what defines that channel: along it, depth runs roughly 120 m,
+#' 250 m, 80 m, so it starts on one bank, crosses the deep water, and ends on the
+#' other.
+#'
+#' Both normals point westerly, into the Gulf, which was verified explicitly
+#' rather than inferred from the endpoint order.
+#'
+#' `docs/methods.md` records the full derivation, and
+#' `docs/section-placement-diagnostics.R` re-runs it on any `uo`/`vo` extract.
 #'
 #' @return a list with `from` and `to`, each `c(longitude, latitude)`
 #' @examples
 #' scotian_shelf_inflow_section()
 #' northeast_channel_section()
+#' @seealso [section_transport()] for an arbitrary line
 #' @export
 scotian_shelf_inflow_section <- function() {
-  # Cape Sable, southwest across the shelf. Travelling from -> to, the
-  # right-hand normal points northwest, the way water enters the Gulf of Maine,
-  # so inflow is positive.
-  list(from = c(-65.62, 43.45), to = c(-66.30, 42.80))
+  # A near-meridional line at about 66 W, from the Nova Scotia shore south
+  # across the passage between Cape Sable and Browns Bank. Travelling from ->
+  # to, the right-hand normal points west, which is the way water rounding the
+  # cape enters the Gulf, so inflow is positive.
+  #
+  # Placement was checked against GLORYS velocities rather than chosen by eye:
+  # this orientation puts 91% of the local flow through the section, against 65%
+  # for an earlier diagonal line that also had strong flow at one endpoint.
+  list(from = c(-66.15, 43.54), to = c(-65.95, 42.76))
 }
 
 #' @rdname scotian_shelf_inflow_section
 #' @export
 northeast_channel_section <- function() {
-  # Browns Bank side to Georges Bank side. Travelling from -> to, the right-hand
-  # normal points northwest, up-channel into the Gulf of Maine.
-  list(from = c(-65.70, 42.60), to = c(-66.20, 42.10))
+  # Across the channel at about 66.4 W, from the Browns Bank side down to
+  # Georges Bank. Depth along it runs roughly 120 m, 250 m, 80 m, so it starts
+  # on a bank, crosses the deep channel, and ends on the other bank, which is
+  # what makes it a crossing rather than a chord.
+  #
+  # The earlier endpoints ran nearly along the channel axis instead, putting
+  # only 27% of the flow through the section and splitting it into opposing
+  # halves whose difference was the reported transport. This carries 73%.
+  list(from = c(-66.52, 42.79), to = c(-66.28, 41.81))
 }
 
 #' Validate a section endpoint

@@ -90,16 +90,32 @@ test_that("the named sections are fixed, documented, and oriented into the Gulf"
     expect_length(section$to, 2)
   }
 
-  # Both are oriented so that the right-hand normal points into the Gulf of
-  # Maine, which is to say northwest. If either endpoint pair is ever edited,
-  # this is the check that catches a silent sign flip.
+  # Both are oriented so the right-hand normal points into the Gulf of Maine,
+  # which from these sections means westerly. If either endpoint pair is ever
+  # edited, this is the check that catches a silent sign flip, and a flip is
+  # invisible in the output: the magnitudes stay plausible and only the
+  # interpretation inverts.
   for (section in list(scotian, channel)) {
     dx <- section$to[1] - section$from[1]
     dy <- section$to[2] - section$from[2]
     normal <- c(dy, -dx)
-    expect_lt(normal[1], 0)   # westward component
-    expect_gt(normal[2], 0)   # northward component
+    expect_lt(normal[1], 0)                        # points west
+    expect_gt(abs(normal[1]), abs(normal[2]))      # and mostly west, not north
   }
+})
+
+test_that("the Northeast Channel section crosses the channel rather than following it", {
+  # The first version of this section ran nearly along the channel axis, so only
+  # a quarter of the flow passed through it and the transport was the difference
+  # between two opposing halves. A crossing runs bank to bank, so its endpoints
+  # sit either side of the deep water.
+  section <- northeast_channel_section()
+
+  # Both endpoints north and south of the channel's latitude band, and the line
+  # spanning it rather than sitting inside it.
+  expect_gt(section$from[2], 42.5)   # Browns Bank side
+  expect_lt(section$to[2], 42.1)     # Georges Bank side
+  expect_gt(abs(section$from[2] - section$to[2]), 0.7)
 })
 
 test_that("the named indices run and label their own columns", {

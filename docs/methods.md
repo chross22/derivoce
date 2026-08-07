@@ -32,6 +32,14 @@ older pipeline they replace. The function documentation says *what*; this says
   - [Two caveats that outweigh the choice](#two-caveats-that-outweigh-the-choice)
   - [Implementation notes](#implementation-notes)
 - [The domain is smaller than it looks](#the-domain-is-smaller-than-it-looks)
+- [How the named sections were placed](#how-the-named-sections-were-placed)
+  - [Two diagnostics](#two-diagnostics)
+  - [What the first placement showed](#what-the-first-placement-showed)
+  - [How the replacements were found](#how-the-replacements-were-found)
+  - [The bathymetric cross-check](#the-bathymetric-cross-check)
+  - [After](#after)
+  - [The sign convention, checked rather than assumed](#the-sign-convention-checked-rather-than-assumed)
+  - [What this does not settle](#what-this-does-not-settle)
 - [Eddy kinetic energy](#eddy-kinetic-energy)
 - [Requirements on the input, and what is rejected](#requirements-on-the-input-and-what-is-rejected)
   - [Resampled input passes the check, and that is the problem](#resampled-input-passes-the-check-and-that-is-the-problem)
@@ -594,6 +602,131 @@ covering both would have to advise both directions at once, which is no advice.
 
 The threshold for warning is 0.9. Losing a margin is the normal condition, not an
 error, and a warning on every ordinary call is one the reader learns to skip.
+
+---
+
+## How the named sections were placed
+
+`scotian_shelf_inflow()` and `northeast_channel_inflow()` have fixed endpoints,
+so those endpoints are part of the definition rather than a detail. This is how
+they were arrived at, and how anyone can check them again.
+
+The short version: the first pair were placed by reading a map, and measuring
+them against real velocities showed one of them was measuring the wrong thing.
+
+### Two diagnostics
+
+A section is well placed when the current crosses it rather than running along
+it, and when the section spans the current rather than cutting through it. Those
+give one number each.
+
+**Capture fraction** is `|mean flow · n̂|` over `|mean flow|`, where `n̂` is the
+section normal. It is 1 when the flow is exactly perpendicular to the section
+and 0 when the flow runs parallel. A low value means most of the water is
+sliding past rather than through, and the transport is a small residual of a
+much larger flow.
+
+**Endpoint ratio** is the larger of the two endpoint normal velocities over the
+peak along the section. Near zero means the flow has died away by the time the
+section ends, so the section spans it. Large means the current continues past
+the endpoint and the transport is truncated at an arbitrary place.
+
+Both matter, and they fail differently. A section can be perfectly perpendicular
+and still too short.
+
+### What the first placement showed
+
+Measured against GLORYS monthly surface velocities for January–April 2010:
+
+| | Cape Sable | Northeast Channel |
+|---|---|---|
+| Flow vs. normal | 50° | 75° |
+| Capture fraction | 0.65 | **0.27** |
+| Endpoint normal velocity | −0.071 / +0.011 m/s | +0.030 / −0.031 m/s |
+
+The Northeast Channel section was the serious one. At 75° it ran nearly *along*
+the channel axis, so barely a quarter of the flow passed through it. Its normal
+velocity profile was positive for the first 40 km and negative for the last 28,
+which means the reported transport was the difference between two opposing
+flows — a quantity acutely sensitive to exactly where the endpoints sit, and not
+a robust index of anything.
+
+Cape Sable was better but truncating. Its largest normal velocity anywhere on
+the section was at the very first sample, −0.071 m/s, so the inshore end sat in
+outflow that had not died away.
+
+### How the replacements were found
+
+A search over candidate centres, orientations, and lengths, scoring each on
+`capture − 0.5 × endpoint_ratio` and requiring net transport to be positive into
+the Gulf in every month. Scoring used all four months rather than one, so the
+result is not fitted to January's circulation.
+
+Candidates that left the water at any sample point were rejected outright, since
+a section running onto land integrates over a gap.
+
+The script is [`docs/section-placement-diagnostics.R`](section-placement-diagnostics.R),
+and it needs only a GLORYS `uo`/`vo` extract to re-run.
+
+### The bathymetric cross-check
+
+A flow-derived answer alone would be overfitting: the best section for one
+season's currents is not necessarily the right physical section. So the
+Northeast Channel result was checked against ETOPO depth, which is what defines
+that channel in the first place.
+
+Along the chosen line at about 66.4°W, depth runs roughly **120 m → 250 m →
+80 m**: it starts on the Browns Bank side, crosses the deep channel, and ends on
+Georges Bank. That is a crossing. The original line stayed inside the deep water
+for its whole length, which is the geometric signature of running along a
+channel rather than across it.
+
+### After
+
+| | Cape Sable | Northeast Channel |
+|---|---|---|
+| Flow vs. normal | 50° → **9°** | 75° → **21°** |
+| Capture fraction | 0.65 → **0.99** | 0.27 → **0.93** |
+| Endpoint normal velocity | → −0.012 / +0.020 m/s | → +0.002 / −0.002 m/s |
+| Peak normal velocity | 0.099 m/s | 0.052 m/s |
+
+The Channel endpoints now sit at ±0.002 m/s against a 0.052 m/s peak, about 4%.
+The section spans the flow.
+
+![Section placement over GLORYS velocities](figures/section-placement.png)
+
+![Normal velocity along each section](figures/section-profile.png)
+
+The profile figure is the one to read. A well-placed section shows a single
+lobe that rises from zero and returns to zero. Two lobes of opposite sign, or a
+curve that is still high at an endpoint, is the signature to act on.
+
+### The sign convention, checked rather than assumed
+
+Both normals point westerly — 259° and 260° compass — which at these sections is
+into the Gulf. This was verified explicitly rather than inferred from the
+endpoint order, because a sign error here is invisible: magnitudes stay entirely
+plausible and only the interpretation inverts.
+
+The regression test asserts the normal points west and is *mostly* west rather
+than north, so editing an endpoint pair cannot silently flip the meaning of the
+index. An earlier version of that test asserted a northwest normal, which was
+true of the original sections and became wrong when they moved; a test that
+encodes accidental geometry rather than the invariant is worse than none.
+
+### What this does not settle
+
+**Surface only.** These are one model level. The Northeast Channel is strongly
+baroclinic, and Ramp et al. (1985) measured a persistent *deep* inflow there. A
+surface section can run opposite to it. If depth-resolved velocities are
+available, fetch them at channel depth and pass them to `section_transport()`.
+
+**Four months of one year.** January–April 2010 is a winter-into-spring
+circulation. An orientation that suits winter need not suit summer, and the
+diagnostics are worth re-running on the period actually being modelled.
+
+**A model, not measurements.** GLORYS is a reanalysis. The sections are placed
+correctly relative to *its* circulation.
 
 ---
 
