@@ -210,8 +210,18 @@ def main() -> None:
               f"annual cycle\n                   alone can produce it.")
 
     if n >= MIN_MONTHS:
-        best_lag, best_r, rows = lagged(raw_a, raw_b)
-        print(f"\nLAGS  (recomputed shifted against published)")
+        # On raw series this scan is worthless: a shared annual cycle makes it
+        # oscillate with a 12-month period, and the apparent "best lag" is just
+        # the phase of that cycle. Scan the anomalies where there are enough
+        # years to have them.
+        if enough:
+            lag_a, lag_b, basis = anom_a, anom_b, "deseasonalized"
+        else:
+            lag_a, lag_b, basis = raw_a, raw_b, "raw -- shared seasonality "\
+                                                "makes this oscillate; read it "\
+                                                "as noise"
+        best_lag, best_r, rows = lagged(lag_a, lag_b)
+        print(f"\nLAGS  ({basis}; positive means published leads)")
         for lag, r in rows:
             if lag % 3 == 0 or lag == best_lag:
                 mark = "  <- best" if lag == best_lag else ""

@@ -43,6 +43,13 @@ def fetch_year(year: int, depth: float, overwrite: bool = False) -> Path:
         print(f"  {year}: already have it, skipping")
         return out
 
+    # Download to a scratch name and rename only on success. Without this a
+    # partial file sits under the final name, and every later run treats it as
+    # complete -- including a concurrent one, which opens it mid-write and dies
+    # on an HDF error. The rename is atomic within a directory.
+    part = out.with_name(out.name + ".part")
+    part.unlink(missing_ok=True)
+
     cmd = [
         "copernicusmarine", "subset",
         "--dataset-id", DATASET,
@@ -55,13 +62,18 @@ def fetch_year(year: int, depth: float, overwrite: bool = False) -> Path:
         "--maximum-depth", str(depth * (1 + DEPTH_TOLERANCE)),
         "--start-datetime", f"{year}-01-01",
         "--end-datetime", f"{year}-12-31",
-        "-o", str(DATA), "--output-filename", out.name, "--overwrite",
+        "-o", str(DATA), "--output-filename", part.name, "--overwrite",
     ]
     print(f"  {year}: fetching ...", flush=True)
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
+        part.unlink(missing_ok=True)
         print(result.stderr[-2000:], file=sys.stderr)
         raise SystemExit(f"fetch failed for {year}")
+
+    if not part.exists() or part.stat().st_size == 0:
+        raise SystemExit(f"fetch for {year} reported success but wrote nothing")
+    part.replace(out)
     print(f"  {year}: {out.stat().st_size / 1e6:.0f} MB")
     return out
 

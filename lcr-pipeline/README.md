@@ -18,8 +18,17 @@ interpolations that is not an R job.
 
 ## Status
 
-Pipeline written, **not yet validated**. Nothing here should be trusted until
-`validate.py` shows it tracks the published series over 1993-2014.
+**Validated, and it does not reproduce the index.** Over 1993-1997 the
+recomputed series correlates with the published one at a deseasonalized
+r = +0.18 (95% CI [-0.13, +0.28]). It is not the arrival boxes, the sample size
+or the domain -- all three were tested and eliminated. See
+[`STATUS.md`](STATUS.md) for the operational detail and
+[`../docs/lcr-extension-experiment.md`](../docs/lcr-extension-experiment.md)
+for the reasoning.
+
+Nothing here should be attached as a covariate. The code is kept because it is
+a few hours from an answer if the paper's section coordinates ever become
+available.
 
 ## Setup
 

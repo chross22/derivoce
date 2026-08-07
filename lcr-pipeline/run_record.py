@@ -43,6 +43,30 @@ def missing_files(years: range, depth: float) -> list[str]:
             for y in needed if not velocity_file(y, depth).exists()]
 
 
+def unusable_files(years: range, depth: float) -> list[str]:
+    """Files that exist but will not open, or hold the wrong year.
+
+    Checked up front because the alternative is finding out inside a worker
+    after several blocks have already spent minutes advecting.
+    """
+    import xarray as xr
+
+    needed = sorted({y for year in years for y in block_years(year)})
+    bad = []
+    for y in needed:
+        path = velocity_file(y, depth)
+        if not path.exists():
+            continue
+        try:
+            with xr.open_dataset(path) as ds:
+                got = pd.to_datetime(ds["time"].values[[0, -1]]).year.tolist()
+                if got[0] != y or got[1] != y:
+                    bad.append(f"{path.name} (holds {got[0]}-{got[1]})")
+        except Exception as err:
+            bad.append(f"{path.name} ({type(err).__name__})")
+    return bad
+
+
 def run_block(year: int, depth: float, particles: int, every: int) -> tuple:
     """One year of releases, as its own process."""
     cmd = [sys.executable, str(HERE / "track.py"),
@@ -71,6 +95,14 @@ def main() -> None:
             f"missing {len(gaps)} velocity files, first few: {gaps[:4]}.\n"
             f"Releases through {args.end} need fields to {args.end + YEARS_AHEAD - 1}. "
             f"Run fetch.py --depth {args.depth:g}")
+
+    print("checking velocity files ...", flush=True)
+    bad = unusable_files(years, args.depth)
+    if bad:
+        raise SystemExit(
+            f"{len(bad)} velocity file(s) will not open or hold the wrong year:\n  "
+            + "\n  ".join(bad)
+            + f"\nDelete them and rerun fetch.py --depth {args.depth:g}")
 
     print(f"{len(list(years))} release years, {args.jobs} at a time")
     failed = []
