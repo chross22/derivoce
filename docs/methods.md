@@ -43,6 +43,9 @@ older pipeline they replace. The function documentation says *what*; this says
   - [The transport reverses in summer, and that is the signal](#the-transport-reverses-in-summer-and-that-is-the-signal)
   - [The sign convention, checked rather than assumed](#the-sign-convention-checked-rather-than-assumed)
   - [What this does not settle](#what-this-does-not-settle)
+- [Region-scale indices](#region-scale-indices)
+  - [Three ways of measuring one thing](#three-ways-of-measuring-one-thing)
+  - [Why the endmembers have no default](#why-the-endmembers-have-no-default)
 - [Eddy kinetic energy](#eddy-kinetic-energy)
 - [Requirements on the input, and what is rejected](#requirements-on-the-input-and-what-is-rejected)
   - [Resampled input passes the check, and that is the problem](#resampled-input-passes-the-check-and-that-is-the-problem)
@@ -794,6 +797,60 @@ on the period actually being modelled.
 
 **A model, not measurements.** GLORYS is a reanalysis. The sections are placed
 correctly relative to *its* circulation.
+
+---
+
+## Region-scale indices
+
+Most of this package returns a value per cell. Four functions do not: they return
+one value per time step, broadcast to every row, describing an area rather than a
+point. `section_transport()` and the two named inflows, `water_mass_fraction()`,
+and `box_anomaly()` with its named case `eastern_gom_salinity()`.
+
+That makes them behave like a climate index, and the degeneracy check treats them
+as one: a horizontal gradient of a transport is identically zero, and
+`horizontal_gradient()` says so.
+
+`derived_indices()` is the catalogue, with the source behind each, and
+`derived_indices(markdown = TRUE)` renders it for pasting elsewhere.
+
+### Three ways of measuring one thing
+
+Scotian Shelf inflow appears three times because the literature measures it three
+ways, and they are not substitutes.
+
+A **transport** integrates the flow normal to a line. It is the only one that
+gives a direction and a flux, and the only one that needs velocities.
+
+A **water-mass fraction** projects each cell's temperature and salinity onto the
+mixing line between two endmembers. It measures how much of the water present
+came from somewhere, which is what governs nutrients, and it works on products
+that carry no velocity at all.
+
+A **box anomaly** averages a covariate over a region and removes a reference. It
+is the most robust of the three and the least specific: it says conditions
+changed, not that water moved. A fresh anomaly in the eastern Gulf is consistent
+with more Scotian Shelf inflow, and equally with local runoff.
+
+They disagree informatively. Strong inflow with a normal salinity anomaly means
+the arriving water was not unusually fresh, which is a finding about the upstream
+shelf rather than a contradiction.
+
+### Why the endmembers have no default
+
+`water_mass_fraction()` requires them. They vary by region, season, and year, and
+a wrong pair produces a confident number rather than an error, because projection
+onto a line always returns something.
+
+That is what `residual = TRUE` is for. It reports the distance from the mixing
+line in the same normalised units: near zero means the two endmembers describe
+the water, and large means they do not and the fraction is meaningless. Fractions
+are clamped to `[0, 1]`, since a cell beyond an endmember indicates a third water
+mass or a bad choice, and reporting 1.4 would dress that up as a measurement.
+
+Temperature and salinity are normalised by the endmember separation before
+projecting, so neither axis dominates for reasons of units rather than
+oceanography.
 
 ---
 

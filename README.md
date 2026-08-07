@@ -328,6 +328,10 @@ env <- water_mass_fraction(env, endmembers = list(
   LSW = c(temperature = 6,  salinity = 34.4),
   WSW = c(temperature = 12, salinity = 35.4)
 ), residual = TRUE)
+
+# The general forms, for any line or box
+env <- section_transport(env, from = c(-66.5, 43.3), to = c(-65.6, 42.6))
+env <- box_anomaly(env, "SSS", box = eastern_gom_box())
 ```
 
 Two cautions. A surface velocity field integrated along a line is a **proxy
