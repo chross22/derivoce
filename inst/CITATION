@@ -1,0 +1,15 @@
+citHeader(
+  "Cite the package for the implementation. The derived covariates and the ",
+  "source products they are computed from carry their own citations - see the ",
+  "References section of the README, and each function's own help page."
+)
+
+bibentry(
+  bibtype = "Manual",
+  key     = "derivoce",
+  title   = "derivoce: Derived Oceanographic Covariates for Species Distribution Models",
+  author  = person("Camille", "Ross"),
+  year    = format(Sys.Date(), "%Y"),
+  note    = paste0("R package version ", meta$Version),
+  url     = "https://github.com/chross22/derivoce"
+)
