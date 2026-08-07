@@ -45,6 +45,13 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
+          # rnaturalearthhires is a Suggests and is not on CRAN. DESCRIPTION
+          # names r-universe in Additional_repositories, but the dependency step
+          # below resolves with pak, which does not read that field - so without
+          # this the whole job fails at dependency resolution, before R CMD check
+          # ever runs. Adding the repo here is what makes distance_to_shore's
+          # resolution = "large" path testable rather than merely declared.
+          extra-repositories: https://ropensci.r-universe.dev
 
       # sf/terra need these system libraries on Linux runners; macOS and
       # Windows runners get them bundled via the R binary packages, so this
