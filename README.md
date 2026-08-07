@@ -43,6 +43,7 @@ added.
 - [References](#references)
   - [Data sources](#data-sources)
   - [Software](#software)
+  - [Keeping these current](#keeping-these-current)
   - [Citing derivoce](#citing-derivoce)
 
 Longer form, with the reasoning behind each quantity:
@@ -580,16 +581,37 @@ cite the paper for the concept and describe your own inputs.
 These do the geometric and raster work, and are worth citing alongside this
 package. `citation("sf")` and so on give the current form.
 
-- Pebesma E (2018). Simple features for R: standardized support for spatial
-  vector data. *The R Journal* **10**(1), 439–446.
+- **sf** — Pebesma E (2018). Simple features for R: standardized support for
+  spatial vector data. *The R Journal* **10**(1), 439–446.
   [doi:10.32614/RJ-2018-009](https://doi.org/10.32614/RJ-2018-009)
-- Pebesma E, Bivand R (2023). *Spatial Data Science: With Applications in R*.
-  Chapman and Hall/CRC.
-  [doi:10.1201/9780429459016](https://doi.org/10.1201/9780429459016)
-- Hijmans R (2025). *terra: Spatial Data Analysis*. R package.
+- **terra** — Hijmans R. *terra: Spatial Data Analysis*. R package.
   <https://CRAN.R-project.org/package=terra>
-- Massicotte P, South A (2023). *rnaturalearth: World Map Data from Natural
-  Earth*. R package. <https://CRAN.R-project.org/package=rnaturalearth>
+- **rnaturalearth** — Massicotte P, South A. *rnaturalearth: World Map Data from
+  Natural Earth*. R package.
+  <https://CRAN.R-project.org/package=rnaturalearth>
+
+Version and year are deliberately omitted for the two R packages: both move with
+every release, so `citation("terra")` is the answer rather than anything written
+down here.
+
+### Keeping these current
+
+A scheduled workflow re-checks the citations each quarter: that every DOI is
+still registered, that everything cited in the code or docs appears in the list
+below, and that nothing in the list is cited nowhere. It opens an issue when
+something needs a look, and does not try to fix anything itself, since choosing
+the right replacement reference is a judgement rather than a lookup.
+
+Run it yourself with:
+
+```bash
+Rscript inst/scripts/check_citations.R
+```
+
+It checks whether doi.org has the DOI registered, and deliberately stops there
+rather than following through to the publisher. Publishers routinely answer a
+scripted request with 403, and treating that as a dead reference would file a
+false alarm every quarter.
 
 ### Citing derivoce
 

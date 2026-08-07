@@ -1,0 +1,107 @@
+# Watches the citations for rot.
+#
+# References decay without anyone touching the package. A DOI stops being
+# registered, or the reference list and the function documentation drift apart
+# because someone added a @references entry and not the README, or removed a
+# function and left its reference behind. None of that shows up in R CMD check,
+# and none of it is visible until a reader follows a link that goes nowhere.
+#
+# Quarterly rather than monthly. Published references change on the order of
+# never, so a more frequent run would be noise, and a check people learn to
+# ignore is worse than no check.
+#
+# The check only reads. Fixing a reference is a judgement about what the right
+# citation now is, not a lookup - see inst/scripts/check_citations.R.
+
+name: Citation check
+
+on:
+  schedule:
+    # 07:00 UTC on the first of January, April, July, and October.
+    - cron: "0 7 1 1,4,7,10 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      # Only what the script itself needs. It reads sources as text rather than
+      # loading the package, so none of derivoce's dependencies are required.
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::curl
+            any::jsonlite
+
+      - name: Check the citations
+        id: check
+        run: |
+          set +e
+          Rscript inst/scripts/check_citations.R --markdown citations.md --json citations.json
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: citation-report
+          path: |
+            citations.md
+            citations.json
+          if-no-files-found: ignore
+
+      # Exit 2 means doi.org could not be reached, which says nothing about the
+      # references. Filing an issue for it would train everyone to ignore these.
+      - name: Report an unreachable resolver
+        if: steps.check.outputs.status == '2'
+        run: |
+          echo "::warning::Could not reach doi.org; no conclusion drawn about the citations."
+
+      - name: Open or update an issue
+        if: steps.check.outputs.status == '1'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('citations.md', 'utf8');
+            const title = 'Citation check found something';
+
+            // One rolling issue rather than a new one each quarter, so a
+            // reference that goes unfixed does not accumulate duplicates.
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'citations',
+            });
+
+            const footer = `\n\n---\n_Checked by [${context.workflow}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) on ${new Date().toISOString().slice(0, 10)}._`;
+
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                body: body + footer,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body: body + footer,
+                labels: ['citations'],
+              });
+            }
