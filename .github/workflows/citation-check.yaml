@@ -36,13 +36,14 @@ jobs:
         with:
           use-public-rspm: true
 
-      # Only what the script itself needs. It reads sources as text rather than
-      # loading the package, so none of derivoce's dependencies are required.
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          packages: |
-            any::curl
-            any::jsonlite
+      # Installed directly rather than through setup-r-dependencies, which
+      # resolves the package's own DESCRIPTION as well as anything asked for.
+      # That pulls in rnaturalearthhires, which is not on CRAN, and the job dies
+      # before the script runs. This check reads sources as text and never loads
+      # derivoce, so its dependency graph is genuinely irrelevant here.
+      - name: Install what the script needs
+        run: install.packages(c("curl", "jsonlite"))
+        shell: Rscript {0}
 
       - name: Check the citations
         id: check
