@@ -4,36 +4,98 @@
 \alias{lag_covariate}
 \title{Lagged covariate values}
 \usage{
-lag_covariate(env_dat, vars = NULL, n = 1, suffix = NULL)
+lag_covariate(
+  env_dat,
+  vars = NULL,
+  n = 1,
+  by = c("step", "day", "month", "year"),
+  suffix = NULL
+)
 }
 \arguments{
 \item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
 
 \item{vars}{covariate columns to lag; \code{NULL} does all of them}
 
-\item{n}{number of time steps to look back}
+\item{n}{how far to look back, counted in \code{by} units. A vector adds one
+column per lag.}
 
-\item{suffix}{suffix for the new columns; the default includes \code{n}}
+\item{by}{what \code{n} counts: \code{"step"} (the default), \code{"day"}, \code{"month"}, or
+\code{"year"}}
+
+\item{suffix}{suffix for the new columns. The default includes \code{n}, and the
+unit too unless it is \code{"step"}, so \code{SST_lag1} and \code{SST_lag1month} cannot be
+confused for each other. Supply one entry per lag when \code{n} has several.}
 }
 \value{
-\code{env_dat} with a lagged column per covariate. The first \code{n} time steps
-have no predecessor and are \code{NA}.
+\code{env_dat} with a lagged column per covariate and lag. Steps with no
+predecessor are \code{NA}.
 }
 \description{
-Adds each covariate's value \code{n} time steps earlier at the same location.
-Populations respond to conditions with a delay — a bloom feeds the animals
-sampled a month later, not the ones sampled during it — so the lagged value can
+Adds each covariate's value from \code{n} units earlier at the same location.
+Populations respond to conditions with a delay. A bloom feeds the animals
+sampled a month later, not the ones sampled during it, so the lagged value can
 carry more signal than the concurrent one.
 }
-\details{
-The default \code{n = 1} reproduces the original pipeline's \code{lag_sst}.
+\section{Lag by calendar units, not by position}{
+
+\code{by} decides what \code{n} counts, and the distinction matters:
+
+\itemize{
+\item \code{"step"} (the default) counts \strong{positions in the series}. \code{n = 1} is
+the previous time step, whatever period that represents. This is only
+unambiguous when the steps are evenly spaced and complete.
+\item \code{"day"}, \code{"month"}, \code{"year"} count \strong{calendar time}. \code{n = 3} with
+\code{by = "month"} finds the step stamped exactly three calendar months
+earlier, and returns \code{NA} if there is no such step.
+}
+
+Prefer a calendar unit whenever the lag has a biological meaning. "Three
+months ago" is a statement about the organism; "three steps ago" is a
+statement about how the data happened to be fetched, and the two stop agreeing
+the moment a month is missing from the record.
+
+A gap makes them disagree silently. In a monthly series missing April,
+\code{by = "step"} treats March as May's predecessor, so a one-step lag quietly
+becomes a two-month one. \code{by = "month"} returns \code{NA} for May instead, because
+April genuinely is not there.
+
+Calendar lags are matched on the exact \code{YEAR}/\code{MONTH}/\code{DAY} stamp. For monthly
+products, whose day is always 1, that is exact. For daily products,
+\code{by = "month"} from the 31st looks for a 31st, and months that have no 31st
+return \code{NA} rather than silently sliding to the 30th.
 
 Locations are matched by coordinate, so this assumes a fixed grid across time
 steps, which is what gridded products give.
 }
+
+\section{Several lags at once}{
+
+\code{n} may be a vector, which adds one column per lag. This is what an
+autoregressive design needs: a covariate's own past at a series of offsets,
+entered together as predictors.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{lag_covariate(env, "SST", n = 1:3, by = "year")
+# adds SST_lag1year, SST_lag2year, SST_lag3year
+}\if{html}{\out{</div>}}
+
+With \code{by = "year"} this gives the same calendar month in each preceding year,
+so the seasonal cycle is held fixed and what remains is the interannual
+signal. That is usually the intended comparison, and it is not what
+\code{by = "step"} with \code{n = 12} gives on a record with any month missing.
+}
+
 \examples{
 \dontrun{
-env <- lag_covariate(env, "SST")           # SST_lag1, the original's lag_sst
-env <- lag_covariate(env, "CHL", n = 2)    # CHL_lag2
+env <- lag_covariate(env, "SST")                      # SST_lag1, previous step
+env <- lag_covariate(env, "CHL", n = 2)               # CHL_lag2
+
+# Calendar lags, which say what they mean
+env <- lag_covariate(env, "CHL", n = 3, by = "month") # CHL_lag3month
+env <- lag_covariate(env, "SST", n = 1, by = "year")  # same month last year
+env <- lag_covariate(env, "SST", n = 30, by = "day")  # daily products
+
+# An autoregressive set: the same month in each of the last three years
+env <- lag_covariate(env, "SST", n = 1:3, by = "year")
 }
 }
