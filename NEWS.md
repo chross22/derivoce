@@ -39,6 +39,13 @@ largest of the three — so both warn and say which way out applies.
   and their magnitude, the Okubo-Weiss parameter, and the Rossby number. It
   fills the gap between `eke()`, which needs a series, and `ftle()`/`fsle()`,
   which need trajectories.
+* `detect_eddies()` identifies eddies as objects rather than as a field, by the
+  Okubo-Weiss criterion of Isern-Fontanet et al. (2003), and reports whether a
+  cell is inside one, which way it turns, and how big it is. Polarity matters
+  ecologically: cyclonic cores upwell and anticyclonic ones downwell, so a
+  covariate that only says "eddy" averages two opposite things together.
+* `distance_to_eddy()` joins the `distance_to_*` family, optionally restricted
+  to one polarity.
 * `residence_time()` releases a particle at every point in a box and measures
   how long it stays, forward or backward. Right-censored at `max_days`, which
   the documentation and a warning both insist on: averaging the column biases

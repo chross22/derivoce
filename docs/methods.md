@@ -55,6 +55,7 @@ older pipeline they replace. The function documentation says *what*; this says
   - [Why the endmembers have no default](#why-the-endmembers-have-no-default)
 - [Eddy kinetic energy](#eddy-kinetic-energy)
 - [Velocity gradient diagnostics](#velocity-gradient-diagnostics)
+- [Eddies as objects](#eddies-as-objects)
 - [Residence time](#residence-time)
 - [Requirements on the input, and what is rejected](#requirements-on-the-input-and-what-is-rejected)
   - [Resampled input passes the check, and that is the problem](#resampled-input-passes-the-check-and-that-is-the-problem)
@@ -1185,6 +1186,51 @@ very large ratio that would look like a real signal.
 a momentary filament can carry the same Okubo–Weiss value, because both are
 single-step quantities. Persistence is what the Lyapunov exponents measure, at
 much greater cost.
+
+---
+
+## Eddies as objects
+
+**What:** the connected cells where rotation beats strain, grouped into
+individual eddies, each described by which way it turns and how big it is.
+
+**Why not just the Okubo-Weiss field.** A per-cell number says how eddy-like the
+flow is at a point. It cannot say that a point is *inside* a particular feature,
+how large that feature is, or what it is doing to the water column — and the
+last is the one that matters. Cyclonic and anticyclonic eddies do opposite
+things: a cyclonic core upwells, lifting nutrients and often concentrating
+plankton, while an anticyclonic one downwells and its core is typically poorer.
+A covariate that says only "eddy" averages the two together, and can find
+nothing where a polarity-aware one finds a strong signal. That is the whole
+reason for going from a field to objects.
+
+**The criterion** is Isern-Fontanet et al. (2003): a cell is rotational where
+\(W < -\alpha\sigma_W\), with \(\sigma_W\) the standard deviation of Okubo-Weiss
+over that time step and \(\alpha = 0.2\) the published value. It is deliberately
+*relative* and recomputed per step, so a quiet month still yields eddies. The
+question it answers is which parts of this flow are most rotational, not whether
+the flow is energetic in absolute terms — the absolute version is `eke()`.
+
+Connected regions are labelled with an eight-way rule, and patches smaller than
+`min_cells` are dropped. On a 1/12-degree product an eddy of oceanographic
+interest spans many cells, so a two-cell patch is more likely an artefact of the
+central differencing than a feature. Polarity comes from the sign of the mean
+vorticity over the patch, and size is reported as the equivalent radius
+\(\sqrt{A/\pi}\) — real eddies are not discs, so that is a size and not a shape.
+
+**No identity between steps, on purpose.** Detection is per time step and
+nothing tracks an eddy through its life, so there is no age, no lifespan and no
+propagation speed, and the same physical eddy carries unrelated labels in
+consecutive steps. The patch id is therefore deliberately not returned: exposing
+it would invite exactly the mistake of treating it as an identity. Tracking is a
+substantially larger undertaking than detection, and it is not attempted here.
+
+**Known limits of the criterion.** Okubo-Weiss is permissive in strongly strained
+flow and sensitive to how smooth the velocity field is, which is why the
+threshold is relative and the minimum size exists. It finds rotation-dominated
+regions — a good working definition of an eddy, and not the same object as a
+closed sea-surface-height contour from altimetry, which is what the published
+eddy atlases use.
 
 ---
 

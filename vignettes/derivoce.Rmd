@@ -323,6 +323,45 @@ The three tools answer different questions about the same velocities.
 ends up together. Cost rises in that order, and so does what they can tell you
 about persistence.
 
+`detect_eddies()` goes one step further and turns that field into *objects*. The
+saddle above has no rotation in it at all, so this needs a field with eddies:
+two counter-rotating vortices.
+
+```{r eddies}
+swirl <- expand.grid(x = seq(-70.5, -66.5, by = 0.1),
+                     y = seq(41.8, 44.2, by = 0.1))
+swirl$UO <- 0
+swirl$VO <- 0
+for (e in list(list(c(-69.5, 42.5), 1), list(c(-67.5, 43.5), -1))) {
+  dx <- (swirl$x - e[[1]][1]) * cos(e[[1]][2] * pi / 180)
+  dy <- swirl$y - e[[1]][2]
+  decay <- 0.6 * exp(-(dx^2 + dy^2) / (2 * 0.35^2))
+  swirl$UO <- swirl$UO - e[[2]] * decay * dy
+  swirl$VO <- swirl$VO + e[[2]] * decay * dx
+}
+swirl$YEAR <- 2010; swirl$MONTH <- 1L; swirl$DAY <- 1L
+swirl <- sf::st_as_sf(swirl, coords = c("x", "y"), crs = 4326)
+
+swirl <- detect_eddies(swirl)
+table(polarity = swirl$polarity, useNA = "no")
+```
+
+Two eddies, turning opposite ways. The polarity is the part that earns its keep:
+a cyclonic core upwells and often concentrates plankton, an anticyclonic one
+downwells and its core is typically poorer, so a covariate that says only "eddy"
+averages two opposite things together.
+
+```{r eddy-distance}
+swirl <- distance_to_eddy(swirl, polarity = "cyclonic")
+round(summary(swirl$cyclonic_eddy_dist), 1)
+```
+
+Distance completes it. Being just outside a rotating core is a different place
+from being far from any, and an inside/outside flag scores both as zero.
+
+Detection is per time step, with no identity carried between steps, so there is
+no age or lifespan here and the patch label is deliberately not returned.
+
 `residence_time()` uses the same integrator as `ftle()` to ask how long water
 stays in a place.
 

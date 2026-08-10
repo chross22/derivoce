@@ -275,6 +275,17 @@ so the seasonal cycle drops out and what remains is interannual.
   Instantaneous and local, so it sits between `eke()`, which needs a series, and
   the Lyapunov exponents, which need trajectories: separating an eddy interior
   from the filaments around it costs one pass rather than an integration.
+- `detect_eddies()` goes from a field to objects: it groups the connected cells
+  where rotation beats strain into individual eddies and describes each one, so
+  a cell carries not "how eddy-like is the flow here" but "you are inside an
+  eddy, it turns this way, and it is this big". Polarity is the part that earns
+  its keep — cyclonic cores upwell and often concentrate plankton, anticyclonic
+  ones downwell, and a covariate that only says "eddy" averages the two together
+  and can easily find nothing.
+- `distance_to_eddy()` completes the `distance_to_*` family. A station 5 km
+  outside a rotating core and one 300 km away are different places, and an
+  inside/outside flag scores both zero. `polarity` narrows it to cyclonic or
+  anticyclonic.
 - `residence_time()` releases a particle at every point in a box and measures
   how long it stays. Long residence means a retentive place where anything with
   a life stage measured in weeks can complete it. Read the censoring note in
