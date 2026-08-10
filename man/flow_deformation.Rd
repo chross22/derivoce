@@ -90,6 +90,21 @@ env <- flow_deformation(env)
 eddy_core <- env$okubo_weiss < 0
 }
 }
+\references{
+Okubo A (1970). Horizontal dispersion of floatable particles in the vicinity
+of velocity singularities such as convergences. \emph{Deep-Sea Research and
+Oceanographic Abstracts} \strong{17}(3), 445-454.
+\doi{10.1016/0011-7471(70)90059-8}
+
+Weiss J (1991). The dynamics of enstrophy transfer in two-dimensional
+hydrodynamics. \emph{Physica D: Nonlinear Phenomena} \strong{48}(2-3), 273-294.
+\doi{10.1016/0167-2789(91)90088-Q}
+
+Isern-Fontanet J, Garcia-Ladona E, Font J (2003). Identification of marine
+eddies from altimetric maps. \emph{Journal of Atmospheric and Oceanic Technology}
+\strong{20}(5), 772-778.
+\doi{10.1175/1520-0426(2003)20<772:IOMEFA>2.0.CO;2}
+}
 \seealso{
 \code{\link[=eke]{eke()}}, \code{\link[=ftle]{ftle()}}, \code{\link[=fsle]{fsle()}}, \code{\link[=horizontal_gradient]{horizontal_gradient()}}
 }

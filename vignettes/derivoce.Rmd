@@ -31,7 +31,7 @@ row per grid point and time step, a column per covariate, and `YEAR`, `MONTH`,
 
 ```{r fetch, eval = FALSE}
 env <- datamatch::accessEnvDat(
-  vars = c("SST", "SSS"), years = 2010, months = 1:6,
+  vars = c("SST", "SSS", "CHL"), years = 2010, months = 1:6,
   bounding_box = list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
 )
 ```
@@ -52,6 +52,8 @@ frames <- lapply(1:6, function(month) {
   centre <- -67.5 - 0.25 * month
   grid$SST <- 8 + 6 * exp(-((grid$x - centre)^2) / 0.6) + 0.35 * (grid$y - 41)
   grid$CHL <- 0.4 + 0.25 * month
+  # Fresher inshore, as a coastal current would leave it.
+  grid$SSS <- 31 + 0.9 * (grid$x + 70) / 4
   grid$YEAR <- 2010
   grid$MONTH <- month
   grid$DAY <- 1L
@@ -135,6 +137,26 @@ env <- lag_covariate(env, "SST", n = 1:3, by = "year")
 # adds SST_lag1year, SST_lag2year, SST_lag3year
 ```
 
+`rolling_covariate()` describes the window instead of accumulating it. The mean
+of the last three months and the variability of the last three months are
+different covariates, and neither is their sum.
+
+```{r rolling}
+env <- rolling_covariate(env, "SST", n = 3, by = "month",
+                         stat = c("mean", "sd"))
+round(c(mean = mean(env$SST_mean3month, na.rm = TRUE),
+        sd = mean(env$SST_sd3month, na.rm = TRUE)), 3)
+```
+
+The window is trailing and inclusive, so March covers January to March. Early
+steps have less history than the window asks for; `min_obs` decides whether they
+get a summary of what is there or an `NA`.
+
+`by = "month"` counts calendar time and `by = "step"` counts positions in the
+record. They agree exactly until the series has a gap, and then diverge
+silently — which is why the distinction is an argument rather than an
+assumption.
+
 ## Distance to a front
 
 The local gradient is a blunt predictor of frontal influence. A station in a
@@ -151,6 +173,79 @@ whole record, so a front means the same physical sharpness every month and a
 quiet month may contain none. That is a real result rather than something to
 suppress: a step with no front returns `NA`, not `0`, because reporting zero
 would assert "you are standing on a front".
+
+Fronts also move, and a distance measured at one moment cannot tell a permanent
+feature from a passing one. `front_frequency()` asks how *often* a place is
+frontal.
+
+```{r front-freq}
+env <- front_frequency(env, "SST", scope = "step")
+round(summary(env$SST_front_freq), 2)
+```
+
+Here the warm tongue drifts west all season, so no cell is frontal for long and
+the frequencies stay low. On a real domain the shelf break stands out precisely
+because it does not move: a cell frontal in fifteen steps of twenty sits on
+something a predator can learn, and one frontal in one caught a filament going
+past.
+
+## Anomalies and extremes
+
+Eight degrees is cold for the southern Gulf of Maine and warm for the Scotian
+Shelf. A model given raw temperature has to learn that geography before it can
+use the departure from it, and `cell_anomaly()` hands the departure over
+directly.
+
+```{r anomaly}
+env <- cell_anomaly(env, "SST", reference = "record")
+round(range(env$SST_anom), 2)
+```
+
+`reference = "record"` removes each cell's whole-series mean, which leaves the
+seasonal cycle in. `"climatology"` removes a mean per calendar month instead,
+which is usually what you want — but it needs several years, because with one
+year there is a single January per cell and **every anomaly comes out exactly
+zero**. That is a silent failure, so the function warns rather than handing back
+a plausible-looking column of zeroes.
+
+`marine_heatwave()` needs the same history, for the same reason: a threshold
+taken over three values is the largest of the three. Twelve years of one month
+is enough to show it.
+
+```{r heatwave}
+years <- 2000:2011
+hw <- do.call(rbind, lapply(years, function(y) {
+  data.frame(x = -68, y = 43, YEAR = y, MONTH = 1L, DAY = 1L,
+             # An ordinary decade, then one very warm year.
+             SST = 9 + 0.4 * ((y * 7) %% 5) + if (y == 2011) 6 else 0)
+}))
+hw <- sf::st_as_sf(hw, coords = c("x", "y"), crs = 4326)
+
+hw <- marine_heatwave(hw, "SST", min_steps = 1)
+sf::st_drop_geometry(hw)[hw$mhw_event,
+                         c("YEAR", "mhw_intensity", "mhw_category")]
+```
+
+One event, in the year it was built into. Intensity is measured from the
+climatology rather than from the threshold, so it is comparable between cells
+whose thresholds differ, and the category counts how many multiples of the
+threshold's own excess the value reached.
+
+## Density
+
+Temperature is a poor stand-in for density wherever salinity varies, and the
+Gulf of Maine is such a place: Scotian Shelf inflow arrives cold *and* fresh,
+and the two pull density in opposite directions.
+
+```{r density}
+env <- potential_density(env)
+round(range(env$sigma_theta), 2)
+```
+
+That is sigma-theta, density minus 1000, from the UNESCO (1983) equation of
+state. Salinity given as a mass fraction rather than PSU sits inside the fitted
+range and would return a plausible freshwater density, so a column entirely
+below 1 PSU is called out separately.
 
 ## Flow structure
 
@@ -176,6 +271,50 @@ flow <- ftle(flow, integration_days = 5, step_hours = 12)
 round(c(speed = median(flow$speed),
         ftle = median(flow$backward_ftle, na.rm = TRUE)), 4)
 ```
+
+`flow_deformation()` describes the same field without following anything. It
+takes the four derivatives of the velocity components and reports what the flow
+is doing locally, which costs one pass rather than an integration.
+
+```{r deformation}
+flow <- flow_deformation(flow)
+measures <- sf::st_drop_geometry(flow)[c("vorticity", "divergence",
+                                         "strain_rate", "okubo_weiss")]
+signif(sapply(measures, median, na.rm = TRUE), 3)
+```
+
+The Okubo–Weiss parameter compares rotation against strain: negative is the
+interior of a coherent eddy, positive the filaments between eddies where water
+is drawn into long thin structures. This synthetic field is a pure saddle — it
+stretches along one axis and squeezes along the other without turning — so
+vorticity is zero and Okubo–Weiss is positive throughout.
+
+```{r deformation-sign}
+c(rotating = mean(flow$okubo_weiss < 0, na.rm = TRUE),
+  straining = mean(flow$okubo_weiss > 0, na.rm = TRUE))
+```
+
+The three tools answer different questions about the same velocities.
+`eke()` needs a time series and asks how variable a place is.
+`flow_deformation()` needs one step and asks what the flow is doing there now.
+`ftle()` and `fsle()` need trajectories and ask where water that started apart
+ends up together. Cost rises in that order, and so does what they can tell you
+about persistence.
+
+`residence_time()` uses the same integrator as `ftle()` to ask how long water
+stays in a place.
+
+```{r residence}
+box <- list(xmin = -68.8, xmax = -68.2, ymin = 42.2, ymax = 42.8)
+flow <- residence_time(flow, box, max_days = 20, step_hours = 12)
+round(summary(flow$forward_residence), 1)
+```
+
+Points outside the box are `NA`. Anything still inside after `max_days` is
+recorded as `max_days`, which is **right-censored**: its real residence is at
+least that, and averaging the column biases the answer downwards, most severely
+at the most retentive sites. The function warns with the censored fraction for
+exactly that reason.
 
 **FTLE is often mostly `NA`, and that is expected.** Parcels are followed through
 the velocity field, and one that reaches the edge of the data has nothing left to

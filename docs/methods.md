@@ -21,9 +21,14 @@ older pipeline they replace. The function documentation says *what*; this says
 - [Temporal gradients](#temporal-gradients)
 - [Lags](#lags)
 - [Time integration](#time-integration)
+- [Rolling summaries](#rolling-summaries)
+- [Anomalies against a cell's own history](#anomalies-against-a-cells-own-history)
+- [Marine heatwaves](#marine-heatwaves)
+- [Seawater density](#seawater-density)
 - [Distance to fronts and contours](#distance-to-fronts-and-contours)
   - [What counts as a front](#what-counts-as-a-front)
   - [Contours and isobaths](#contours-and-isobaths)
+- [How often a place is frontal](#how-often-a-place-is-frontal)
 - [FTLE](#ftle)
   - [Details that matter](#details-that-matter)
   - [On monthly data](#on-monthly-data)
@@ -47,6 +52,8 @@ older pipeline they replace. The function documentation says *what*; this says
   - [Three ways of measuring one thing](#three-ways-of-measuring-one-thing)
   - [Why the endmembers have no default](#why-the-endmembers-have-no-default)
 - [Eddy kinetic energy](#eddy-kinetic-energy)
+- [Velocity gradient diagnostics](#velocity-gradient-diagnostics)
+- [Residence time](#residence-time)
 - [Requirements on the input, and what is rejected](#requirements-on-the-input-and-what-is-rejected)
   - [Resampled input passes the check, and that is the problem](#resampled-input-passes-the-check-and-that-is-the-problem)
 - [How this is tested](#how-this-is-tested)
@@ -396,6 +403,149 @@ contributing steps at all returns `NA`, rather than a spurious total of 0.
 
 ---
 
+## Rolling summaries
+
+**What:** a summary of each location's trailing window — mean, standard
+deviation, minimum, maximum, sum, median or range.
+
+**Why it is not the integral.** `integrate_covariate()` accumulates a total.
+This describes the distribution the total came from, and the two answer
+different questions. A mean and a standard deviation over the same window carry
+information their sum does not: two places with identical three-month totals can
+differ entirely in whether that arrived steadily or in one pulse, and for
+anything with a threshold response that difference is the signal.
+
+**The window is trailing and inclusive.** A three-month mean at March covers
+January, February and March. Ending the window before the current step would be
+defensible for a strictly predictive covariate, but it is not what "the last
+three months" means, and it would make the one-step window empty.
+
+**Steps or calendar time**, exactly as in `lag_covariate()`, and computed on the
+same month counter so a window and a lag of the same size agree about what a
+month is. The two only disagree once the record has a gap, and then silently: on
+a monthly series missing April, a three-*step* window at June covers March, May
+and June, while a three-*month* window covers April, May and June and finds only
+two of them. Which is right depends on whether the question is about the ocean
+or about the record.
+
+**Partial windows.** Early steps have less history than the window asks for, and
+a location can be absent from some of the steps inside it. `min_obs` sets how
+many values a window must actually contain before it is summarised. The default
+of 1 is permissive, so the first steps get a summary of a short window rather
+than nothing; raising it is right when a mean of two values would be read as a
+mean of twelve.
+
+---
+
+## Anomalies against a cell's own history
+
+**What:** each value minus the mean of that same grid cell, optionally divided
+by that cell's standard deviation.
+
+**Why per cell.** `box_anomaly()` averages a region into one number per time
+step, which behaves like a climate index. This keeps the map and removes the
+spatial pattern of the *mean* instead. That is what makes a covariate usable
+across a domain with a strong background gradient: 8 °C is cold for the southern
+Gulf of Maine and warm for the Scotian Shelf, and a model handed raw temperature
+must first learn the geography before the departure from it becomes available.
+An anomaly hands over the departure directly.
+
+**Standardising** divides by the cell's own variability, so a departure is
+expressed in units of how unusual it is rather than how large. That makes places
+comparable — a 1 °C anomaly is unremarkable on the shelf and extreme in the deep
+basin — which is what a single coefficient applied across a domain requires. It
+also discards the magnitude, so it is the wrong choice when the question is how
+much warmer rather than how unusual.
+
+**Why it needs several years, and why that is a warning.** With
+`reference = "climatology"` the mean is taken within calendar month, so a cell's
+January is compared with its other Januaries. Given one year there is exactly
+one January per cell, the mean of one value is that value, and **every anomaly
+is identically zero**. Nothing errors: the result is a column of zeroes, which
+is a perfectly plausible-looking covariate that carries no information at all.
+That is the failure mode worth catching, so it warns and names the way out —
+`reference = "record"`, which compares each cell against its whole-series mean
+and needs only that the record be longer than one step.
+
+---
+
+## Marine heatwaves
+
+**What:** periods when a cell was unusually warm, or unusually cold, for the
+time of year, after Hobday et al. (2016) with the categories of Hobday et al.
+(2018).
+
+**The threshold is a percentile of the cell's own seasonal climatology,** not a
+fixed temperature. A fixed temperature would flag the whole southern half of any
+domain and nothing in the north.
+
+**A percentile threshold always has exceedances.** About a tenth of steps sit
+above the 90th percentile by construction. That is not a defect and it is the
+reason an event is a *run* rather than a single step: `min_steps` is where the
+definition lives, not a detail. Hobday et al. use five consecutive **days**, and
+this works in time steps because `accessEnvDat()` serves monthly as readily as
+daily — five consecutive months is a far rarer and larger thing than five
+consecutive days, so the defaults are permissive and the choice is left to the
+caller rather than fixed at a number that means something different on each
+cadence.
+
+**Intensity is measured from the climatology, not from the threshold.** Two
+cells whose thresholds differ can then be compared: the number says how far
+conditions departed from normal, rather than how far past a cell-specific line
+they went.
+
+**What counts as consecutive.** Runs are counted over consecutive entries in the
+sequence of time steps present in the data, which has two consequences. A cell
+absent from a step other cells have breaks that cell's event, since it cannot be
+shown to have stayed warm through a step it has no value for. But a step missing
+from the record *entirely* is not in the sequence at all, so the steps either
+side are adjacent and an event runs straight through it. On a record with holes,
+duration is in steps you have rather than in elapsed time.
+
+**The climatology is computed from the data given,** so a warming trend within
+the series raises the threshold and later events are measured against a warmer
+baseline. That is a choice rather than an oversight — it makes events relative
+to recent conditions, which is usually what an ecological question means — but
+it is not the fixed-baseline definition used for detecting long-term change. For
+that, compute the threshold on a subset and apply it.
+
+---
+
+## Seawater density
+
+**What:** potential density, conventionally as sigma-theta, from the UNESCO
+(1983) one-atmosphere equation of state.
+
+**Why not temperature.** Density is what stratification, mixing and buoyancy
+depend on, and temperature is a poor stand-in wherever salinity varies. The Gulf
+of Maine is exactly such a place: Scotian Shelf inflow arrives cold *and* fresh,
+and the two pull density in opposite directions, so a cold anomaly may be either
+denser or lighter than the water it displaces depending on how fresh it is. A
+model given temperature alone cannot resolve that, and one given temperature and
+salinity as separate covariates has to learn a non-linear combination of them
+that the equation of state already knows.
+
+**Potential, not in-situ.** Copernicus `thetao` is a potential temperature, so
+applying the one-atmosphere formula to it gives potential density directly. That
+is the right quantity for comparing water masses and deciding what floats over
+what, and it deliberately ignores pressure, so it is not in-situ density and
+should not be used where the compressibility of deep water matters.
+
+**Range and units.** The polynomial is fitted over roughly −2 to 40 °C and 0 to
+42 PSU, and outside that it still returns a number that is an extrapolation of a
+fit rather than a density. Salinity given as a mass fraction rather than PSU
+sits *inside* that range, so the range check cannot see it, and it would return
+a plausible freshwater density near 1000 kg/m³ instead of about 1027. A column
+entirely below 1 PSU is therefore flagged separately.
+
+The implementation is checked against the published one-atmosphere check values,
+which it reproduces to within 5 × 10⁻⁶ kg/m³, and against the shape of the
+polynomial — fresh water is densest near 4 °C, and at 35 PSU that maximum has
+been pushed below the freezing point so density falls monotonically with
+temperature.
+
+---
+
 ## Distance to fronts and contours
 
 **What:** how far each point is from the nearest front, or from a named contour
@@ -437,6 +587,35 @@ A contour almost never falls exactly on a cell centre, so a cell is marked as on
 the contour when the level lies between its value and any neighbour's — detected
 with a 3×3 focal range of the above/below indicator. Testing for exact equality
 would find nothing on coarsely quantised data.
+
+---
+
+## How often a place is frontal
+
+**What:** the fraction of time steps in which a cell's own gradient was sharp
+enough to count as a front.
+
+**Why distance is not enough.** Fronts move. A cell frontal in one step of
+twenty happened to catch a passing filament; a cell frontal in fifteen sits on a
+persistent feature — a shelf-break front, a tidal mixing front, the edge of a
+plume — and those are the ones that aggregate plankton reliably enough for a
+predator to learn them. An instantaneous distance cannot tell the two apart, and
+neither can averaging distance over time, because a cell can be close to a
+*different* transient front in every step and score well throughout.
+
+**The threshold choice matters more here than for distance.** With
+`scope = "record"` a single cutoff applies throughout, so frequency reflects both
+how often a front is present and whether this part of the domain is
+gradient-rich at all. With `scope = "step"` each step is cut at its own quantile,
+so a fixed fraction of cells is frontal in every step and frequency becomes
+purely a statement about location. The second is usually what persistence is
+meant to mean.
+
+**An undefined gradient leaves the denominator.** The outermost ring of cells
+has no central difference, and a missing value has none either. Neither is
+evidence that no front was present, so those steps are excluded from the count
+rather than scored as zero — which would drag the frequency of every edge cell
+towards nothing.
 
 ---
 
@@ -895,6 +1074,82 @@ covariate.
 
 ---
 
+## Velocity gradient diagnostics
+
+**What:** vorticity, divergence, the two strain components and their magnitude,
+the Okubo–Weiss parameter (Okubo 1970; Weiss 1991), and the Rossby number, all
+from the four horizontal derivatives of the velocity components.
+
+**Where they sit among the others.** These are instantaneous and local: they
+describe the flow in one cell at one time step and need no history and no
+trajectories. That places them between `eke()`, which needs a series to form an
+anomaly, and `ftle()`/`fsle()`, which advect particles through many steps. The
+three answer different questions about the same velocities — how variable is
+this place, what is the flow doing here now, and where does water that started
+together end up apart — and cost rises in that order.
+
+**Okubo–Weiss** compares rotation against strain, \(W = S_n^2 + S_s^2 -
+\zeta^2\). Negative means rotation wins, which is the interior of a coherent
+eddy; positive means strain wins, which is the filaments between eddies where
+water is drawn into long thin structures. Isern-Fontanet et al. (2003) use a
+threshold of \(-0.2\sigma_W\) for eddy identification; this returns the parameter
+rather than a classification, because the threshold is domain-dependent and
+belongs to the caller.
+
+**Derivatives are taken in metres, not kilometres,** so results come out in
+s⁻¹ rather than in a mixed unit that Okubo–Weiss would then have to carry
+squared. The Rossby number is \(\zeta/f\), which is the dimensionless form and
+so comparable between latitudes; values approaching 1 mean the flow is fast
+enough that geostrophic balance is breaking down. Because \(f\) vanishes at the
+equator, the band within two degrees of it is returned as `NA` rather than as a
+very large ratio that would look like a real signal.
+
+**What they cannot tell you** is persistence. A coherent eddy lasting weeks and
+a momentary filament can carry the same Okubo–Weiss value, because both are
+single-step quantities. Persistence is what the Lyapunov exponents measure, at
+much greater cost.
+
+---
+
+## Residence time
+
+**What:** a particle is released at every point inside a box and advected until
+it leaves; the time it took is the residence time of water starting there.
+
+**Why it is worth the cost.** Long residence means a retentive place — a gyre, a
+basin, the lee of a bank — where anything with a life stage measured in weeks
+can complete it without being flushed out. That is the mechanism behind a good
+deal of plankton distribution that concentration alone does not explain:
+*Calanus* accumulates in the deep basins of the Gulf of Maine partly because the
+circulation holds water there long enough, and a covariate saying so is closer
+to the cause than one saying the water is currently cold.
+
+**It reuses the same integrator as `ftle()`,** one Runge-Kutta step at a time so
+that box membership can be tested as the particle moves, rather than carrying a
+second copy of the advection code that could drift away from the first.
+
+**Censoring is the thing to get right.** A particle still inside when `max_days`
+runs out has a residence of *at least* that, not equal to it. The column records
+`max_days` for those, which is right-censored data, and treating it as a
+measurement biases every summary downwards — most severely at the most retentive
+sites, which is usually the comparison being made. The function warns with the
+fraction censored. The honest responses are to raise `max_days`, to model the
+column as censored, or to use it as an ordering rather than a duration; what is
+not safe is to average it.
+
+**Resolution.** Membership is tested once per step, so an answer is the first
+check after the particle actually left: at or above the true value by less than
+`step_hours`. On a short window that is a large share of the answer, and the step
+should be shortened when the residences being compared are themselves short.
+
+**Leaving the velocity field is not the same as leaving the box.** A particle
+that runs off the edge of the fetched domain while still inside the box returns
+`NA`, because whether it was still residing is unknowable. That is reported
+separately from censoring, since the fix is different: fetch a larger bounding
+box, or move the box inside the domain.
+
+---
+
 ## Requirements on the input, and what is rejected
 
 `horizontal_gradient()` requires points on a **regular lon/lat lattice**.
@@ -1031,6 +1286,26 @@ the right side of the line: they are retrieval problems, not derivation ones.
   above). Stacking per-level fetches is the missing piece.
 - **Depth-resolved FTLE in one call** — same constraint, same workaround; see
   below.
+- **Extending the `LCR` index past 2014** — attempted twice and shelved, so it
+  is not so much unimplemented as answered in the negative. Monthly Copernicus
+  fields fail for a physical reason, and daily fields with a purpose-built
+  Lagrangian pipeline clear that obstacle and still do not reproduce the
+  published series. The arrival regions, the particle count and the domain were
+  each tested and eliminated as explanations; what remains is that the
+  reproduction counts particles entering a region while the paper counts them
+  crossing a hydrographic section, and those coordinates are not published.
+  [`lcr-extension-experiment.md`](lcr-extension-experiment.md) records both
+  attempts and the diagnostics.
+
+- **Stratification beyond a two-level difference** — buoyancy frequency and
+  potential energy anomaly need temperature and salinity on several levels in
+  one object, and `accessEnvDat()` serves surface values plus a bottom
+  temperature. `potential_density()` covers what the available fields do
+  support, which is the density of the surface layer rather than the structure
+  beneath it.
+- **Wind-driven terms** — Ekman transport and upwelling indices need wind
+  stress, which is not among the variables `datamatch` serves. That is a
+  retrieval problem rather than a derivation one, so it belongs upstream.
 
 ## FTLE at depth
 

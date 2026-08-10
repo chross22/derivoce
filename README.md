@@ -584,6 +584,23 @@ cite the paper for the concept and describe your own inputs.
 - Haller G (2015). Lagrangian coherent structures. *Annual Review of Fluid
   Mechanics* **47**, 137–162.
   [doi:10.1146/annurev-fluid-010313-141322](https://doi.org/10.1146/annurev-fluid-010313-141322)
+- Hobday AJ, Alexander LV, Perkins SE, Smale DA, Straub SC, Oliver ECJ,
+  Benthuysen JA, Burrows MT, Donat MG, Feng M, Holbrook NJ, Moore PJ, Scannell
+  HA, Sen Gupta A, Wernberg T (2016). A hierarchical approach to defining marine
+  heatwaves. *Progress in Oceanography* **141**, 227–238.
+  [doi:10.1016/j.pocean.2015.12.014](https://doi.org/10.1016/j.pocean.2015.12.014)
+- Hobday AJ, Oliver ECJ, Sen Gupta A, Benthuysen JA, Burrows MT, Donat MG,
+  Holbrook NJ, Moore PJ, Thomsen MS, Wernberg T, Smale DA (2018). Categorizing
+  and naming marine heatwaves. *Oceanography* **31**(2), 162–173.
+  [doi:10.5670/oceanog.2018.205](https://doi.org/10.5670/oceanog.2018.205)
+- Isern-Fontanet J, García-Ladona E, Font J (2003). Identification of marine
+  eddies from altimetric maps. *Journal of Atmospheric and Oceanic Technology*
+  **20**(5), 772–778.
+  [doi:10.1175/1520-0426(2003)20<772:IOMEFA>2.0.CO;2](https://doi.org/10.1175/1520-0426(2003)20%3C772:IOMEFA%3E2.0.CO;2)
+- Okubo A (1970). Horizontal dispersion of floatable particles in the vicinity of
+  velocity singularities such as convergences. *Deep-Sea Research and
+  Oceanographic Abstracts* **17**(3), 445–454.
+  [doi:10.1016/0011-7471(70)90059-8](https://doi.org/10.1016/0011-7471(70)90059-8)
 - Ramp SR, Schlitz RJ, Wright WR (1985). The deep flow through the Northeast
   Channel, Gulf of Maine. *Journal of Physical Oceanography* **15**(12),
   1790–1808.
@@ -599,10 +616,16 @@ cite the paper for the concept and describe your own inputs.
 - Townsend DW, Pettigrew NR, Thomas MA, Neary MG, McGillicuddy DJ, O'Donnell J
   (2015). Water masses and nutrient sources to the Gulf of Maine. *Journal of
   Marine Research* **73**, 93–122.
+- UNESCO (1983). Algorithms for computation of fundamental properties of
+  seawater. *UNESCO Technical Papers in Marine Science* **44**.
+  [unesdoc.unesco.org](https://unesdoc.unesco.org/ark:/48223/pf0000059832)
 - Wang et al. (2022). Freshwater transport in the Scotian Shelf and its impacts
   on the Gulf of Maine salinity. *Journal of Geophysical Research: Oceans*
   **127**.
   [doi:10.1029/2021JC017663](https://doi.org/10.1029/2021JC017663)
+- Weiss J (1991). The dynamics of enstrophy transfer in two-dimensional
+  hydrodynamics. *Physica D: Nonlinear Phenomena* **48**(2–3), 273–294.
+  [doi:10.1016/0167-2789(91)90088-Q](https://doi.org/10.1016/0167-2789(91)90088-Q)
 
 ### Data sources
 

@@ -55,6 +55,20 @@
 #' @return `env_dat` with one column per requested measure. Vorticity,
 #'   divergence and the strains are in s^-1, Okubo-Weiss in s^-2, and the Rossby
 #'   number is dimensionless
+#' @references
+#' Okubo A (1970). Horizontal dispersion of floatable particles in the vicinity
+#' of velocity singularities such as convergences. *Deep-Sea Research and
+#' Oceanographic Abstracts* **17**(3), 445-454.
+#' \doi{10.1016/0011-7471(70)90059-8}
+#'
+#' Weiss J (1991). The dynamics of enstrophy transfer in two-dimensional
+#' hydrodynamics. *Physica D: Nonlinear Phenomena* **48**(2-3), 273-294.
+#' \doi{10.1016/0167-2789(91)90088-Q}
+#'
+#' Isern-Fontanet J, Garcia-Ladona E, Font J (2003). Identification of marine
+#' eddies from altimetric maps. *Journal of Atmospheric and Oceanic Technology*
+#' **20**(5), 772-778.
+#' \doi{10.1175/1520-0426(2003)20<772:IOMEFA>2.0.CO;2}
 #' @examples
 #' \dontrun{
 #' env <- flow_deformation(env)
