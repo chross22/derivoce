@@ -57,6 +57,20 @@ largest of the three — so both warn and say which way out applies.
 
 * `potential_density()` is the UNESCO (1983) one-atmosphere equation of state,
   reproducing the published check values to within 5e-6 kg/m^3.
+* `buoyancy_frequency()` computes N^2 between two depths, the stratification
+  measure `vertical_gradient()` only approximates with a temperature
+  difference. That matters where salinity varies: Scotian Shelf inflow is fresh
+  enough to stratify water barely warmer at the surface.
+* `eady_growth_rate()` gives the growth rate of baroclinic instability, after
+  Eady (1949) in the maximum-growth form of Lindzen and Farrell (1980). It
+  complements `detect_eddies()` — that finds eddies that exist, this finds where
+  conditions favour making them. Eady is a person, not a spelling of "eddy".
+
+  Both need velocities or densities at two levels, which is two
+  `datamatch::accessEnvDat()` calls at different `depth` ranges joined as
+  columns. A previous version of `docs/methods.md` asserted this was impossible
+  because only surface values and a bottom temperature were available; that was
+  wrong, and is corrected there.
 * `rolling_covariate()` summarises a trailing window — mean, sd, min, max, sum,
   median, range — with the same step-versus-calendar distinction as
   `lag_covariate()`, on the same month counter.

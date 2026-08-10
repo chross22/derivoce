@@ -37,10 +37,17 @@ can be either denser or lighter than the water it displaces depending on how
 fresh it is.
 }
 \details{
-Uses the UNESCO (1983) equation of state at the surface, which is the
-one-atmosphere form. Copernicus \code{thetao} is already a potential temperature,
-so applying it here gives potential density directly, conventionally reported
-as sigma-theta: density in kg/m^3 minus 1000.
+Uses the UNESCO (1983) equation of state at one atmosphere. Copernicus
+\code{thetao} is already a potential temperature, so applying it here gives
+potential density directly, conventionally reported as sigma-theta: density
+in kg/m^3 minus 1000.
+
+"One atmosphere" describes the \emph{pressure} the density is referenced to, not
+the depth the temperature and salinity came from. Potential density is
+exactly the quantity you want for water sampled at depth — it is what that
+water would weigh if brought to the surface, which is what makes two levels
+comparable. \code{datamatch::accessEnvDat()} takes a \code{depth} argument, so this
+applies to any level, and \code{\link[=buoyancy_frequency]{buoyancy_frequency()}} uses two of them.
 }
 \section{What it is not}{
 

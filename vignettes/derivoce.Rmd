@@ -269,6 +269,58 @@ state. Salinity given as a mass fraction rather than PSU sits inside the fitted
 range and would return a plausible freshwater density, so a column entirely
 below 1 PSU is called out separately.
 
+## Stratification and where eddies are made
+
+`accessEnvDat()` takes a `depth` argument and returns one level per call, so a
+second fetch at a deeper level gives you the other half of a vertical
+difference. Here we stand one in for a second fetch: colder, saltier, and slower
+than the surface, as deeper water usually is.
+
+```{r deep-level}
+env$SST_deep <- env$SST - 3
+env$SSS_deep <- env$SSS + 0.6
+env <- potential_density(env, "SST_deep", "SSS_deep", name = "rho_deep")
+env <- potential_density(env, "SST", "SSS", name = "rho_surface")
+
+env <- buoyancy_frequency(env, "rho_surface", "rho_deep",
+                          depths = c(0.494, 92.326))
+signif(range(env$N2), 3)
+```
+
+`N2` is the real stratification measure, where `vertical_gradient()` only
+approximates it with a temperature difference. The distinction matters here
+because Scotian Shelf inflow is cold *and* fresh, and those pull density in
+opposite directions — a temperature-only measure can miss stratification
+entirely.
+
+Given velocities at both levels, the **Eady growth rate** says how fast
+baroclinic instability grows: where a sheared, weakly stratified flow can
+overturn and make eddies.
+
+```{r eady}
+env$UO <- 0.25
+env$VO <- 0.05
+env$UO_deep <- 0.05
+env$VO_deep <- 0.00
+
+env <- eady_growth_rate(env, shallow = c("UO", "VO"),
+                        deep = c("UO_deep", "VO_deep"),
+                        depths = c(0.494, 92.326))
+signif(range(env$eady_growth), 3)
+```
+
+The units are per day, so these correspond to an e-folding in under two days —
+high, because the synthetic shear above is a strong one: 0.2 m/s across 92 m.
+Read the field comparatively rather than as a literal doubling time.
+
+Eady is a person — Eric Eady, 1949 — not a spelling of "eddy", which is an
+unlucky collision given that the rate predicts where eddies form. The 0.31
+coefficient comes from Lindzen and Farrell (1980), not from Eady.
+
+Where the column is not stably stratified the rate is `NA` rather than enormous:
+dividing by a vanishing `N` would otherwise manufacture intense instability
+exactly where the assumption behind the formula has failed.
+
 ## Flow structure
 
 With velocities you can compute eddy kinetic energy and Lyapunov exponents. A

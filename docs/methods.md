@@ -56,6 +56,7 @@ older pipeline they replace. The function documentation says *what*; this says
 - [Eddy kinetic energy](#eddy-kinetic-energy)
 - [Velocity gradient diagnostics](#velocity-gradient-diagnostics)
 - [Eddies as objects](#eddies-as-objects)
+- [Stratification and baroclinic instability](#stratification-and-baroclinic-instability)
 - [Residence time](#residence-time)
 - [Requirements on the input, and what is rejected](#requirements-on-the-input-and-what-is-rejected)
   - [Resampled input passes the check, and that is the problem](#resampled-input-passes-the-check-and-that-is-the-problem)
@@ -305,6 +306,14 @@ mislabelled columns*, where a caller could get a temperature field named as a
 salinity one. It is now a refusal with a diagnosis. A true `dT/dz` from
 intermediate levels still needs one fetch per level, stacked afterwards; the
 surface-to-bottom difference sidesteps that entirely.
+
+**Which is the default, not the limit.** `vertical_gradient()` takes the two
+columns as arguments, so once two levels have been fetched and joined it will
+difference those instead — nothing about it is tied to `SST` and `BOTT`. And
+once the two depths are known rather than "the surface and whatever the sea
+floor is here", [buoyancy frequency](#stratification-and-baroclinic-instability)
+is the better quantity: a temperature difference stands in for stratification
+only where salinity is uniform, and on this shelf it is not.
 
 With a `depth` column supplied, the difference is divided by depth to give a
 per-metre rate rather than a total difference. That column now has an obvious
@@ -1234,6 +1243,57 @@ eddy atlases use.
 
 ---
 
+## Stratification and baroclinic instability
+
+**What:** the buoyancy frequency \(N^2\) between two depths, and from it the
+Eady growth rate — how fast baroclinic instability converts the potential energy
+stored in tilted density surfaces into eddies.
+
+**Why \(N^2\) rather than a temperature difference.** `vertical_gradient()`
+approximates stratification as surface minus bottom temperature, which is a fair
+proxy only where salinity is uniform. In the Gulf of Maine it is not: Scotian
+Shelf inflow is fresh enough to stratify water that is barely warmer at the
+surface, and a temperature-only measure misses it entirely. \(N^2\) is computed
+from density, so it counts both contributions with the weights the equation of
+state gives them.
+
+**Eady is a person.** Eric Eady set out the model of baroclinic instability in
+1949. The name collides awkwardly with "eddy", the more so because the rate is
+precisely a predictor of where eddies form, so the two look interchangeable
+beside each other and are not. The 0.31 coefficient is not Eady's own — it is
+the maximum-growth-rate approximation of Lindzen and Farrell (1980), which is
+the form actually computed here, and both are cited on the help page.
+
+**Why it belongs next to the eddy diagnostics.** `detect_eddies()` finds eddies
+that exist; this says where the conditions favour making them. Shear supplies
+the energy and stratification resists the overturning, so the rate is high where
+a sheared, weakly stratified flow can tip over — on this shelf, the shelf-break
+front and the edges of warm-core rings.
+
+**Both levels come from separate fetches.** `accessEnvDat()` takes a `depth`
+argument and returns one level per call, so the deeper level is a second call
+joined as columns on the same points. That is assembly rather than an obstacle,
+and it is the same pattern the depth-resolved FTLE section describes.
+
+**A two-level estimate is a bulk one.** It averages the stratification over the
+layer between the levels, and where a sharp pycnocline sits inside that layer
+the true peak \(N^2\) is far larger and its depth invisible. The choice of
+levels therefore does much of the work, and the trap is the mixed layer: if the
+two straddle its base, \(N^2\) is governed by how much of the well-mixed layer
+was included, and it will then vary through the season for that reason alone
+rather than because stratification changed. Compare the levels against `MLD`
+before reading a seasonal cycle into it.
+
+**Where the assumptions fail, the answer is withheld.** \(N\) is only a
+frequency in a stably stratified column, so an unstable one gets `NA` rather
+than a growth rate. Dividing by a vanishing \(N\) would otherwise produce a very
+large number precisely where the quasi-geostrophic assumption has broken down —
+intense apparent instability as an artefact of the formula rather than a
+finding. Negative \(N^2\) is still reported by `buoyancy_frequency()` itself,
+because denser water over lighter is real in winter convection and worth seeing.
+
+---
+
 ## Residence time
 
 **What:** a particle is released at every point inside a box and advected until
@@ -1403,10 +1463,11 @@ the right side of the line: they are retrieval problems, not derivation ones.
 
 ## Not yet implemented
 
-- **Vertical gradients from a depth profile** — the current implementation is
-  surface-minus-bottom. A true `dT/dz` from intermediate levels needs several
-  levels in one object, and `accessEnvDat()` returns one level per call (see
-  above). Stacking per-level fetches is the missing piece.
+- **Vertical gradients from a full depth profile** — the two-level case is
+  covered: `vertical_gradient()` differences any two temperature columns and
+  `buoyancy_frequency()` gives \(N^2\) between any two depths. A profile still
+  needs several levels in one object, and `accessEnvDat()` returns one level per
+  call (see above), so stacking per-level fetches remains the missing piece.
 - **Depth-resolved FTLE in one call** — same constraint, same workaround; see
   below.
 - **Extending the `LCR` index past 2014** — attempted twice and shelved, so it
@@ -1420,15 +1481,21 @@ the right side of the line: they are retrieval problems, not derivation ones.
   [`lcr-extension-experiment.md`](lcr-extension-experiment.md) records both
   attempts and the diagnostics.
 
-- **Stratification beyond a two-level difference** — buoyancy frequency and
-  potential energy anomaly need temperature and salinity on several levels in
-  one object, and `accessEnvDat()` serves surface values plus a bottom
-  temperature. `potential_density()` covers what the available fields do
-  support, which is the density of the surface layer rather than the structure
-  beneath it.
+- **Stratification as a profile** — `buoyancy_frequency()` now covers the
+  two-level case, which is enough for \(N^2\) and for the Eady growth rate. A
+  genuine profile, and the potential energy anomaly that needs one, still waits
+  on the same constraint as depth-resolved FTLE: `accessEnvDat()` returns one
+  level per call, so a profile is several fetches joined as columns rather than
+  one object. Nothing prevents it; it is assembly work.
+
+  *An earlier version of this document said buoyancy frequency was impossible
+  because `accessEnvDat()` served only surface values and a bottom temperature.
+  That was wrong. It takes a `depth` argument, so temperature, salinity and
+  velocity are available at any level, one level per call — as the section on
+  FTLE at depth below already described.*
 - **Wind-driven terms** — Ekman transport and upwelling indices need wind
-  stress, which is not among the variables `datamatch` serves. That is a
-  retrieval problem rather than a derivation one, so it belongs upstream.
+  stress, which is not among the variables `datamatch` serves. That one really
+  is a retrieval problem rather than a derivation one, so it belongs upstream.
 
 ## FTLE at depth
 

@@ -156,10 +156,18 @@ change with a real unit.
 
 ### Vertical gradients
 
-`vertical_gradient()` is the surface-minus-bottom difference in each cell, a
-stratification index. It is large where a warm surface layer sits over cold deep
-water, and near zero where the column is mixed. Both inputs come from the same
-Copernicus dataset, so it needs no extra download.
+`vertical_gradient()` is the difference between two temperature columns in each
+cell, a stratification index. It is large where a warm surface layer sits over
+cold deep water, and near zero where the column is mixed. It defaults to
+surface-minus-bottom, and both of those come from the same Copernicus dataset,
+so the usual case needs no extra download.
+
+The two columns are arguments rather than fixed, so any two levels work:
+`accessEnvDat()` takes a `depth` and returns one level per call, so a second
+fetch gives a temperature at whatever depth you choose. Where you know the two
+depths, `buoyancy_frequency()` is the better measure — a temperature difference
+stands in for stratification only where salinity is uniform, and Scotian Shelf
+inflow is fresh enough to stratify water barely warmer at the surface.
 
 Pass a `depth` column for a per-metre rate instead of a total difference.
 `datamatch::attach_bathymetry()` supplies that column:
@@ -248,6 +256,16 @@ so the seasonal cycle drops out and what remains is interannual.
   stratification and buoyancy depend on, and the two part company exactly where
   it matters here: Scotian Shelf inflow is cold *and* fresh, which pull density
   in opposite directions.
+- `buoyancy_frequency()` gives N² between two depths — the real stratification
+  measure, where `vertical_gradient()` only approximates it with a temperature
+  difference. Needs a second `accessEnvDat()` call at a deeper `depth`, joined
+  as columns.
+- `eady_growth_rate()` says how fast baroclinic instability grows, from the
+  vertical shear, the stratification and the Coriolis parameter. High where a
+  sheared, weakly stratified flow can overturn — the shelf-break front and the
+  edges of warm-core rings — so it complements `detect_eddies()`: that finds
+  eddies which exist, this finds where conditions favour making them. (Eady is
+  a person, not a spelling of "eddy".)
 
 ### Fronts, contours, and flow structure
 
@@ -555,10 +573,12 @@ neighbours, so every cloud hole erases a ring around itself.
 
 ## Still to come
 
-- **Vertical gradients from a depth profile.** The current one is
-  surface-minus-bottom. A true `dT/dz` needs several model levels in one object,
-  and `accessEnvDat()` returns one level per call. Stacking per-level fetches is
-  the workaround. Doing that inside `vertical_gradient()` is the work.
+- **Vertical gradients from a full depth profile.** The two-level case is
+  covered — `vertical_gradient()` takes any two temperature columns and
+  `buoyancy_frequency()` gives N² between any two depths. A true profile,
+  and the potential energy anomaly that needs one, is still assembly work:
+  `accessEnvDat()` returns one level per call, so a profile is several fetches
+  joined as columns. Doing that inside the functions is what remains.
 - **Extending the LCR index past 2014.** Tried twice and shelved. Monthly
   Copernicus fields fail for a physical reason: the averaging removes the narrow
   Labrador Current jet and the Grand Banks bifurcation the index depends on.
@@ -597,6 +617,8 @@ cite the paper for the concept and describe your own inputs.
   water intrusion into the Gulf of Maine. *Journal of Physical Oceanography*
   **52**(8).
   [doi:10.1175/JPO-D-21-0288.1](https://doi.org/10.1175/JPO-D-21-0288.1)
+- Eady ET (1949). Long waves and cyclone waves. *Tellus* **1**(3), 33–52.
+  [doi:10.3402/tellusa.v1i3.8507](https://doi.org/10.3402/tellusa.v1i3.8507)
 - Feng H, Vandemark D, Wilkin J (2016). Gulf of Maine salinity variation and its
   correlation with upstream Scotian Shelf currents at seasonal and interannual
   time scales. *Journal of Geophysical Research: Oceans* **121**.
@@ -621,6 +643,10 @@ cite the paper for the concept and describe your own inputs.
   eddies from altimetric maps. *Journal of Atmospheric and Oceanic Technology*
   **20**(5), 772–778.
   [doi:10.1175/1520-0426(2003)20<772:IOMEFA>2.0.CO;2](https://doi.org/10.1175/1520-0426(2003)20%3C772:IOMEFA%3E2.0.CO;2)
+- Lindzen RS, Farrell B (1980). A simple approximate result for the maximum
+  growth rate of baroclinic instabilities. *Journal of the Atmospheric Sciences*
+  **37**(7), 1648–1654.
+  [doi:10.1175/1520-0469(1980)037<1648:ASARFT>2.0.CO;2](https://doi.org/10.1175/1520-0469%281980%29037%3C1648:ASARFT%3E2.0.CO;2)
 - Okubo A (1970). Horizontal dispersion of floatable particles in the vicinity of
   velocity singularities such as convergences. *Deep-Sea Research and
   Oceanographic Abstracts* **17**(3), 445–454.

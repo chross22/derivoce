@@ -7,10 +7,17 @@
 #' can be either denser or lighter than the water it displaces depending on how
 #' fresh it is.
 #'
-#' Uses the UNESCO (1983) equation of state at the surface, which is the
-#' one-atmosphere form. Copernicus `thetao` is already a potential temperature,
-#' so applying it here gives potential density directly, conventionally reported
-#' as sigma-theta: density in kg/m^3 minus 1000.
+#' Uses the UNESCO (1983) equation of state at one atmosphere. Copernicus
+#' `thetao` is already a potential temperature, so applying it here gives
+#' potential density directly, conventionally reported as sigma-theta: density
+#' in kg/m^3 minus 1000.
+#'
+#' "One atmosphere" describes the *pressure* the density is referenced to, not
+#' the depth the temperature and salinity came from. Potential density is
+#' exactly the quantity you want for water sampled at depth — it is what that
+#' water would weigh if brought to the surface, which is what makes two levels
+#' comparable. `datamatch::accessEnvDat()` takes a `depth` argument, so this
+#' applies to any level, and [buoyancy_frequency()] uses two of them.
 #'
 #' @section What it is not:
 #' This is the density a parcel would have if brought to the surface. It is the
