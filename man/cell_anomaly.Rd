@@ -9,6 +9,7 @@ cell_anomaly(
   vars = NULL,
   reference = c("climatology", "record"),
   standardize = FALSE,
+  detrend = FALSE,
   suffix = NULL
 )
 }
@@ -24,6 +25,10 @@ series, which leaves the seasonal cycle in}
 
 \item{standardize}{divide by the standard deviation of the same group, giving
 a z-score}
+
+\item{detrend}{also remove a fitted linear trend from each cell, so what is
+left is the departure after both the seasonal cycle and the long-term
+change are gone}
 
 \item{suffix}{appended to each covariate name to make the new column. Defaults
 to \code{"_anom"}, or \code{"_z"} when standardising}
@@ -56,6 +61,28 @@ has to apply across the whole domain.
 
 It also throws away the magnitude. If the question is how much warmer, not
 how unusual, leave it off.
+}
+
+\section{Detrending}{
+
+\code{detrend = TRUE} removes a fitted linear trend as well. This matters in a
+warming shelf sea: an anomaly that still contains the trend largely encodes
+\emph{which year it is}, and a model given it will fit the trend and appear to
+have learned something about temperature. What is left after detrending says
+whether conditions were unusual \strong{for their year}, which is usually the
+ecological question.
+
+The trend and the seasonal cycle are estimated in one fit rather than
+sequentially, for the reasons set out in \code{\link[=decompose_covariate]{decompose_covariate()}} — removed
+one after the other, each absorbs part of the other. With
+\code{reference = "climatology"} both are taken out and the result is that
+function's residual; with \code{reference = "record"} only the mean and the trend
+go, and the seasonal cycle stays in.
+
+Detrending is not free of assumptions. A linear trend fitted to a short
+record can absorb genuine low-frequency variability — a decade of a
+multidecadal oscillation looks like a trend — so the residual is a departure
+from a fitted line, not from a known baseline.
 }
 
 \section{Why this needs several years}{

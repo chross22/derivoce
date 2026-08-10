@@ -208,6 +208,28 @@ year there is a single January per cell and **every anomaly comes out exactly
 zero**. That is a silent failure, so the function warns rather than handing back
 a plausible-looking column of zeroes.
 
+`decompose_covariate()` goes further and hands back the parts themselves, so
+each can be used or inspected rather than only the leftover. Six months is too
+short for a seasonal cycle, so ask for the trend alone.
+
+```{r decompose}
+env <- decompose_covariate(env, "SST", components = c("trend", "slope"))
+round(range(env$SST_slope), 2)
+```
+
+That is the rate of change per year in each cell — here large, because the warm
+tongue is sweeping west across the domain over a single season, and every cell
+sees a steep local trend as it passes.
+
+The trend and the seasonal cycle are fitted **together** rather than one after
+the other. Taken in sequence each absorbs part of the other: removing the trend
+first lets the seasonal cycle leak into it, because months are of unequal length
+and a twelve-month cycle is not orthogonal to a straight line in elapsed days.
+Fitted jointly, neither can steal from the other.
+
+`cell_anomaly(detrend = TRUE)` uses the same fit to give the departure once both
+the seasonal cycle and the long-term change are gone.
+
 `marine_heatwave()` needs the same history, for the same reason: a threshold
 taken over three values is the largest of the three. Twelve years of one month
 is enough to show it.
@@ -334,6 +356,17 @@ time step, broadcast to every row, so they behave like a climate index.
 flow <- section_transport(flow, from = c(-68.8, 42.2), to = c(-68.2, 42.8))
 tapply(flow$transport, flow$MONTH, function(x) round(unique(x)))
 ```
+
+An index is broadcast onto every row so the object keeps its shape and can carry
+on down the pipe. `index_series()` pulls it back out when you want the series
+itself — to plot it, or write it somewhere.
+
+```{r series}
+index_series(flow, "transport")
+```
+
+It refuses to collapse a column that varies across the grid, because that would
+keep one arbitrary cell and quietly discard the map.
 
 One number per month, as intended: the index describes the section, not the cell,
 so a horizontal gradient of it would be identically zero and `horizontal_gradient()`

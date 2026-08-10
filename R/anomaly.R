@@ -22,6 +22,26 @@
 #' It also throws away the magnitude. If the question is how much warmer, not
 #' how unusual, leave it off.
 #'
+#' @section Detrending:
+#' `detrend = TRUE` removes a fitted linear trend as well. This matters in a
+#' warming shelf sea: an anomaly that still contains the trend largely encodes
+#' *which year it is*, and a model given it will fit the trend and appear to
+#' have learned something about temperature. What is left after detrending says
+#' whether conditions were unusual **for their year**, which is usually the
+#' ecological question.
+#'
+#' The trend and the seasonal cycle are estimated in one fit rather than
+#' sequentially, for the reasons set out in [decompose_covariate()] — removed
+#' one after the other, each absorbs part of the other. With
+#' `reference = "climatology"` both are taken out and the result is that
+#' function's residual; with `reference = "record"` only the mean and the trend
+#' go, and the seasonal cycle stays in.
+#'
+#' Detrending is not free of assumptions. A linear trend fitted to a short
+#' record can absorb genuine low-frequency variability — a decade of a
+#' multidecadal oscillation looks like a trend — so the residual is a departure
+#' from a fitted line, not from a known baseline.
+#'
 #' @section Why this needs several years:
 #' With `reference = "climatology"` the mean is taken over the values sharing a
 #' calendar month, so a cell's January is compared with its other Januaries.
@@ -41,6 +61,9 @@
 #'   series, which leaves the seasonal cycle in
 #' @param standardize divide by the standard deviation of the same group, giving
 #'   a z-score
+#' @param detrend also remove a fitted linear trend from each cell, so what is
+#'   left is the departure after both the seasonal cycle and the long-term
+#'   change are gone
 #' @param suffix appended to each covariate name to make the new column. Defaults
 #'   to `"_anom"`, or `"_z"` when standardising
 #' @return `env_dat` with one anomaly column per covariate, in the units of the
@@ -57,21 +80,71 @@
 #' @export
 cell_anomaly <- function(env_dat, vars = NULL,
                          reference = c("climatology", "record"),
-                         standardize = FALSE, suffix = NULL) {
+                         standardize = FALSE, detrend = FALSE, suffix = NULL) {
   reference <- match.arg(reference)
   vars <- resolve_vars(env_dat, vars, kind = "temporal")
   suffix <- suffix %||% if (standardize) "_z" else "_anom"
 
   groups <- anomaly_groups(env_dat, reference)
-  warn_thin_climatology(groups, reference, standardize)
+  if (!detrend) warn_thin_climatology(groups, reference, standardize)
 
   for (v in vars) {
     values <- env_dat[[v]]
-    centred <- values - group_stat(values, groups, mean)
-    if (standardize) centred <- centred / group_stat(values, groups, stats::sd)
+    centred <- if (detrend) {
+      detrended_anomaly(env_dat, values, reference)
+    } else {
+      values - group_stat(values, groups, mean)
+    }
+    # Within a group the anomaly differs from the values by a constant, so for
+    # the undetrended case this is the same divisor as the values would give.
+    if (standardize) centred <- centred / group_stat(centred, groups, stats::sd)
     env_dat[[paste0(v, suffix)]] <- centred
   }
   env_dat
+}
+
+#' Anomaly with the long-term trend removed as well
+#'
+#' Uses the same joint fit as [decompose_covariate()] rather than removing a
+#' trend and a climatology one after the other, because in sequence each absorbs
+#' part of the other.
+#'
+#' @param env_dat an `sf` POINT object
+#' @param values the covariate
+#' @param reference `"climatology"` to drop the seasonal cycle too, `"record"`
+#'   to keep it
+#' @return a numeric vector the same length as `values`
+#' @keywords internal
+detrended_anomaly <- function(env_dat, values, reference) {
+  cells <- location_key(env_dat)
+  elapsed <- elapsed_days(env_dat)
+  months <- env_dat$MONTH
+
+  out <- rep(NA_real_, length(values))
+  thin <- 0L
+  cell_rows <- split(seq_len(length(values)), cells)
+
+  for (rows in cell_rows) {
+    piece <- decompose_one(values[rows], elapsed[rows], months[rows], degree = 1)
+    thin <- thin + piece$too_thin
+    out[rows] <- if (reference == "climatology") {
+      piece$residual
+    } else {
+      # Keep the seasonal cycle, drop only the mean and the trend.
+      piece$seasonal + piece$residual
+    }
+  }
+
+  if (reference == "climatology" && thin > 0) {
+    warning(
+      thin, " of ", length(cell_rows), " cell(s) cannot support a seasonal ",
+      "term, which needs at least two\n  calendar months present and one of ",
+      "them seen in more than one year. For those the\n  anomaly is detrended ",
+      "but not deseasonalised, so the seasonal cycle is still in it.",
+      call. = FALSE
+    )
+  }
+  out
 }
 
 #' Grouping used to form an anomaly

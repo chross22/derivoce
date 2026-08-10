@@ -9,6 +9,21 @@ Seven new derivations, none of which need any input
   than the geography — the cell-wise counterpart of `box_anomaly()`.
   `standardize = TRUE` gives a z-score, comparable across places of different
   variability at the cost of the magnitude.
+* `cell_anomaly()` gains `detrend`, which removes a fitted linear trend as well
+  as the mean. In a warming shelf sea an anomaly that still contains the trend
+  largely encodes which year it is, and a model given it will fit the trend and
+  appear to have learned something about temperature.
+* `decompose_covariate()` splits each cell's series into a centred trend, a
+  repeating seasonal cycle, a residual, and optionally the slope in units per
+  year, additively so that
+  `value = mean + trend + seasonal + residual`. The trend and the cycle are
+  estimated in one fit rather than sequentially: taken one after the other, each
+  absorbs part of the other, and a series containing nothing but a seasonal
+  cycle acquires a spurious trend worth a few percent of its amplitude.
+* `index_series()` collapses a broadcast per-step column back to one row per
+  time step, for plotting or export. It refuses a column that varies within a
+  step, since collapsing a map would keep one arbitrary cell and discard the
+  pattern.
 * `marine_heatwave()` implements Hobday et al. (2016, 2018): a percentile
   threshold on each cell's own seasonal climatology, events as runs of
   consecutive exceeding steps, and intensity, duration, cumulative intensity and

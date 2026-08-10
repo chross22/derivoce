@@ -168,3 +168,71 @@ test_that("a missing covariate is an error", {
                        years = 2000:2004, months = 1L)
   expect_error(cell_anomaly(env, "NOPE"), "NOPE")
 })
+
+
+test_that("detrending removes a linear trend the plain anomaly leaves in", {
+  # Ten years warming steadily, with no seasonal cycle.
+  env <- anomaly_field(function(lon, lat, y, m) 0.5 * (y - 2000),
+                       years = 2000:2009, months = 1L)
+
+  plain <- cell_anomaly(env, "SST", reference = "record")
+  flat <- cell_anomaly(env, "SST", reference = "record", detrend = TRUE)
+
+  # The plain anomaly is the trend, and correlates almost perfectly with year.
+  expect_gt(abs(stats::cor(plain$SST_anom, env$YEAR)), 0.99)
+  # Detrended, what is left is a ten-thousandth of what was there. Not machine
+  # zero, because the series is linear in *year* while the trend is fitted
+  # against elapsed days, and leap years make those spacings uneven.
+  expect_lt(stats::sd(flat$SST_anom), stats::sd(plain$SST_anom) / 1000)
+})
+
+test_that("a warm year stands out once the trend is gone", {
+  # A steady warming plus one genuinely anomalous year. Against the raw
+  # anomaly the last years all look warm; against the detrended one, only the
+  # anomalous year does.
+  env <- anomaly_field(function(lon, lat, y, m) {
+    0.5 * (y - 2000) + ifelse(y == 2003, 4, 0)
+  }, years = 2000:2009, months = 1L)
+
+  flat <- cell_anomaly(env, "SST", reference = "record", detrend = TRUE)
+
+  odd <- env$YEAR == 2003
+  expect_equal(which.max(flat$SST_anom), which(odd)[1])
+  expect_gt(min(flat$SST_anom[odd]), max(flat$SST_anom[!odd]))
+})
+
+test_that("detrending with a climatology drops the seasonal cycle as well", {
+  env <- anomaly_field(function(lon, lat, y, m) {
+    0.3 * (y - 2000) + 5 * sin(2 * pi * m / 12)
+  }, years = 2000:2009, months = 1:12)
+
+  both <- cell_anomaly(env, "SST", reference = "climatology", detrend = TRUE)
+  kept <- cell_anomaly(env, "SST", reference = "record", detrend = TRUE)
+
+  # Trend and cycle both gone.
+  expect_lt(stats::sd(both$SST_anom), 0.05)
+  # Trend gone, cycle still there.
+  expect_gt(stats::sd(kept$SST_anom), 3)
+})
+
+test_that("standardising still works when detrending", {
+  env <- anomaly_field(function(lon, lat, y, m) {
+    0.5 * (y - 2000) + ifelse(y %% 2 == 0, 1, -1)
+  }, years = 2000:2009, months = 1L)
+
+  z <- cell_anomaly(env, "SST", reference = "record", detrend = TRUE,
+                    standardize = TRUE)
+
+  expect_true("SST_z" %in% names(z))
+  expect_equal(mean(z$SST_z), 0, tolerance = 1e-8)
+  expect_equal(stats::sd(z$SST_z), 1, tolerance = 0.2)
+})
+
+test_that("detrending is off by default, so behaviour is unchanged", {
+  env <- anomaly_field(function(lon, lat, y, m) 0.5 * (y - 2000),
+                       years = 2000:2009, months = 1L)
+
+  expect_equal(cell_anomaly(env, "SST", reference = "record")$SST_anom,
+               cell_anomaly(env, "SST", reference = "record",
+                            detrend = FALSE)$SST_anom)
+})

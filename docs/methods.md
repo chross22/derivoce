@@ -23,6 +23,8 @@ older pipeline they replace. The function documentation says *what*; this says
 - [Time integration](#time-integration)
 - [Rolling summaries](#rolling-summaries)
 - [Anomalies against a cell's own history](#anomalies-against-a-cells-own-history)
+- [Trend, seasonal cycle, and what is left](#trend-seasonal-cycle-and-what-is-left)
+- [Pulling an index back out as a series](#pulling-an-index-back-out-as-a-series)
 - [Marine heatwaves](#marine-heatwaves)
 - [Seawater density](#seawater-density)
 - [Distance to fronts and contours](#distance-to-fronts-and-contours)
@@ -466,6 +468,81 @@ is a perfectly plausible-looking covariate that carries no information at all.
 That is the failure mode worth catching, so it warns and names the way out —
 `reference = "record"`, which compares each cell against its whole-series mean
 and needs only that the record be longer than one step.
+
+---
+
+## Trend, seasonal cycle, and what is left
+
+**What:** each cell's series split into a long-term trend, a repeating seasonal
+cycle, and the residual, additively so that
+`value = mean + trend + seasonal + residual`.
+
+**Why separate them.** The parts answer different questions and are easy to
+confuse. In a warming shelf sea, a temperature anomaly that still contains the
+trend largely encodes *which year it is*: a model given it will fit the trend
+and appear to have learned something about temperature. The residual is the part
+that says whether this month was warm **for its year and season**, which is
+usually the ecological question. The trend itself is the more interesting
+covariate when the question is about change rather than about conditions, and
+`slope` reports it as a rate per year, one number per cell.
+
+**Both are fitted at once, and this was not the first implementation.** The
+obvious approach is sequential — remove the trend, then take the seasonal cycle
+from what remains — and it is wrong in both orders.
+
+Removing the trend first lets the seasonal cycle leak into it. The trend is
+fitted against *elapsed days*, which is deliberate, since it is what makes a gap
+in the record leave a gap in the trend rather than compressing it. But calendar
+months are of unequal length, so a twelve-month cycle sampled on the first of
+each month is not orthogonal to a straight line in days. Testing this on a
+series containing nothing but a seasonal cycle produced a spurious trend with a
+standard deviation of 0.27 on an amplitude of 5 — around five percent of the
+signal, invented from nothing.
+
+Removing the seasonal cycle first fails the other way whenever the record does
+not contain whole years. A series starting in July and warming throughout gives
+the later months more warm years than the earlier ones, and the "cycle" acquires
+a step that is really the trend.
+
+Fitting a single model with both a polynomial in time and a factor for calendar
+month estimates each conditional on the other, and neither failure occurs. The
+cost is that the seasonal term needs enough observations to afford a parameter
+per calendar month; where it cannot — an annual series, or one covering a single
+year — it is reported as zero and whatever it would have explained stays in the
+residual, with a warning saying so.
+
+**What it does not do.** The seasonal term repeats by construction, so it cannot
+represent a seasonal cycle that is itself changing, which is exactly what a
+warming sea may be doing. A linear trend fitted to a short record can also
+absorb genuine low-frequency variability: a decade of a multidecadal oscillation
+looks like a trend. The residual is a departure from a fitted line, not from a
+known baseline.
+
+---
+
+## Pulling an index back out as a series
+
+**What:** the inverse of broadcasting. The region-scale indices compute one
+value per time step and repeat it on every row so the object keeps its shape and
+can carry on down a pipe; this collapses such a column back to one row per step.
+
+**Why the shape is broadcast in the first place** is that a covariate has to
+line up with the observations to be modelled. That is right for modelling and
+wrong for almost everything else: plotting a 22-year monthly index from a
+broadcast column means plotting each value a few thousand times, and writing one
+out means exporting a file mostly made of repetition.
+
+**Why it refuses a map.** A column that varies within a time step is a map, not
+an index. Collapsing it would return one arbitrary cell's value — whichever came
+first — and the result would look entirely plausible while having silently
+discarded the spatial pattern. That is the kind of quiet wrongness this package
+tries not to produce, so it is an error rather than an implicit mean. Taking a
+mean over a region is a real operation with a real choice in it, and
+`box_anomaly()` is that operation with the region named.
+
+With no columns specified, the constant-within-step columns are detected using
+the same `constant_within()` test the input checks use, so an object passed
+through several index functions gives all of them back at once.
 
 ---
 

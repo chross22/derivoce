@@ -223,8 +223,21 @@ so the seasonal cycle drops out and what remains is interannual.
   Gulf of Maine and warm for the Scotian Shelf, and a model given raw
   temperature has to learn that before it can use the difference.
   `standardize = TRUE` divides by the cell's own variability too, which makes
-  departures comparable across the domain at the cost of the magnitude. The
-  cell-wise counterpart of `box_anomaly()`.
+  departures comparable across the domain at the cost of the magnitude.
+  `detrend = TRUE` also removes the long-term trend, which matters in a warming
+  shelf sea: an anomaly that still contains the trend largely encodes *which
+  year it is*. The cell-wise counterpart of `box_anomaly()`.
+- `decompose_covariate()` splits a series into its parts — a trend, a repeating
+  seasonal cycle, and the residual — additively, so each can be used or
+  inspected on its own. `slope` gives the rate of change per year, one number
+  per cell. The trend and the cycle are fitted **together**, because removed one
+  after the other each absorbs part of the other.
+- `index_series()` collapses a broadcast per-step column back to one row per
+  time step. The region-scale indices below all compute one value per step and
+  repeat it on every row so the object keeps its shape; this pulls the series
+  back out for plotting or export. It refuses to collapse a column that varies
+  across the grid, because that would keep one arbitrary cell and discard the
+  map.
 - `marine_heatwave()` flags periods unusually warm — or, with
   `direction = "cold"`, unusually cold — for the time of year, after Hobday et
   al. (2016, 2018), with intensity, duration, cumulative intensity and the four

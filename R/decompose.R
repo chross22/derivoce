@@ -35,12 +35,24 @@
 #' for the parts that cannot be estimated rather than a fit through two points,
 #' and the function warns.
 #'
-#' The order is deliberate: the trend is removed first, then the seasonal cycle
-#' is taken from the detrended values. Doing it the other way lets a trend
-#' sitting unevenly across the calendar leak into the seasonal term — with a
-#' record starting in July and warming throughout, the later-summer months carry
-#' more warm years than the winter ones and the "seasonal cycle" acquires a step
-#' that is really the trend.
+#' The trend and the seasonal cycle are estimated **together**, in one fit,
+#' rather than one being removed before the other is measured. Doing it in sequence
+#' lets whichever goes first absorb part of the other, in both directions.
+#'
+#' A trend removed first picks up part of the seasonal cycle, because the trend
+#' is fitted against elapsed days and calendar months are of unequal length: a
+#' twelve-month cycle sampled on the first of each month is not orthogonal to a
+#' straight line in days, and a series containing nothing but a seasonal cycle
+#' comes out with a spurious trend worth a few percent of its amplitude. A
+#' seasonal cycle removed first picks up part of the trend whenever the record
+#' does not contain whole years — with a series starting in July and warming
+#' throughout, the later months carry more warm years than the earlier ones, and
+#' the "cycle" acquires a step that is really the trend.
+#'
+#' Fitting both at once removes each conditional on the other, so neither
+#' failure occurs. The cost is that the seasonal term needs enough observations
+#' to afford a parameter per calendar month; where it cannot, it is reported as
+#' zero rather than estimated badly, and the function warns.
 #'
 #' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
 #' @param vars covariate columns, or `NULL` for all numeric ones
@@ -101,7 +113,9 @@ decompose_covariate <- function(env_dat, vars = NULL, degree = 1,
     }
   }
 
-  warn_decompose(short, thin, length(cell_rows), degree)
+  # Only complain about the seasonal term if it was asked for.
+  warn_decompose(short, if ("seasonal" %in% components) thin else 0L,
+                 length(cell_rows), degree)
   env_dat
 }
 
@@ -124,30 +138,46 @@ decompose_one <- function(y, t, month, degree) {
     return(out)
   }
 
-  centre <- mean(y[usable])
-  fit <- stats::lm(y ~ stats::poly(t, degree, raw = TRUE),
-                   data = data.frame(y = y, t = t), na.action = stats::na.exclude)
-  fitted <- stats::predict(fit, newdata = data.frame(t = t))
-
-  trend <- fitted - mean(fitted[usable])
-  detrended <- y - centre - trend
-
-  # The seasonal term is only meaningful once a month has more than one year
-  # behind it; otherwise it is that month's own value and the residual is zero
-  # by construction.
   per_month <- table(month[usable])
-  if (length(per_month) == 0 || max(per_month) < 2) out$too_thin <- 1L
+  months_present <- length(per_month)
+  # A month factor costs one parameter per month beyond the first, and is only
+  # informative once some month has more than one year behind it. Below that it
+  # would fit every observation exactly and drive the residual to zero.
+  afford_seasonal <- months_present > 1 && max(per_month) > 1 &&
+    sum(usable) > degree + months_present
+  if (!afford_seasonal) out$too_thin <- 1L
 
-  monthly <- tapply(detrended[usable], month[usable], mean)
-  seasonal <- as.numeric(monthly[match(month, names(monthly))])
-  seasonal <- seasonal - mean(seasonal[usable], na.rm = TRUE)
+  frame <- data.frame(y = y, t = t, month = factor(month))
+  form <- if (afford_seasonal) {
+    y ~ stats::poly(t, degree, raw = TRUE) + month
+  } else {
+    y ~ stats::poly(t, degree, raw = TRUE)
+  }
+  fit <- stats::lm(form, data = frame, na.action = stats::na.exclude)
 
-  out$trend <- trend
-  out$seasonal <- seasonal
-  out$residual <- detrended - seasonal
+  # Trend and seasonal cycle are estimated together rather than one after the
+  # other. Fitting the trend first lets the seasonal cycle leak into it: months
+  # are of unequal length, so a twelve-month cycle sampled on the first of each
+  # month is not orthogonal to a straight line in elapsed days, and a pure
+  # seasonal series acquires a spurious trend of a few percent of its own
+  # amplitude. Estimated jointly, neither can absorb the other.
+  pieces <- stats::predict(fit, newdata = frame, type = "terms")
+  labels <- colnames(pieces)
+  trend_col <- grep("poly", labels, fixed = TRUE)
+
+  out$trend <- as.numeric(pieces[, trend_col])
+  out$seasonal <- if (afford_seasonal) {
+    as.numeric(pieces[, setdiff(seq_along(labels), trend_col)])
+  } else {
+    rep(0, length(y))
+  }
+  out$residual <- y - as.numeric(stats::predict(fit, newdata = frame))
+
   if (degree == 1) {
-    # Slope per year rather than per day, which is the unit anyone reads.
-    out$slope <- rep(unname(stats::coef(fit)[2]) * 365.25, length(y))
+    slope <- unname(stats::coef(fit)[grep("poly", names(stats::coef(fit)),
+                                          fixed = TRUE)][1])
+    # Per year rather than per day, which is the unit anyone reads.
+    out$slope <- rep(slope * 365.25, length(y))
   }
   out
 }
@@ -186,11 +216,13 @@ warn_decompose <- function(short, thin, total, degree) {
   }
   if (thin > 0) {
     warning(
-      thin, " of ", total, " cell(s) have at most one value per calendar ",
-      "month, so the seasonal term is\n  that month's own value and the ",
-      "residual is zero by construction.",
-      "\n  A seasonal cycle needs several years. Use components = \"trend\" ",
-      "on a record this short.",
+      thin, " of ", total, " cell(s) cannot support a seasonal term, which ",
+      "needs at least two calendar\n  months present and at least one of them ",
+      "observed in more than one year.",
+      "\n  Their seasonal component is reported as zero, and whatever a ",
+      "seasonal cycle would have\n  explained stays in the residual. On an ",
+      "annual series, or one covering a single year,\n  ask for ",
+      "components = \"trend\" instead.",
       call. = FALSE
     )
   }
