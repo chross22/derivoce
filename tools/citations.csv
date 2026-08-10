@@ -1,0 +1,14 @@
+key,doi,url,first_author,year,title,container,volume,pages,checks,note
+ross2023,10.3354/meps14204,,Ross,2023,Estimating North Atlantic right whale prey based on Calanus finmarchicus thresholds,Marine Ecology Progress Series,703,1-16,crossref,
+belkin2009,10.1016/j.jmarsys.2008.11.018,,Belkin,2009,An algorithm for oceanic front detection in chlorophyll and SST satellite imagery,Journal of Marine Systems,78,319-326,crossref,
+grodsky2025,10.1029/2024JC021891,,Grodsky,2025,An Eastern Gulf of Maine Salinity Index for Monitoring Winter Scotian Shelf Inflow and Its Relation to Coastal and Interior Pathways,Journal of Geophysical Research: Oceans,130,,crossref,
+feng2016,10.1002/2016JC012337,,Feng,2016,Gulf of Maine salinity variation and its correlation with upstream Scotian Shelf currents at seasonal and interannual time scales,Journal of Geophysical Research: Oceans,121,8585-8607,crossref,
+wang2022,10.1029/2021JC017663,,Wang,2022,Freshwater Transport in the Scotian Shelf and Its Impacts on the Gulf of Maine Salinity,Journal of Geophysical Research: Oceans,127,,crossref,
+du2022,10.1175/JPO-D-21-0288.1,,Du,2022,Impact of Gulf Stream Warm-Core Rings on Slope Water Intrusion into the Gulf of Maine,Journal of Physical Oceanography,52,1797-1815,crossref,
+silver2023,10.1038/s41598-023-34494-0,,Silver,2023,Increased gulf stream warm core ring formations contributes to an observed increase in salinity maximum intrusions on the Northeast Shelf,Scientific Reports,13,,crossref,
+jutras2023,10.1038/s41467-023-38321-y,,Jutras,2023,Large-scale control of the retroflection of the Labrador Current,Nature Communications,14,,crossref,
+dovidio2004,10.1029/2004GL020328,,d'Ovidio,2004,Mixing structures in the Mediterranean Sea from finite‐size Lyapunov exponents,Geophysical Research Letters,31,,crossref,
+haller2015,10.1146/annurev-fluid-010313-141322,,Haller,2015,Lagrangian Coherent Structures,Annual Review of Fluid Mechanics,47,137-162,crossref,
+pebesma2018,10.32614/RJ-2018-009,,Pebesma,2018,Simple Features for R: Standardized Support for Spatial Vector Data,The R Journal,10,439,crossref,
+datamarinecopernicuseu,,https://data.marine.copernicus.eu/register,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+marinecopernicuseu,,https://marine.copernicus.eu/,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
