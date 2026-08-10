@@ -216,6 +216,26 @@ lag_covariate(env, "SST", n = 1:3, by = "year")
 With `by = "year"` this holds the calendar month fixed and varies only the year,
 so the seasonal cycle drops out and what remains is interannual.
 
+### Anomalies, extremes, and density
+
+- `cell_anomaly()` removes each cell's own mean, so what is left is the
+  departure rather than the geography. Eight degrees is cold for the southern
+  Gulf of Maine and warm for the Scotian Shelf, and a model given raw
+  temperature has to learn that before it can use the difference.
+  `standardize = TRUE` divides by the cell's own variability too, which makes
+  departures comparable across the domain at the cost of the magnitude. The
+  cell-wise counterpart of `box_anomaly()`.
+- `marine_heatwave()` flags periods unusually warm — or, with
+  `direction = "cold"`, unusually cold — for the time of year, after Hobday et
+  al. (2016, 2018), with intensity, duration, cumulative intensity and the four
+  categories. Whether an animal was there in an ordinary summer or a heatwave
+  summer is often more useful than the temperature itself.
+- `potential_density()` gives sigma-theta from temperature and salinity, by the
+  UNESCO (1983) equation of state. Density, not temperature, is what
+  stratification and buoyancy depend on, and the two part company exactly where
+  it matters here: Scotian Shelf inflow is cold *and* fresh, which pull density
+  in opposite directions.
+
 ### Fronts, contours, and flow structure
 
 - `distance_to_front()` measures how far each point is from the nearest front,
@@ -232,6 +252,20 @@ so the seasonal cycle drops out and what remains is interannual.
   **Forward** finds *repelling* structures, the transport barriers. For
   depth-resolved versions, fetch velocities at a chosen depth: Copernicus GLORYS
   carries `uo` and `vo` on 50 levels.
+- `front_frequency()` asks how *reliably* a front sits in a place, rather than
+  how far one was at a moment. Fronts move: a cell frontal in one step of twenty
+  caught a passing filament, while one frontal in fifteen sits on a shelf-break
+  or tidal mixing front, and only the second aggregates plankton reliably enough
+  for a predator to learn it.
+- `flow_deformation()` gives vorticity, divergence, the strain components,
+  the Okubo-Weiss parameter and the Rossby number from the velocity gradients.
+  Instantaneous and local, so it sits between `eke()`, which needs a series, and
+  the Lyapunov exponents, which need trajectories: separating an eddy interior
+  from the filaments around it costs one pass rather than an integration.
+- `residence_time()` releases a particle at every point in a box and measures
+  how long it stays. Long residence means a retentive place where anything with
+  a life stage measured in weeks can complete it. Read the censoring note in
+  `?residence_time` before averaging the result.
 - `eke()` computes eddy kinetic energy. You choose what the anomaly is measured
   against: the record mean, a monthly climatology, or a rolling window. That
   choice decides what counts as an eddy rather than mean flow.
@@ -501,12 +535,16 @@ neighbours, so every cloud hole erases a ring around itself.
   surface-minus-bottom. A true `dT/dz` needs several model levels in one object,
   and `accessEnvDat()` returns one level per call. Stacking per-level fetches is
   the workaround. Doing that inside `vertical_gradient()` is the work.
-- **Extending the LCR index past 2014.** Tried and shelved: recomputing it from
-  monthly Copernicus fields does not work, because monthly averaging removes the
-  narrow Labrador Current jet and the Grand Banks bifurcation the index depends
-  on. [`docs/lcr-extension-experiment.md`](docs/lcr-extension-experiment.md)
-  records the diagnosis. Daily fields and a purpose-built Lagrangian framework
-  would be needed.
+- **Extending the LCR index past 2014.** Tried twice and shelved. Monthly
+  Copernicus fields fail for a physical reason: the averaging removes the narrow
+  Labrador Current jet and the Grand Banks bifurcation the index depends on.
+  Daily fields with OceanParcels clear that obstacle and still do not reproduce
+  the published series — and it is not the arrival regions, the particle count
+  or the domain, all of which were tested and eliminated. What is left is that
+  this counts particles entering a region while the paper counts them crossing a
+  hydrographic section, and those coordinates are not published.
+  [`docs/lcr-extension-experiment.md`](docs/lcr-extension-experiment.md) records
+  both attempts.
 - **Gulf Stream Index.** NAO, AO, AMO, PDO, LCR, and AMOC are all in
   [datamatch](https://github.com/chross22/datamatch) via
   `attach_climate_index()`. The Gulf Stream Index is harder: it has several

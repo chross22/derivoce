@@ -1,3 +1,52 @@
+# derivoce (development version)
+
+Seven new derivations, none of which need any input
+`datamatch::accessEnvDat()` does not already serve.
+
+## Anomalies and extremes
+
+* `cell_anomaly()` removes each cell's own mean, leaving the departure rather
+  than the geography — the cell-wise counterpart of `box_anomaly()`.
+  `standardize = TRUE` gives a z-score, comparable across places of different
+  variability at the cost of the magnitude.
+* `marine_heatwave()` implements Hobday et al. (2016, 2018): a percentile
+  threshold on each cell's own seasonal climatology, events as runs of
+  consecutive exceeding steps, and intensity, duration, cumulative intensity and
+  the four categories. `direction = "cold"` gives cold spells.
+
+Both fail silently given too little history — a monthly climatology over one
+year is exactly zero everywhere, and a 90th percentile over three values is the
+largest of the three — so both warn and say which way out applies.
+
+## Flow structure
+
+* `flow_deformation()` gives vorticity, divergence, the two strain components
+  and their magnitude, the Okubo-Weiss parameter, and the Rossby number. It
+  fills the gap between `eke()`, which needs a series, and `ftle()`/`fsle()`,
+  which need trajectories.
+* `residence_time()` releases a particle at every point in a box and measures
+  how long it stays, forward or backward. Right-censored at `max_days`, which
+  the documentation and a warning both insist on: averaging the column biases
+  it downwards, most severely at the most retentive sites.
+* `front_frequency()` measures how reliably a place is frontal, where
+  `distance_to_front()` measures how far one was at a moment.
+
+## Water properties and history
+
+* `potential_density()` is the UNESCO (1983) one-atmosphere equation of state,
+  reproducing the published check values to within 5e-6 kg/m^3.
+* `rolling_covariate()` summarises a trailing window — mean, sd, min, max, sum,
+  median, range — with the same step-versus-calendar distinction as
+  `lag_covariate()`, on the same month counter.
+
+## Documentation
+
+* `docs/lcr-extension-experiment.md` now records the second attempt at
+  extending the Labrador Current retroflection index. Daily fields with
+  OceanParcels clear the obstacle that stopped the monthly attempt and still do
+  not reproduce the published series; the arrival regions, the particle count
+  and the domain were each tested and eliminated as explanations.
+
 # derivoce 0.1.0
 
 First release.
