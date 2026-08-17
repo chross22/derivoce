@@ -479,6 +479,30 @@ real GLORYS currents rather than by eye. `docs/methods.md` records how.
 as.data.frame(derived_indices())[, c("name", "method", "units")]
 ```
 
+## Describing it for an archive
+
+A derived covariate is the hardest kind of column to document: its meaning is
+not in what was measured but in how it was computed. `eml_attributes()` emits
+what this package knows, in the shape
+[EML](https://eml.ecoinformatics.org/) wants.
+
+```{r eml}
+attributes <- eml_attributes(env, vars = c("SST", "SST_grad", "sigma_theta"),
+                             units = c(SST = "celsius"))
+attributes[, c("attributeName", "unit", "measurementScale")]
+```
+
+The gradient's unit was built from the one given for `SST`. Had `units` not said
+what `SST` holds, it would have come back `NA` rather than guessed — a dataset
+archived with confidently wrong units is worse than one with a visible hole.
+
+EML validates units against a fixed dictionary, and several quantities here are
+not in it, so they have to be declared:
+
+```{r eml-units}
+eml_custom_units(eml_attributes(env, c("N2", "eady_growth")))[, c("id", "description")]
+```
+
 ## When the package argues back
 
 Two checks exist because the failure they catch is invisible in the output.

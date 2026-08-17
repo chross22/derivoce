@@ -444,6 +444,39 @@ from the paper's. Cite the paper for the concept and describe your own inputs.
 Sources are also available as `as.data.frame(derived_indices())$source`, and all
 work cited anywhere here is listed under [References](#references) at the end.
 
+## Describing the output for an archive
+
+Derived covariates are the hardest part of a dataset to document, because their
+meaning lives in how they were computed rather than in what was measured.
+`SST_grad` is degrees per kilometre by central differences on a lon/lat lattice,
+and nothing in the column name or the numbers says so. That knowledge is already
+in this package.
+
+`eml_attributes()` emits it as the attribute table [Ecological Metadata
+Language](https://eml.ecoinformatics.org/) wants, ready for
+`EML::set_attributes()`. derivoce does not depend on the `EML` package and does
+not write XML — it hands over the table.
+
+```r
+env <- horizontal_gradient(env, "SST")
+env <- eke(env)
+
+attributes <- eml_attributes(env, units = c(SST = "celsius"))
+custom <- eml_custom_units(attributes)
+```
+
+Two things it is careful about. A derived unit usually depends on the source
+unit — a gradient of temperature is °C/km, a gradient of chlorophyll is
+mg/m³/km — and the package does not know what your source column holds, so pass
+`units` to say. Anything unresolved comes back as `NA` rather than a guess: an
+archived dataset with confidently wrong units is worse than one with an obvious
+hole.
+
+And EML validates units against a fixed dictionary of 195 entries, several of
+which these quantities are not in — per second, per day, metres squared per
+second squared. `eml_custom_units()` returns exactly the declarations your
+attribute table needs, so the document validates.
+
 ## Column names
 
 Every default above is a datamatch catalog name: `SST` and `BOTT` for

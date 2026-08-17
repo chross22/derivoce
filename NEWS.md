@@ -75,6 +75,25 @@ largest of the three — so both warn and say which way out applies.
   median, range — with the same step-versus-calendar distinction as
   `lag_covariate()`, on the same month counter.
 
+## Metadata
+
+* `eml_attributes()` describes the derived columns as an Ecological Metadata
+  Language attribute table, in the shape `EML::set_attributes()` consumes.
+  Derived covariates are the hardest part of a dataset to document, because
+  their meaning lives in how they were computed rather than in what was
+  measured, and that knowledge is already here.
+* `eml_custom_units()` returns declarations for the units EML's dictionary does
+  not carry — per second, per second squared, per day, and metres squared per
+  second squared among them. A document using an undeclared unit does not
+  validate, so a test asserts that every unit the package can emit is either
+  standard or declared.
+* `eml_col_classes()` supplies the matching `col_classes` vector.
+
+No dependency on the `EML` package: derivoce hands over the table and lets EML
+write the XML. Units that depend on the source column, such as a gradient's,
+come back as `NA` unless `units` says what the source holds — a guessed unit in
+an archived dataset is worse than a visible gap.
+
 ## Documentation
 
 * `docs/lcr-extension-experiment.md` now records the second attempt at

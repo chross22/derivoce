@@ -32,6 +32,8 @@ Suggests:
     ggplot2,
     knitr,
     rmarkdown,
+    emld,
+    xml2,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
 Remotes:

@@ -60,6 +60,7 @@ older pipeline they replace. The function documentation says *what*; this says
 - [Residence time](#residence-time)
 - [Requirements on the input, and what is rejected](#requirements-on-the-input-and-what-is-rejected)
   - [Resampled input passes the check, and that is the problem](#resampled-input-passes-the-check-and-that-is-the-problem)
+- [Describing the output as EML](#describing-the-output-as-eml)
 - [How this is tested](#how-this-is-tested)
 - [Since resolved elsewhere](#since-resolved-elsewhere)
 - [Not yet implemented](#not-yet-implemented)
@@ -1392,6 +1393,56 @@ series is a sum over fewer steps than the calendar suggests. `keep_counts = TRUE
 on the upscale is how to see how many.
 
 ---
+
+## Describing the output as EML
+
+**What:** the derived columns as an Ecological Metadata Language attribute
+table, plus declarations for the units EML does not recognise.
+
+**Why the package should be the one to say.** A derived covariate is the hardest
+kind of column to document, because its meaning is not in what was measured but
+in how it was computed. `SST_grad` is a gradient magnitude in degrees per
+kilometre, taken by central differences on a lon/lat lattice, with the outermost
+ring `NA` because a central difference needs a neighbour on both sides. None of
+that is recoverable from the column name or from the numbers, and by the time a
+dataset reaches an archive the person writing the metadata is often not the
+person who ran the code. The knowledge is here; emitting it costs a registry.
+
+**No dependency on the `EML` package.** This returns the data frame that
+`EML::set_attributes()` consumes and stops there. Writing XML is that package's
+job and it does it well, whereas a partial reimplementation here would be one
+more thing to keep in step with the standard. It also keeps the metadata path
+usable when `EML` is not installed, which matters because the table is worth
+reading on its own.
+
+**Units it refuses to guess.** Most derived units are functions of the source
+unit: a gradient of temperature is °C/km, a gradient of chlorophyll is
+mg/m³/km. The package knows the *structure* — "per kilometre" — but not what the
+source column holds, since that is a property of the fetch rather than of the
+derivation. The `units` argument supplies it, and anything still unresolved
+comes back `NA` with a definition naming the gap. That is the deliberate choice:
+a dataset archived with confidently wrong units is worse than one with a visible
+hole, because the hole gets filled and the wrong number gets believed.
+
+Columns the package did not create are described as such rather than guessed at
+for the same reason.
+
+**Custom units, which are easy to get silently wrong.** EML validates against a
+fixed dictionary of 195 unit ids, and several quantities here are outside it —
+`perSecond` for vorticity and strain, `perSecondSquared` for Okubo-Weiss and
+\(N^2\), `perDay` for the Lyapunov exponents and the Eady growth rate,
+`metersSquaredPerSecondSquared` for eddy kinetic energy. A document using an
+undeclared unit does not validate, and the failure surfaces at submission rather
+than at authoring. `eml_custom_units()` returns the declarations for whichever
+non-standard units an attribute table actually used, and a test asserts the
+invariant directly: every unit the registry can emit is either in the dictionary
+or in the custom list. That test reads the dictionary from `emld` rather than
+from a copied-out list, so it cannot drift from the standard.
+
+The naming convention is also worth noting, since it is a trap: EML's unit ids
+are plural where you would expect singular — `metersPerSecond`, not
+`meterPerSecond` — and an id that does not match the dictionary exactly is
+simply an undeclared custom unit.
 
 ## How this is tested
 
