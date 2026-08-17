@@ -9,3 +9,6 @@
 ^\.github$
 ^docs$
 ^lcr-pipeline$
+^figure$
+^derivoce\.Rcheck$
+^derivoce.*\.tar\.gz$
