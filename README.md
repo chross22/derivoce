@@ -61,20 +61,26 @@ remotes::install_github("chross22/derivoce")
 ### Installing datamatch
 
 [`datamatch`](https://github.com/chross22/datamatch) fetches the data these
-functions derive from. It is a **suggested** dependency, so the line above does
-not install it. It is not on CRAN either:
+functions derive from. It is **not a declared dependency of derivoce at all**,
+so nothing installs it for you. It is not on CRAN either:
 
 ```r
 remotes::install_github("chross22/datamatch")
-
-# or get both at once
-remotes::install_github("chross22/derivoce", dependencies = TRUE)
 ```
 
-Why only suggested? Everything here works on the *shape* `accessEnvDat()`
+Why not even suggested? Everything here works on the *shape* `accessEnvDat()`
 returns: an `sf` POINT object with one row per grid point and time step, plus
-`YEAR`, `MONTH`, and `DAY`. Nothing calls datamatch itself. So an object of that
+`YEAR`, `MONTH`, and `DAY`. Nothing in this package calls datamatch — it appears
+only in documentation, in `\dontrun{}` examples, and inside warning messages
+that tell you which datamatch function a column came from. An object of that
 shape works whatever produced it, and the tests build their own.
+
+Declaring it anyway had a cost. A suggested package that resolves from no
+repository makes `R CMD check` report a dependency it cannot find, and the
+`Remotes:` field that pointed at GitHub is a devtools convention that CRAN does
+not recognise. Both produced check notes for a package that is never loaded.
+The honest description is the one above: derivoce consumes a shape, and
+datamatch is the most convenient way to produce it, not a component of it.
 
 ### The Copernicus client
 
