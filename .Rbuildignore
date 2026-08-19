@@ -12,3 +12,4 @@
 ^figure$
 ^derivoce\.Rcheck$
 ^derivoce.*\.tar\.gz$
+^\.lintr$

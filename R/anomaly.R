@@ -122,7 +122,7 @@ detrended_anomaly <- function(env_dat, values, reference) {
 
   out <- rep(NA_real_, length(values))
   thin <- 0L
-  cell_rows <- split(seq_len(length(values)), cells)
+  cell_rows <- split(seq_along(values), cells)
 
   for (rows in cell_rows) {
     piece <- decompose_one(values[rows], elapsed[rows], months[rows], degree = 1)
