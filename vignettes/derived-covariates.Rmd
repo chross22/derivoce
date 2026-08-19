@@ -74,6 +74,13 @@ env   <- vertical_gradient(env, depth = "DEPTH")   # degrees C per metre
   default `window = "year"` reproduces the `int_chl` of Ross et al. (2023),
   chlorophyll integrated from January and reset each year. A numeric window rolls
   without resetting.
+- `rolling_covariate()` summarises a trailing window rather than accumulating
+  it: mean, standard deviation, minimum, maximum, sum, median or range. That is
+  a different covariate from the integral, not a variation on it. Two places
+  with identical three-month totals can differ entirely in whether the total
+  arrived steadily or in one pulse, and for anything with a threshold response
+  that difference is the signal. The window ends at, and includes, the current
+  step, so a three-month mean at March covers January to March.
 
 Locations are matched by coordinate, not row order, so time steps need not list
 their points in the same order.
@@ -105,6 +112,14 @@ lag_covariate(env, "SST", n = 1:3, by = "year")
 
 With `by = "year"` this holds the calendar month fixed and varies only the year,
 so the seasonal cycle drops out and what remains is interannual.
+
+`rolling_covariate()` takes the same `by`, computed on the same month counter,
+so a window and a lag of the same size agree about what a month is. The two
+disagree only once the record has a gap, and then silently: on a monthly series
+missing April, a three-*step* window at June covers March, May and June, while a
+three-*month* window covers April, May and June and finds only two of them.
+`min_obs` decides whether a window that short is summarised anyway or returned
+as `NA`.
 
 ### Anomalies, extremes, and density
 
@@ -325,6 +340,56 @@ Each function computes from whatever data you give it, so the numbers will diffe
 from the paper's. Cite the paper for the concept and describe your own inputs.
 Sources are also available as `as.data.frame(derived_indices())$source`, and all
 work cited anywhere here is listed under [References](#references) at the end.
+
+### Describing the result for an archive
+
+The other functions here add covariates. These describe them, which is a
+different job and a harder one to do afterwards: a derived covariate's meaning
+lives in how it was computed rather than in what was measured. `SST_grad` is
+degrees per kilometre by central differences on a lon/lat lattice with an `NA`
+outer ring, and nothing in the column name or the numbers says so. By the time a
+dataset reaches an archive, the person writing the metadata is often not the
+person who ran the code.
+
+`eml_attributes()` emits what this package knows as the attribute table
+[Ecological Metadata Language](https://eml.ecoinformatics.org/) expects, in the
+shape `EML::set_attributes()` consumes, with `eml_col_classes()` for the vector
+that goes alongside it:
+
+```r
+attributes <- eml_attributes(env)
+EML::set_attributes(attributes, col_classes = eml_col_classes(env))
+```
+
+derivoce does not depend on the `EML` package and writes no XML. It hands over
+the table and stops there.
+
+Units are where this earns its keep, and where it deliberately refuses to help.
+A derived unit is built from its source — a gradient of temperature is °C/km, a
+gradient of chlorophyll mg/m³/km — so the source has to be known first.
+Everything `datamatch` serves already is, including the seafloor terrain and the
+climate indices, so a workflow built on those needs no `units` argument and
+`SST_grad` comes back as `celsiusPerKilometer` unprompted. Name anything else,
+or override a default:
+
+```r
+eml_attributes(env, units = c(TEMP_INSITU = "celsius"))
+```
+
+Anything still unresolved comes back as `NA` rather than a guess. A dataset
+archived with confidently wrong units is worse than one with a visible hole,
+because the hole gets filled and the wrong number gets believed. Columns this
+package did not create are described as such for the same reason.
+
+EML also validates units against a fixed dictionary of 195 entries, and several
+quantities here are outside it — per second for vorticity and strain, per second
+squared for Okubo–Weiss and N², per day for the Lyapunov exponents and the Eady
+growth rate. A document using an undeclared unit does not validate, and it fails
+at submission rather than at authoring:
+
+```r
+eml_custom_units(attributes)   # only the non-standard units actually used
+```
 
 ## Warnings you may see
 
