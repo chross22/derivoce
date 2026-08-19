@@ -226,7 +226,7 @@ nowhere to put that.
 
 Two caveats outweigh the choice. Monthly fields have already averaged away the
 eddies that make sharp structures, and plankton are not passive surface tracers.
-[`docs/methods.md`](docs/methods.md) covers both.
+[`docs/methods.md`](https://github.com/chross22/derivoce/blob/master/docs/methods.md) covers both.
 
 ### Regional indices
 
@@ -314,8 +314,8 @@ is how you find out whether the answer means anything.
 
 We chose the section endpoints ourselves by testing them against real currents;
 they are not from any paper.
-[`docs/methods.md`](docs/methods.md#how-the-named-sections-were-placed) shows how,
-and [`docs/section-placement-diagnostics.R`](docs/section-placement-diagnostics.R)
+[`docs/methods.md`](https://github.com/chross22/derivoce/blob/master/docs/methods.md#how-the-named-sections-were-placed) shows how,
+and [`docs/section-placement-diagnostics.R`](https://github.com/chross22/derivoce/blob/master/docs/section-placement-diagnostics.R)
 re-runs the test on your own data.
 
 #### A note on "Follows"
