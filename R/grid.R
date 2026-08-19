@@ -1,10 +1,6 @@
 #' @keywords internal
 "_PACKAGE"
 
-# Null-coalescing operator. Defined here rather than relying on base R's, which
-# only exists from R 4.4 onward.
-`%||%` <- function(x, y) if (is.null(x)) y else x
-
 #' Time-step columns that are not covariates
 #'
 #' @keywords internal
