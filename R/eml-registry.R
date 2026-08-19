@@ -193,11 +193,16 @@ eml_unit_registry <- function() {
   data.frame(
     id = c("perSecond", "perSecondSquared", "perDay",
            "metersSquaredPerSecondSquared", "practicalSalinityUnit",
-           "celsiusPerKilometer", "celsiusPerYear"),
+           "celsiusPerKilometer", "celsiusPerYear", "sverdrup",
+           "millimolesPerCubicMeter", "milligramsPerSquareMeterPerDay",
+           "milligramsPerCubicMeterPerDay"),
     unitType = c("frequency", "unknown", "frequency", "unknown", "dimensionless",
+                 "unknown", "unknown", "volumetricRate", "amountOfSubstance",
                  "unknown", "unknown"),
-    parentSI = c("hertz", NA, "hertz", NA, NA, NA, NA),
-    multiplierToSI = c(1, NA, 1 / 86400, NA, NA, NA, NA),
+    parentSI = c("hertz", NA, "hertz", NA, NA, NA, NA,
+                 "cubicMetersPerSecond", "molePerCubicMeter", NA, NA),
+    multiplierToSI = c(1, NA, 1 / 86400, NA, NA, NA, NA,
+                       1e6, 0.001, NA, NA),
     description = c(
       "Reciprocal seconds, as for vorticity, divergence, strain rate and buoyancy frequency.",
       "Reciprocal seconds squared, as for the Okubo-Weiss parameter and the square of the buoyancy frequency.",
@@ -205,8 +210,54 @@ eml_unit_registry <- function() {
       "Metres squared per second squared, the unit of kinetic energy per unit mass.",
       "Practical Salinity Unit, dimensionless on the Practical Salinity Scale 1978.",
       "Degrees Celsius per kilometre, as for a horizontal temperature gradient.",
-      "Degrees Celsius per year, as for a fitted temperature trend."
+      "Degrees Celsius per year, as for a fitted temperature trend.",
+      "Sverdrup, 10^6 cubic metres per second, the conventional unit of ocean volume transport.",
+      "Millimoles per cubic metre, as datamatch serves nitrate, phosphate and dissolved oxygen.",
+      "Milligrams per square metre per day, as datamatch serves satellite primary production.",
+      "Milligrams per cubic metre per day, as datamatch serves modelled net primary production."
     ),
     stringsAsFactors = FALSE
+  )
+}
+
+#' EML units for the variables datamatch serves
+#'
+#' A translation of datamatch's own unit strings into EML unit ids, so that
+#' [eml_attributes()] can resolve the source columns of a normal workflow
+#' without being told what each one holds. Derived units are built on top of
+#' these, so a temperature gradient becomes degrees per kilometre without the
+#' caller naming either part.
+#'
+#' Hardcoded rather than read from datamatch at runtime, because datamatch is
+#' deliberately not a dependency of this package. The cost is that it can fall
+#' behind, so a test checks it against the live catalogue whenever datamatch is
+#' installed, and reports any variable this table has not been told about.
+#'
+#' @return a named character vector, variable name to EML unit id
+#' @keywords internal
+datamatch_units <- function() {
+  c(
+    # Copernicus physics
+    SST = "celsius", BOTT = "celsius",
+    SSS = "practicalSalinityUnit", BOTS = "practicalSalinityUnit",
+    UO = "metersPerSecond", VO = "metersPerSecond",
+    SSH = "meter", MLD = "meter", SIC = "dimensionless",
+    # Surface forcing. Wind stress is N/m^2, which is a pascal exactly.
+    WSPD = "metersPerSecond", UWND = "metersPerSecond",
+    VWND = "metersPerSecond",
+    TAUX = "pascal", TAUY = "pascal", TAU = "pascal",
+    # Copernicus biogeochemistry
+    CHL = "milligramsPerCubicMeter", CHL_MODEL = "milligramsPerCubicMeter",
+    DIATO = "milligramsPerCubicMeter", DINO = "milligramsPerCubicMeter",
+    PP = "milligramsPerSquareMeterPerDay",
+    NPP_MODEL = "milligramsPerCubicMeterPerDay",
+    NO3 = "millimolesPerCubicMeter", PO4 = "millimolesPerCubicMeter",
+    O2 = "millimolesPerCubicMeter", PH = "dimensionless",
+    # Seafloor terrain, from attach_bathymetry()
+    DEPTH = "meter", SLOPE = "degree", ASPECT = "degree", TPI = "meter",
+    # Climate indices, from attach_climate_index(). The oscillation indices are
+    # standardized anomalies; AMOC is a transport in Sverdrups.
+    NAO = "dimensionless", AO = "dimensionless", AMO = "dimensionless",
+    PDO = "dimensionless", LCR = "dimensionless", AMOC = "sverdrup"
   )
 }

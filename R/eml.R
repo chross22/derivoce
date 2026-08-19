@@ -20,8 +20,15 @@
 #' @section Units it cannot know:
 #' A derived unit is usually a function of the source unit — a gradient of
 #' temperature is degrees per kilometre, a gradient of chlorophyll is mg/m^3 per
-#' kilometre — and the package does not know what the source column holds. Pass
-#' `units` to say. Anything still unresolved comes back with `unit = NA` and an
+#' kilometre — so the source unit has to be known before the derived one can be.
+#'
+#' The variables `datamatch` serves are known already: the Copernicus physics
+#' and biogeochemistry variables, the seafloor terrain from
+#' `attach_bathymetry()`, and the climate indices from
+#' `attach_climate_index()`. A workflow built on those needs no `units`
+#' argument. Pass one for anything else, or to override a default.
+#'
+#' Anything still unresolved comes back with `unit = NA` and an
 #' `attributeDefinition` that names the gap, rather than a plausible guess: an
 #' archived dataset with confidently wrong units is worse than one with an
 #' obvious hole in it.
@@ -40,7 +47,8 @@
 #' @param env_dat an `sf` POINT object that has been through this package
 #' @param vars columns to describe, or `NULL` for every covariate column
 #' @param units named character vector giving the EML unit of source columns,
-#'   for example `c(SST = "celsius", CHL = "milligramsPerCubicMeter")`
+#'   for example `c(TEMP_INSITU = "celsius")`. Merged over the defaults for the
+#'   variables datamatch serves, which are already known
 #' @return a data frame with one row per column, carrying `attributeName`,
 #'   `attributeDefinition`, `measurementScale`, `domain`, `unit` and
 #'   `numberType`
@@ -63,6 +71,11 @@ eml_attributes <- function(env_dat, vars = NULL, units = NULL) {
     stop("Column(s) not present: ", paste(missing, collapse = ", "),
          "\nAvailable: ", paste(available, collapse = ", "), call. = FALSE)
   }
+
+  # datamatch's own variables are known, so a normal workflow needs no `units`
+  # at all; anything passed overrides the defaults for the columns it names.
+  known <- datamatch_units()
+  units <- c(units, known[setdiff(names(known), names(units))])
 
   rows <- lapply(vars, function(v) describe_column(v, env_dat[[v]], units))
   out <- do.call(rbind, rows)

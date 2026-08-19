@@ -88,6 +88,17 @@ largest of the three — so both warn and say which way out applies.
   validate, so a test asserts that every unit the package can emit is either
   standard or declared.
 * `eml_col_classes()` supplies the matching `col_classes` vector.
+* Units for everything `datamatch` serves are built in — the Copernicus physics
+  and biogeochemistry variables, the seafloor terrain from
+  `attach_bathymetry()`, and the climate indices from `attach_climate_index()`
+  — so a workflow built on those needs no `units` argument, and a derived unit
+  such as a gradient's is composed from its source. A test checks the table
+  against datamatch's live catalogue whenever datamatch is installed, so it
+  cannot quietly fall behind. It has already earned its keep: it caught seven
+  variables added to datamatch part way through this work — bottom salinity
+  (`BOTS`), 10 m wind (`WSPD`, `UWND`, `VWND`) and wind stress (`TAUX`, `TAUY`,
+  `TAU`) — which had made a statement in `docs/methods.md` about wind stress
+  being unavailable go stale within the day.
 
 No dependency on the `EML` package: derivoce hands over the table and lets EML
 write the XML. Units that depend on the source column, such as a gradient's,

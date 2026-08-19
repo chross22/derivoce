@@ -12,7 +12,8 @@ eml_attributes(env_dat, vars = NULL, units = NULL)
 \item{vars}{columns to describe, or \code{NULL} for every covariate column}
 
 \item{units}{named character vector giving the EML unit of source columns,
-for example \code{c(SST = "celsius", CHL = "milligramsPerCubicMeter")}}
+for example \code{c(TEMP_INSITU = "celsius")}. Merged over the defaults for the
+variables datamatch serves, which are already known}
 }
 \value{
 a data frame with one row per column, carrying \code{attributeName},
@@ -41,8 +42,15 @@ EML::set_attributes(attributes, col_classes = eml_col_classes(env))
 
 A derived unit is usually a function of the source unit — a gradient of
 temperature is degrees per kilometre, a gradient of chlorophyll is mg/m^3 per
-kilometre — and the package does not know what the source column holds. Pass
-\code{units} to say. Anything still unresolved comes back with \code{unit = NA} and an
+kilometre — so the source unit has to be known before the derived one can be.
+
+The variables \code{datamatch} serves are known already: the Copernicus physics
+and biogeochemistry variables, the seafloor terrain from
+\code{attach_bathymetry()}, and the climate indices from
+\code{attach_climate_index()}. A workflow built on those needs no \code{units}
+argument. Pass one for anything else, or to override a default.
+
+Anything still unresolved comes back with \code{unit = NA} and an
 \code{attributeDefinition} that names the gap, rather than a plausible guess: an
 archived dataset with confidently wrong units is worse than one with an
 obvious hole in it.

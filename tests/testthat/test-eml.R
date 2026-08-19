@@ -18,6 +18,8 @@ eml_field <- function() {
     f$SST <- 10 + m + f$x + 0.5 * f$y
     f$UO <- 0.2 + 0.05 * (f$x + 69.5)
     f$VO <- 0.1 - 0.05 * (f$y - 43)
+    # Not a variable datamatch serves, so nothing is known about its units.
+    f$TEMP_INSITU <- 9 + m + f$x
     f
   })
   sf::st_as_sf(do.call(rbind, frames), coords = c("x", "y"), crs = 4326)
@@ -68,9 +70,9 @@ test_that("a gradient's unit is built from the source column's unit", {
 
 test_that("an unknown source unit gives no unit rather than a guess", {
   env <- eml_field()
-  env <- horizontal_gradient(env, "SST")
+  env <- horizontal_gradient(env, "TEMP_INSITU")
 
-  out <- eml_attributes(env, "SST_grad")
+  out <- eml_attributes(env, "TEMP_INSITU_grad")
 
   expect_true(is.na(out$unit))
   # But it still says what the quantity is.
@@ -80,10 +82,21 @@ test_that("an unknown source unit gives no unit rather than a guess", {
 test_that("a column this package did not create says so", {
   env <- eml_field()
 
-  out <- eml_attributes(env, "SST")
+  out <- eml_attributes(env, "TEMP_INSITU")
 
   expect_match(out$attributeDefinition, "not derived by derivoce")
   expect_true(is.na(out$unit))
+})
+
+test_that("a datamatch column is still not derived here, but its unit is known", {
+  # The two are independent: derivoce did not create SST, and yet it knows what
+  # SST holds, because datamatch serves it.
+  env <- eml_field()
+
+  out <- eml_attributes(env, "SST")
+
+  expect_match(out$attributeDefinition, "not derived by derivoce")
+  expect_equal(out$unit, "celsius")
 })
 
 test_that("a supplied unit is used for the source column itself", {

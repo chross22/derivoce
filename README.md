@@ -164,16 +164,21 @@ Language](https://eml.ecoinformatics.org/) wants, ready for
 not write XML — it hands over the table:
 
 ```r
-attributes <- eml_attributes(env, units = c(SST = "celsius"))
+attributes <- eml_attributes(env)
 custom <- eml_custom_units(attributes)
 ```
 
-A derived unit usually depends on the source unit — a gradient of temperature is
-°C/km, a gradient of chlorophyll mg/m³/km — and the package does not know what
-your source column holds, so pass `units` to say. Anything unresolved comes back
-as `NA` rather than a guess: an archived dataset with confidently wrong units is
-worse than one with an obvious hole. `eml_custom_units()` then returns the
-declarations EML's fixed 195-entry dictionary lacks, so the document validates.
+A derived unit depends on the source unit — a gradient of temperature is °C/km,
+a gradient of chlorophyll mg/m³/km — so the source has to be known first.
+Everything datamatch serves already is: the Copernicus physics and
+biogeochemistry variables, the seafloor terrain from `attach_bathymetry()`, and
+the climate indices from `attach_climate_index()`. A workflow built on those
+needs no `units` argument. Pass one for anything else, or to override a default.
+
+Anything still unresolved comes back as `NA` rather than a guess: an archived
+dataset with confidently wrong units is worse than one with an obvious hole.
+`eml_custom_units()` then returns the declarations EML's fixed 195-entry
+dictionary lacks, so the document validates.
 
 ## Still to come
 

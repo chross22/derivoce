@@ -1544,9 +1544,18 @@ the right side of the line: they are retrieval problems, not derivation ones.
   That was wrong. It takes a `depth` argument, so temperature, salinity and
   velocity are available at any level, one level per call — as the section on
   FTLE at depth below already described.*
-- **Wind-driven terms** — Ekman transport and upwelling indices need wind
-  stress, which is not among the variables `datamatch` serves. That one really
-  is a retrieval problem rather than a derivation one, so it belongs upstream.
+- **Wind-driven terms** — Ekman transport, Ekman pumping and upwelling indices.
+  These are now *possible*: `datamatch` serves wind stress as `TAUX`, `TAUY` and
+  `TAU`, and 10 m wind as `UWND`, `VWND` and `WSPD`. Nothing here computes them
+  yet, and the Coriolis parameter they need is already available internally.
+
+  *An earlier version of this document said wind stress was not among the
+  variables `datamatch` serves, and that the gap was upstream. That was true
+  when written and is not any more. `datamatch` also now serves bottom salinity
+  as `BOTS`, which means a surface-to-bottom **density** difference is available
+  where previously only a temperature difference was — pair
+  `potential_density()` on `SST`/`SSS` with the same on `BOTT`/`BOTS` and hand
+  both to `buoyancy_frequency()`.*
 
 ## FTLE at depth
 
