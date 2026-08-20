@@ -235,3 +235,51 @@ test_that("a missing column is an error naming what is available", {
   env <- eml_field()
   expect_error(eml_attributes(env, "NOPE"), "NOPE")
 })
+
+# covariate_columns() is kept identical to datamatch's, since the two describe
+# the same thing about the same objects and a reader should not have to check
+# which package's version they are looking at.
+
+test_that("covariate_columns matches datamatch: source in, depth out", {
+  d <- sf::st_as_sf(
+    data.frame(x = c(1, 2), y = c(1, 2), SST = c(4, 5),
+               SST_source = c("satellite", "model"), BOTS_depth = c(80, 90),
+               YEAR = 2010L, MONTH = 6L, DAY = 1L),
+    coords = c("x", "y"), crs = 4326)
+
+  cols <- covariate_columns(d)
+  # A source tag travels with the variable it describes.
+  expect_true("SST_source" %in% cols)
+  # A model level is not a measurement, and its mean is not a depth.
+  expect_false("BOTS_depth" %in% cols)
+  expect_false(".datamatch_source" %in% cols)
+})
+
+test_that("DEPTH is a covariate, not provenance", {
+  # distance_to_isobath() works off a DEPTH column from attach_bathymetry().
+  # The bookkeeping pattern needs the underscore, so this must survive.
+  d <- sf::st_as_sf(
+    data.frame(x = c(1, 2), y = c(1, 2), DEPTH = c(100, 120),
+               YEAR = 2010L, MONTH = 6L, DAY = 1L),
+    coords = c("x", "y"), crs = 4326)
+  expect_true("DEPTH" %in% covariate_columns(d))
+})
+
+test_that("an archive still describes a depth column", {
+  # Narrowing covariate_columns() must not narrow what gets deposited:
+  # datamatch::write_eml() documents <var>_depth with metres as its unit, and a
+  # column in a deposited table with nothing describing it is worse than one
+  # that is merely not a covariate.
+  d <- sf::st_as_sf(
+    data.frame(x = c(1, 2), y = c(1, 2), SST = c(4, 5), BOTS_depth = c(80, 90),
+               YEAR = 2010L, MONTH = 6L, DAY = 1L),
+    coords = c("x", "y"), crs = 4326)
+
+  expect_true("BOTS_depth" %in% documented_columns(d))
+  expect_true("BOTS_depth" %in% eml_attributes(d)$attributeName)
+  # col_classes is positional, to line up with the attribute table EML wants,
+  # so the check is that it covers the same columns rather than names them.
+  expect_length(eml_col_classes(d), length(documented_columns(d)))
+  expect_equal(eml_col_classes(d)[match("BOTS_depth", documented_columns(d))],
+               "numeric")
+})

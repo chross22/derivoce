@@ -63,7 +63,7 @@
 #' @seealso [eml_custom_units()], [derived_indices()]
 #' @export
 eml_attributes <- function(env_dat, vars = NULL, units = NULL) {
-  available <- covariate_columns(env_dat)
+  available <- documented_columns(env_dat)
   vars <- vars %||% available
 
   missing <- setdiff(vars, available)
@@ -131,7 +131,7 @@ eml_custom_units <- function(attributes) {
 #' @seealso [eml_attributes()]
 #' @export
 eml_col_classes <- function(env_dat, vars = NULL) {
-  vars <- vars %||% covariate_columns(env_dat)
+  vars <- vars %||% documented_columns(env_dat)
   vapply(vars, function(v) {
     value <- env_dat[[v]]
     if (is.numeric(value)) "numeric"

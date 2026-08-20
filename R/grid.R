@@ -16,11 +16,51 @@ time_columns <- function() c("YEAR", "MONTH", "DAY")
 #' package operates on the *shape* `accessEnvDat()` returns, not on datamatch
 #' itself, so an object of that shape from any source works.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' `<var>_source` is included and `<var>_depth` is not, matching
+#' `datamatch::covariate_columns()`. A source tag travels with the variable it
+#' describes and survives resampling as a categorical; a depth is the model
+#' level a derived bottom value was taken from, and the mean of two of those is
+#' not the depth any value came from. `.datamatch_source` is datamatch's
+#' internal per-row tag and is never data.
+#'
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @return character vector of covariate column names
 #' @keywords internal
 covariate_columns <- function(env_dat) {
-  setdiff(names(env_dat), c(time_columns(), attr(env_dat, "sf_column")))
+  candidates <- setdiff(names(env_dat),
+                        c(time_columns(), attr(env_dat, "sf_column")))
+  candidates[!is_bookkeeping_column(candidates)]
+}
+
+#' Columns that are bookkeeping rather than data
+#'
+#' Kept identical to `datamatch::is_bookkeeping_column()`. Duplicated rather
+#' than imported for the same reason `covariate_columns()` is: this package
+#' works on the shape datamatch returns, not on datamatch.
+#'
+#' @param names <char> column names to inspect
+#' @return <logical> one per name
+#' @keywords internal
+is_bookkeeping_column <- function(names) {
+  grepl("_depth$", names) | names == ".datamatch_source"
+}
+
+#' Every column a deposited table should describe
+#'
+#' Wider than [covariate_columns()], and deliberately so. `<var>_depth` must not
+#' be derived from or resampled as though it were a measurement, but an archive
+#' still has to say what it is - `datamatch::write_eml()` documents it, with
+#' metres as its unit, rather than leaving a column in the deposited table with
+#' nothing describing it. Only datamatch's internal per-row tag is left out,
+#' since it does not survive `matchData()` to reach a deposit at all.
+#'
+#' @param env_dat an `sf` POINT object
+#' @return character vector of column names
+#' @keywords internal
+documented_columns <- function(env_dat) {
+  candidates <- setdiff(names(env_dat),
+                        c(time_columns(), attr(env_dat, "sf_column")))
+  candidates[candidates != ".datamatch_source"]
 }
 
 #' Split environmental data into its time steps

@@ -7,7 +7,7 @@
 covariate_columns(env_dat)
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 }
 \value{
 character vector of covariate column names
@@ -20,5 +20,13 @@ it have it from datamatch already. It is not imported from there because
 datamatch is a suggested rather than a hard dependency — everything in this
 package operates on the \emph{shape} \code{accessEnvDat()} returns, not on datamatch
 itself, so an object of that shape from any source works.
+}
+\details{
+\verb{<var>_source} is included and \verb{<var>_depth} is not, matching
+\code{datamatch::covariate_columns()}. A source tag travels with the variable it
+describes and survives resampling as a categorical; a depth is the model
+level a derived bottom value was taken from, and the mean of two of those is
+not the depth any value came from. \code{.datamatch_source} is datamatch's
+internal per-row tag and is never data.
 }
 \keyword{internal}
