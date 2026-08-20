@@ -40,7 +40,7 @@
 #' flows the other, which is exactly the situation in the Northeast Channel. Read
 #' the output as an index of variability rather than as a flux.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`, on a
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`, on a
 #'   regular lon/lat grid, with eastward and northward velocity columns
 #' @param from,to endpoints of the section, each `c(longitude, latitude)`
 #' @param u name of the eastward velocity column, in m/s
@@ -57,7 +57,7 @@
 #' 1790-1808.
 #' @examples
 #' \dontrun{
-#' env <- datamatch::accessEnvDat(vars = c("UO", "VO"), ...)
+#' env <- datamatch::accessCopernicus(vars = c("UO", "VO"), ...)
 #'
 #' # An arbitrary section
 #' env <- section_transport(env, from = c(-66.5, 43.3), to = c(-65.6, 42.6))

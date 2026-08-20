@@ -45,7 +45,7 @@ surface-minus-bottom, and both of those come from the same Copernicus dataset,
 so the usual case needs no extra download.
 
 The two columns are arguments rather than fixed, so any two levels work:
-`accessEnvDat()` takes a `depth` and returns one level per call, so a second
+`accessCopernicus()` takes a `depth` and returns one level per call, so a second
 fetch gives a temperature at whatever depth you choose. Where you know the two
 depths, `buoyancy_frequency()` is the better measure — a temperature difference
 stands in for stratification only where salinity is uniform, and Scotian Shelf
@@ -155,7 +155,7 @@ as `NA`.
   in opposite directions.
 - `buoyancy_frequency()` gives N² between two depths — the real stratification
   measure, where `vertical_gradient()` only approximates it with a temperature
-  difference. Needs a second `accessEnvDat()` call at a deeper `depth`, joined
+  difference. Needs a second `accessCopernicus()` call at a deeper `depth`, joined
   as columns.
 - `eady_growth_rate()` says how fast baroclinic instability grows, from the
   vertical shear, the stratification and the Coriolis parameter. High where a
@@ -451,7 +451,7 @@ all. `fill_satellite_gaps()` adds a `<var>_source` factor. Naming it explicitly
 fails, while `vars = NULL` skips it silently.
 
 These warnings are a safety net, not a substitute for naming your variables once
-the object carries more than a plain `accessEnvDat()` fetch.
+the object carries more than a plain `accessCopernicus()` fetch.
 
 ## Resampled and gap-filled input
 

@@ -53,7 +53,7 @@
 #' The same applies to `standardize`, which needs at least two values per group
 #' to have a standard deviation at all.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param vars covariate columns, or `NULL` for all numeric ones
 #' @param reference `"climatology"` (the default) removes a separate mean per
 #'   cell per calendar month, leaving departures from the usual conditions for

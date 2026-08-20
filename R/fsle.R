@@ -39,7 +39,7 @@
 #' substituting `max_days` would report a slow separation rate where there was
 #' none at all.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`, on a
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`, on a
 #'   regular lon/lat grid, containing eastward and northward velocity columns
 #' @param u name of the eastward velocity column, in m/s
 #' @param v name of the northward velocity column, in m/s
@@ -58,7 +58,7 @@
 #' @examples
 #' \dontrun{
 #' # Structures at the 50 km scale, comparable across the whole shelf
-#' env <- datamatch::accessEnvDat(vars = c("UO", "VO"), ...)
+#' env <- datamatch::accessCopernicus(vars = c("UO", "VO"), ...)
 #' env <- fsle(env, final_separation = 50)       # UO and VO are the defaults
 #'
 #' # A scale matched to a predator's search radius

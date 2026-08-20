@@ -50,7 +50,7 @@
 #' rotation-dominated regions, which is a good working definition of an eddy and
 #' not the same thing as a closed-contour eddy from altimetry.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param u name of the eastward velocity column, in m/s
 #' @param v name of the northward velocity column, in m/s
 #' @param threshold multiple of the standard deviation of Okubo-Weiss below

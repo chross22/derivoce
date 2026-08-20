@@ -13,14 +13,14 @@
 #' is fresh enough to stratify water that is barely warmer at the surface.
 #'
 #' @section Getting the two levels:
-#' `datamatch::accessEnvDat()` takes a `depth` argument, so a second call at a
+#' `datamatch::accessCopernicus()` takes a `depth` argument, so a second call at a
 #' different depth gives the deeper level, and the two are joined as columns on
 #' the same points. Compute a density for each with [potential_density()], then
 #' pass both here.
 #'
 #' ```r
-#' surface <- datamatch::accessEnvDat(vars = c("SST", "SSS"), depth = c(0, 1), ...)
-#' deep    <- datamatch::accessEnvDat(vars = c("SST", "SSS"), depth = c(90, 100), ...)
+#' surface <- datamatch::accessCopernicus(vars = c("SST", "SSS"), depth = c(0, 1), ...)
+#' deep    <- datamatch::accessCopernicus(vars = c("SST", "SSS"), depth = c(90, 100), ...)
 #' ```
 #'
 #' @section What a two-level estimate is and is not:
@@ -39,7 +39,7 @@
 #' sits above lighter, which is genuine convective instability in winter and
 #' otherwise usually a sign that the two levels are not what you think.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param shallow name of the density column for the shallower level, in kg/m^3
 #'   or as sigma-theta; both give the same answer since only the difference
 #'   enters
@@ -100,7 +100,7 @@ buoyancy_frequency <- function(env_dat, shallow, deep, depths,
 #'
 #' @section What it needs:
 #' Velocities at two depths and a stratification spanning the same layer, which
-#' means two calls to `datamatch::accessEnvDat()` at different `depth` ranges
+#' means two calls to `datamatch::accessCopernicus()` at different `depth` ranges
 #' joined as columns. See [buoyancy_frequency()], which produces the
 #' stratification and explains how to choose the levels.
 #'
@@ -117,7 +117,7 @@ buoyancy_frequency <- function(env_dat, shallow, deep, depths,
 #' and which would look like intense instability exactly where the assumption
 #' has failed.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param shallow length-2 character vector naming the eastward and northward
 #'   velocity columns at the shallower level, in m/s
 #' @param deep the same for the deeper level

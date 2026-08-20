@@ -16,7 +16,7 @@ section_transport(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}, on a
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}, on a
 regular lon/lat grid, with eastward and northward velocity columns}
 
 \item{from, to}{endpoints of the section, each \code{c(longitude, latitude)}}
@@ -86,7 +86,7 @@ the output as an index of variability rather than as a flux.
 
 \examples{
 \dontrun{
-env <- datamatch::accessEnvDat(vars = c("UO", "VO"), ...)
+env <- datamatch::accessCopernicus(vars = c("UO", "VO"), ...)
 
 # An arbitrary section
 env <- section_transport(env, from = c(-66.5, 43.3), to = c(-65.6, 42.6))

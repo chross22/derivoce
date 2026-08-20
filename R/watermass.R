@@ -35,7 +35,7 @@
 #' This is why the endmembers are an argument with no default. They vary by
 #' region, season, and year, and a wrong pair produces confident nonsense.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param endmembers a list of exactly two named `c(temperature, salinity)`
 #'   vectors. The fraction returned is of the **first**.
 #' @param temperature name of the temperature column, in degrees C

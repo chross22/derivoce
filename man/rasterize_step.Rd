@@ -17,7 +17,7 @@ a \code{terra::SpatRaster} with one layer per variable
 \description{
 Spatial derivatives are only defined on a grid, so the points have to be put
 back onto one. Gridded ocean products come as a regular lon/lat lattice, and
-\code{datamatch::accessEnvDat()} flattens that lattice to points without moving
+\code{datamatch::accessCopernicus()} flattens that lattice to points without moving
 them, so the grid can be recovered exactly from the unique coordinates.
 }
 \details{

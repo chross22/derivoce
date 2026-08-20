@@ -91,7 +91,7 @@ which is often what actually concentrates plankton:
 ## The data shape
 
 Everything takes and returns the output shape of
-[`datamatch::accessEnvDat()`](https://github.com/chross22/datamatch): an `sf`
+[`datamatch::accessCopernicus()`](https://github.com/chross22/datamatch): an `sf`
 POINT object with one row per (grid point, time step), a column per covariate,
 and `YEAR`/`MONTH`/`DAY` columns.
 
@@ -108,7 +108,7 @@ coordinate.
 
 ### Column names come from the catalog
 
-`accessEnvDat()` returns columns under the names that were requested, so a fetch
+`accessCopernicus()` returns columns under the names that were requested, so a fetch
 of `vars = c("SST", "BOTT")` yields columns `SST` and `BOTT` rather than the
 Copernicus codes `thetao` and `bottomT`. Every default column name here is a
 [`variable_dictionary()`](https://github.com/chross22/datamatch) name — `SST`
@@ -291,7 +291,7 @@ the *same* physics dataset — `SST` and `BOTT` in the catalog — so both arriv
 a single fetch and the difference is already the quantity of interest.
 
 This is worth stating because the obvious alternative is still not available in
-one call. `accessEnvDat()` assigns its output column names **positionally**
+one call. `accessCopernicus()` assigns its output column names **positionally**
 (`c("x", "y", vars, "YEAR", "MONTH", "DAY")`), so it can only handle one raster
 layer per requested variable. A `depth` range spanning several model levels
 returns more layers than that, and datamatch now checks the count and stops:
@@ -571,7 +571,7 @@ domain and nothing in the north.
 above the 90th percentile by construction. That is not a defect and it is the
 reason an event is a *run* rather than a single step: `min_steps` is where the
 definition lives, not a detail. Hobday et al. use five consecutive **days**, and
-this works in time steps because `accessEnvDat()` serves monthly as readily as
+this works in time steps because `accessCopernicus()` serves monthly as readily as
 daily — five consecutive months is a far rarer and larger thing than five
 consecutive days, so the defaults are permissive and the choice is left to the
 caller rather than fixed at a number that means something different on each
@@ -1271,7 +1271,7 @@ the energy and stratification resists the overturning, so the rate is high where
 a sheared, weakly stratified flow can tip over — on this shelf, the shelf-break
 front and the edges of warm-core rings.
 
-**Both levels come from separate fetches.** `accessEnvDat()` takes a `depth`
+**Both levels come from separate fetches.** `accessCopernicus()` takes a `depth`
 argument and returns one level per call, so the deeper level is a second call
 joined as columns on the same points. That is assembly rather than an obstacle,
 and it is the same pattern the depth-resolved FTLE section describes.
@@ -1517,7 +1517,7 @@ the right side of the line: they are retrieval problems, not derivation ones.
 - **Vertical gradients from a full depth profile** — the two-level case is
   covered: `vertical_gradient()` differences any two temperature columns and
   `buoyancy_frequency()` gives \(N^2\) between any two depths. A profile still
-  needs several levels in one object, and `accessEnvDat()` returns one level per
+  needs several levels in one object, and `accessCopernicus()` returns one level per
   call (see above), so stacking per-level fetches remains the missing piece.
 - **Depth-resolved FTLE in one call** — same constraint, same workaround; see
   below.
@@ -1535,12 +1535,12 @@ the right side of the line: they are retrieval problems, not derivation ones.
 - **Stratification as a profile** — `buoyancy_frequency()` now covers the
   two-level case, which is enough for \(N^2\) and for the Eady growth rate. A
   genuine profile, and the potential energy anomaly that needs one, still waits
-  on the same constraint as depth-resolved FTLE: `accessEnvDat()` returns one
+  on the same constraint as depth-resolved FTLE: `accessCopernicus()` returns one
   level per call, so a profile is several fetches joined as columns rather than
   one object. Nothing prevents it; it is assembly work.
 
   *An earlier version of this document said buoyancy frequency was impossible
-  because `accessEnvDat()` served only surface values and a bottom temperature.
+  because `accessCopernicus()` served only surface values and a bottom temperature.
   That was wrong. It takes a `depth` argument, so temperature, salinity and
   velocity are available at any level, one level per call — as the section on
   FTLE at depth below already described.*
@@ -1567,14 +1567,14 @@ Copernicus does provide them: `GLOBAL_MULTIYEAR_PHY_001_030` (GLORYS12V1) carrie
 flow at that level and `ftle()` runs on it unmodified.
 
 ```r
-deep <- datamatch::accessEnvDat(
+deep <- datamatch::accessCopernicus(
   vars = c("UO", "VO"), depth = c(100, 100),   # one level
   years = 2010, months = 1:12, bounding_box = bb
 )
 deep <- ftle(deep, integration_days = 14)      # UO/VO are the defaults
 ```
 
-The constraint is on the fetching side. `accessEnvDat()` names its output columns
+The constraint is on the fetching side. `accessCopernicus()` names its output columns
 positionally, so it returns **one level per call** — and a `depth` range spanning
 several levels is now refused outright, with an error naming the depth range as
 the likely cause, rather than returning mislabelled columns. Depth-resolved FTLE

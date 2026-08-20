@@ -16,7 +16,7 @@
 #' the depth the temperature and salinity came from. Potential density is
 #' exactly the quantity you want for water sampled at depth — it is what that
 #' water would weigh if brought to the surface, which is what makes two levels
-#' comparable. `datamatch::accessEnvDat()` takes a `depth` argument, so this
+#' comparable. `datamatch::accessCopernicus()` takes a `depth` argument, so this
 #' applies to any level, and [buoyancy_frequency()] uses two of them.
 #'
 #' @section What it is not:
@@ -36,7 +36,7 @@
 #' Fresh water from a river mouth and ice-melt surface layers are the usual
 #' culprits.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param temperature name of the temperature column, in degrees C. Should be a
 #'   potential temperature
 #' @param salinity name of the salinity column, in PSU

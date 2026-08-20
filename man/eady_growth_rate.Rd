@@ -15,7 +15,7 @@ eady_growth_rate(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{shallow}{length-2 character vector naming the eastward and northward
 velocity columns at the shallower level, in m/s}
@@ -54,7 +54,7 @@ each other and are not.
 \section{What it needs}{
 
 Velocities at two depths and a stratification spanning the same layer, which
-means two calls to \code{datamatch::accessEnvDat()} at different \code{depth} ranges
+means two calls to \code{datamatch::accessCopernicus()} at different \code{depth} ranges
 joined as columns. See \code{\link[=buoyancy_frequency]{buoyancy_frequency()}}, which produces the
 stratification and explains how to choose the levels.
 }

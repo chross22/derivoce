@@ -17,7 +17,7 @@ fsle(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}, on a
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}, on a
 regular lon/lat grid, containing eastward and northward velocity columns}
 
 \item{u}{name of the eastward velocity column, in m/s}
@@ -92,7 +92,7 @@ none at all.
 \examples{
 \dontrun{
 # Structures at the 50 km scale, comparable across the whole shelf
-env <- datamatch::accessEnvDat(vars = c("UO", "VO"), ...)
+env <- datamatch::accessCopernicus(vars = c("UO", "VO"), ...)
 env <- fsle(env, final_separation = 50)       # UO and VO are the defaults
 
 # A scale matched to a predator's search radius

@@ -15,7 +15,7 @@ distance_to_front(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{var}{covariate whose gradient defines the fronts}
 

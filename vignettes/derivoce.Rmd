@@ -27,10 +27,10 @@ was produced by the code shown.
 
 Every function takes and returns the same thing: an `sf` POINT object with one
 row per grid point and time step, a column per covariate, and `YEAR`, `MONTH`,
-`DAY` columns. That is what `datamatch::accessEnvDat()` returns.
+`DAY` columns. That is what `datamatch::accessCopernicus()` returns.
 
 ```{r fetch, eval = FALSE}
-env <- datamatch::accessEnvDat(
+env <- datamatch::accessCopernicus(
   vars = c("SST", "SSS", "CHL"), years = 2010, months = 1:6,
   bounding_box = list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
 )
@@ -271,7 +271,7 @@ below 1 PSU is called out separately.
 
 ## Stratification and where eddies are made
 
-`accessEnvDat()` takes a `depth` argument and returns one level per call, so a
+`accessCopernicus()` takes a `depth` argument and returns one level per call, so a
 second fetch at a deeper level gives you the other half of a vertical
 difference. Here we stand one in for a second fetch: colder, saltier, and slower
 than the surface, as deeper water usually is.

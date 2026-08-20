@@ -14,7 +14,7 @@ water_mass_fraction(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{endmembers}{a list of exactly two named \code{c(temperature, salinity)}
 vectors. The fraction returned is of the \strong{first}.}

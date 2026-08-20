@@ -9,7 +9,7 @@ temporal gradients, time-integrated variables, temporal lags, and fluid dynamics
 computed from gridded ocean data.
 
 It takes the output of
-[`datamatch::accessEnvDat()`](https://github.com/chross22/datamatch), an `sf`
+[`datamatch::accessCopernicus()`](https://github.com/chross22/datamatch), an `sf`
 point object per time step. It returns the same shape, with derived columns
 added — so every function composes in a pipe.
 
@@ -27,7 +27,7 @@ dependency**, so nothing installs it for you, and it is not on CRAN:
 remotes::install_github("chross22/datamatch")
 ```
 
-Why not even suggested? Everything here works on the *shape* `accessEnvDat()`
+Why not even suggested? Everything here works on the *shape* `accessCopernicus()`
 returns: an `sf` POINT object with one row per grid point and time step, plus
 `YEAR`, `MONTH`, and `DAY`. Nothing in this package calls datamatch — it appears
 only in documentation, in `\dontrun{}` examples, and inside warning messages that
@@ -67,7 +67,7 @@ install.packages("rnaturalearthhires", repos = "https://ropensci.r-universe.dev"
 ```r
 library(derivoce)
 
-env <- datamatch::accessEnvDat(
+env <- datamatch::accessCopernicus(
   vars = c("SST", "BOTT"),               # product and dataset inferred
   years = 2003:2017, months = 1:12,
   bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
@@ -117,7 +117,7 @@ Every default is a datamatch catalog name: `SST` and `BOTT` for
 `vertical_gradient()`, `UO` and `VO` for `eke()`, `current_speed()`, `ftle()` and
 `fsle()`, and `DEPTH` for `distance_to_isobath()`.
 
-`accessEnvDat()` returns columns under the names you asked for, rather than under
+`accessCopernicus()` returns columns under the names you asked for, rather than under
 Copernicus codes, so a dictionary fetch needs no column arguments. Here is the
 same `eke()` call twice, differing only in the fetch:
 
@@ -125,18 +125,18 @@ same `eke()` call twice, differing only in the fetch:
 bb <- list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
 
 # Catalog names, so the columns are UO and VO - what eke() expects by default.
-env <- datamatch::accessEnvDat(vars = c("UO", "VO"), years = 2010, months = 1:12,
+env <- datamatch::accessCopernicus(vars = c("UO", "VO"), years = 2010, months = 1:12,
                                bounding_box = bb)
 env <- eke(env)
 
 # Copernicus codes, so the columns are uo and vo and have to be named.
-env <- datamatch::accessEnvDat(vars = c("uo", "vo"), years = 2010, months = 1:12,
+env <- datamatch::accessCopernicus(vars = c("uo", "vo"), years = 2010, months = 1:12,
                                bounding_box = bb)
 env <- eke(env, u = "uo", v = "vo")
 ```
 
 `distance_to_isobath()` is the exception: its `DEPTH` column comes from
-`datamatch::attach_bathymetry()`, not from `accessEnvDat()`.
+`datamatch::attach_bathymetry()`, not from `accessCopernicus()`.
 
 ## Requirements on the input
 
@@ -186,7 +186,7 @@ dictionary lacks, so the document validates.
   covered — `vertical_gradient()` takes any two temperature columns and
   `buoyancy_frequency()` gives N² between any two depths. A true profile, and the
   potential energy anomaly that needs one, is still assembly work:
-  `accessEnvDat()` returns one level per call, so a profile is several fetches
+  `accessCopernicus()` returns one level per call, so a profile is several fetches
   joined as columns. Doing that inside the functions is what remains.
 - **Extending the LCR index past 2014.** Tried twice and shelved. Monthly
   Copernicus fields fail for a physical reason: the averaging removes the narrow

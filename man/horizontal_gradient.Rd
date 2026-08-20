@@ -13,7 +13,7 @@ horizontal_gradient(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}, one row
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}, one row
 per grid point and time step}
 
 \item{vars}{covariate columns to differentiate; \code{NULL} does all of them}
@@ -50,7 +50,7 @@ magnitude here is a real rate of change with a real unit.
 }
 \examples{
 \dontrun{
-env <- datamatch::accessEnvDat(vars = c("SST", "SSS"), ...)
+env <- datamatch::accessCopernicus(vars = c("SST", "SSS"), ...)
 env <- horizontal_gradient(env, "SST")        # SST_grad, in degrees C per km
 env <- horizontal_gradient(env, "SST", components = TRUE)
 

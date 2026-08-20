@@ -17,7 +17,7 @@
 #' is dimensionally meaningless for a field measured in degrees Celsius. The
 #' magnitude here is a real rate of change with a real unit.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`, one row
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`, one row
 #'   per grid point and time step
 #' @param vars covariate columns to differentiate; `NULL` does all of them
 #' @param per distance unit for the result: `"km"` (default) or `"m"`
@@ -32,7 +32,7 @@
 #' *Marine Ecology Progress Series* **703**, 1-16. \doi{10.3354/meps14204}
 #' @examples
 #' \dontrun{
-#' env <- datamatch::accessEnvDat(vars = c("SST", "SSS"), ...)
+#' env <- datamatch::accessCopernicus(vars = c("SST", "SSS"), ...)
 #' env <- horizontal_gradient(env, "SST")        # SST_grad, in degrees C per km
 #' env <- horizontal_gradient(env, "SST", components = TRUE)
 #'
@@ -124,7 +124,7 @@ cell_size <- function(layer, per = "km") {
 #'
 #' @section Other levels, and a better measure:
 #' The two columns are arguments, not fixed, so this is not restricted to the
-#' surface and the sea floor. `datamatch::accessEnvDat()` takes a `depth`
+#' surface and the sea floor. `datamatch::accessCopernicus()` takes a `depth`
 #' argument and returns one level per call, so a second fetch at a chosen depth
 #' gives a temperature at that level, and the difference between any two levels
 #' can be taken the same way.
@@ -136,7 +136,7 @@ cell_size <- function(layer, per = "km") {
 #' warmer at the surface. \eqn{N^2} counts both contributions with the weights
 #' the equation of state gives them.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param surface name of the shallower temperature column
 #' @param bottom name of the deeper temperature column
 #' @param depth optional depth column name; when given, the difference is divided
@@ -146,7 +146,7 @@ cell_size <- function(layer, per = "km") {
 #' @return `env_dat` with the vertical gradient column added
 #' @examples
 #' \dontrun{
-#' env <- datamatch::accessEnvDat(vars = c("SST", "BOTT"), ...)
+#' env <- datamatch::accessCopernicus(vars = c("SST", "BOTT"), ...)
 #' env <- vertical_gradient(env)                 # SST and BOTT are the defaults
 #'
 #' # As a per-metre rate, with depth from datamatch's bathymetry
@@ -155,7 +155,7 @@ cell_size <- function(layer, per = "km") {
 #' env <- vertical_gradient(env, depth = "DEPTH")
 #'
 #' # Between two chosen levels rather than surface and sea floor
-#' deep <- datamatch::accessEnvDat(vars = "SST", depth = c(90, 100), ...)
+#' deep <- datamatch::accessCopernicus(vars = "SST", depth = c(90, 100), ...)
 #' env$SST_90m <- deep$SST
 #' env <- vertical_gradient(env, surface = "SST", bottom = "SST_90m")
 #' }
@@ -187,7 +187,7 @@ vertical_gradient <- function(env_dat, surface = "SST", bottom = "BOTT",
 #'
 #' The first time step has no predecessor and is `NA`.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param vars covariate columns to differentiate; `NULL` does all of them
 #' @param per time unit for the rate: `"step"` (default, change per time step),
 #'   `"day"`, or `"month"`

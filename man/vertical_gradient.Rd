@@ -13,7 +13,7 @@ vertical_gradient(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{surface}{name of the shallower temperature column}
 
@@ -42,7 +42,7 @@ already present.
 \section{Other levels, and a better measure}{
 
 The two columns are arguments, not fixed, so this is not restricted to the
-surface and the sea floor. \code{datamatch::accessEnvDat()} takes a \code{depth}
+surface and the sea floor. \code{datamatch::accessCopernicus()} takes a \code{depth}
 argument and returns one level per call, so a second fetch at a chosen depth
 gives a temperature at that level, and the difference between any two levels
 can be taken the same way.
@@ -57,7 +57,7 @@ the equation of state gives them.
 
 \examples{
 \dontrun{
-env <- datamatch::accessEnvDat(vars = c("SST", "BOTT"), ...)
+env <- datamatch::accessCopernicus(vars = c("SST", "BOTT"), ...)
 env <- vertical_gradient(env)                 # SST and BOTT are the defaults
 
 # As a per-metre rate, with depth from datamatch's bathymetry
@@ -66,7 +66,7 @@ env <- datamatch::attach_bathymetry(env, bathy, "DEPTH")
 env <- vertical_gradient(env, depth = "DEPTH")
 
 # Between two chosen levels rather than surface and sea floor
-deep <- datamatch::accessEnvDat(vars = "SST", depth = c(90, 100), ...)
+deep <- datamatch::accessCopernicus(vars = "SST", depth = c(90, 100), ...)
 env$SST_90m <- deep$SST
 env <- vertical_gradient(env, surface = "SST", bottom = "SST_90m")
 }

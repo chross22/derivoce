@@ -14,7 +14,7 @@ scotian_shelf_inflow(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}, on a
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}, on a
 regular lon/lat grid, with eastward and northward velocity columns}
 
 \item{u}{name of the eastward velocity column, in m/s}

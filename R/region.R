@@ -15,7 +15,7 @@
 #' section measures the crossing directly, this measures its most visible
 #' consequence and asks you to supply the interpretation.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param var covariate column to average
 #' @param box named list with `xmin`, `xmax`, `ymin`, `ymax`, in degrees
 #' @param reference `"climatology"` (the default) removes a separate mean per
@@ -97,7 +97,7 @@ box_anomaly <- function(env_dat, var, box,
 #' the thing being measured, so restrict to winter months at the fetch, or subset
 #' afterwards, rather than reading an annual value as an inflow index.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param salinity name of the surface salinity column, in PSU
 #' @param reference passed to [box_anomaly()]
 #' @param name name for the new column

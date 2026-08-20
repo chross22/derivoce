@@ -31,7 +31,7 @@
 #' or a missing value — are left out of the denominator rather than counted as
 #' not frontal.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param var the covariate whose gradient defines a front
 #' @param threshold gradient magnitude at or above which a cell is frontal. When
 #'   `NULL`, taken from `quantile`

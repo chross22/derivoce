@@ -13,7 +13,7 @@ time_columns <- function() c("YEAR", "MONTH", "DAY")
 #' datamatch's whenever both packages are attached, for no gain: callers who want
 #' it have it from datamatch already. It is not imported from there because
 #' datamatch is a suggested rather than a hard dependency — everything in this
-#' package operates on the *shape* `accessEnvDat()` returns, not on datamatch
+#' package operates on the *shape* `accessCopernicus()` returns, not on datamatch
 #' itself, so an object of that shape from any source works.
 #'
 #' `<var>_source` is included and `<var>_depth` is not, matching
@@ -90,7 +90,7 @@ step_rows <- function(env_dat, step) {
 #'
 #' Spatial derivatives are only defined on a grid, so the points have to be put
 #' back onto one. Gridded ocean products come as a regular lon/lat lattice, and
-#' `datamatch::accessEnvDat()` flattens that lattice to points without moving
+#' `datamatch::accessCopernicus()` flattens that lattice to points without moving
 #' them, so the grid can be recovered exactly from the unique coordinates.
 #'
 #' Scattered points are rejected rather than interpolated: silently gridding
@@ -181,7 +181,7 @@ is_regular <- function(values, tolerance = 1e-3) {
 #' Handles the split/rasterize/compute/join cycle that each spatial derivative
 #' shares, so those functions only have to say what to do to one raster.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param vars covariate columns the function needs
 #' @param fun a function taking a `SpatRaster` and returning a `SpatRaster`
 #'   whose layer names become the new columns

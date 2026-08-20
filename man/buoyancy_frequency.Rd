@@ -14,7 +14,7 @@ buoyancy_frequency(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{shallow}{name of the density column for the shallower level, in kg/m^3
 or as sigma-theta; both give the same answer since only the difference
@@ -49,13 +49,13 @@ is fresh enough to stratify water that is barely warmer at the surface.
 }
 \section{Getting the two levels}{
 
-\code{datamatch::accessEnvDat()} takes a \code{depth} argument, so a second call at a
+\code{datamatch::accessCopernicus()} takes a \code{depth} argument, so a second call at a
 different depth gives the deeper level, and the two are joined as columns on
 the same points. Compute a density for each with \code{\link[=potential_density]{potential_density()}}, then
 pass both here.
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{surface <- datamatch::accessEnvDat(vars = c("SST", "SSS"), depth = c(0, 1), ...)
-deep    <- datamatch::accessEnvDat(vars = c("SST", "SSS"), depth = c(90, 100), ...)
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{surface <- datamatch::accessCopernicus(vars = c("SST", "SSS"), depth = c(0, 1), ...)
+deep    <- datamatch::accessCopernicus(vars = c("SST", "SSS"), depth = c(90, 100), ...)
 }\if{html}{\out{</div>}}
 }
 

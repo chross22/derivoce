@@ -63,7 +63,7 @@
 #' signal. That is usually the intended comparison, and it is not what
 #' `by = "step"` with `n = 12` gives on a record with any month missing.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param vars covariate columns to lag; `NULL` does all of them
 #' @param n how far to look back, counted in `by` units. A vector adds one
 #'   column per lag.
@@ -183,7 +183,7 @@ lag_source_step <- function(steps, n, by) {
 #' of each year, reset at the year boundary. A numeric window instead sums over
 #' that many trailing time steps, giving a rolling total that does not reset.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param vars covariate columns to integrate; `NULL` does all of them
 #' @param window `"year"` to accumulate from the start of each calendar year,
 #'   `"all"` to accumulate over the whole record, or a positive integer for a

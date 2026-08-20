@@ -13,7 +13,7 @@ potential_density(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{temperature}{name of the temperature column, in degrees C. Should be a
 potential temperature}
@@ -46,7 +46,7 @@ in kg/m^3 minus 1000.
 the depth the temperature and salinity came from. Potential density is
 exactly the quantity you want for water sampled at depth — it is what that
 water would weigh if brought to the surface, which is what makes two levels
-comparable. \code{datamatch::accessEnvDat()} takes a \code{depth} argument, so this
+comparable. \code{datamatch::accessCopernicus()} takes a \code{depth} argument, so this
 applies to any level, and \code{\link[=buoyancy_frequency]{buoyancy_frequency()}} uses two of them.
 }
 \section{What it is not}{

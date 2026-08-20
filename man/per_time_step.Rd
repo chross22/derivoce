@@ -7,7 +7,7 @@
 per_time_step(env_dat, vars, fun)
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{vars}{covariate columns the function needs}
 

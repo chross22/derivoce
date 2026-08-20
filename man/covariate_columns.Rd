@@ -18,7 +18,7 @@ Deliberately internal, and a deliberate duplicate of
 datamatch's whenever both packages are attached, for no gain: callers who want
 it have it from datamatch already. It is not imported from there because
 datamatch is a suggested rather than a hard dependency — everything in this
-package operates on the \emph{shape} \code{accessEnvDat()} returns, not on datamatch
+package operates on the \emph{shape} \code{accessCopernicus()} returns, not on datamatch
 itself, so an object of that shape from any source works.
 }
 \details{

@@ -34,14 +34,14 @@
 #' is the usual range.
 #'
 #' Note that monthly-mean velocity fields, which is what
-#' `datamatch::accessEnvDat()` returns for a `P1M` product, have already averaged
+#' `datamatch::accessCopernicus()` returns for a `P1M` product, have already averaged
 #' away the eddies that generate the sharpest structures. FTLE computed from
 #' monthly means is a real diagnostic of the mean circulation, but it is not the
 #' same quantity as FTLE from daily or hourly fields, and its ridges are
 #' correspondingly smoother. Prefer a daily (`P1D`) product where the choice
 #' exists.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`, on a
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`, on a
 #'   regular lon/lat grid, containing eastward and northward velocity columns
 #' @param u name of the eastward velocity column, in m/s
 #' @param v name of the northward velocity column, in m/s
@@ -56,7 +56,7 @@
 #'   cells and particles that leave the domain or run aground are `NA`.
 #' @examples
 #' \dontrun{
-#' env <- datamatch::accessEnvDat(
+#' env <- datamatch::accessCopernicus(
 #'   dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
 #'   vars = c("UO", "VO"), ...
 #' )
@@ -66,7 +66,7 @@
 #' env <- ftle(env, direction = "forward")
 #'
 #' # At depth: one model level per fetch
-#' deep <- datamatch::accessEnvDat(vars = c("UO", "VO"), depth = c(100, 100), ...)
+#' deep <- datamatch::accessCopernicus(vars = c("UO", "VO"), depth = c(100, 100), ...)
 #' deep <- ftle(deep, integration_days = 14)
 #' }
 #' @references

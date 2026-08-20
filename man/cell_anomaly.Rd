@@ -14,7 +14,7 @@ cell_anomaly(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{vars}{covariate columns, or \code{NULL} for all numeric ones}
 

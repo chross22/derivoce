@@ -22,7 +22,7 @@ distance_to_shore(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{resolution}{Natural Earth coastline resolution: \code{"medium"}, \code{"large"},
 or \code{"small"}}

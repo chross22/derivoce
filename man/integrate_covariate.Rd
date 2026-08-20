@@ -7,7 +7,7 @@
 integrate_covariate(env_dat, vars = NULL, window = "year", suffix = "_int")
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessEnvDat()}}
+\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
 
 \item{vars}{covariate columns to integrate; \code{NULL} does all of them}
 

@@ -54,7 +54,7 @@
 #' to afford a parameter per calendar month; where it cannot, it is reported as
 #' zero rather than estimated badly, and the function warns.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessEnvDat()`
+#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
 #' @param vars covariate columns, or `NULL` for all numeric ones
 #' @param degree polynomial degree of the trend. 1 is a straight line
 #' @param components which of `"trend"`, `"seasonal"`, `"residual"` and
