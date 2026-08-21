@@ -29,7 +29,8 @@
 #' default of 1 is permissive, so the first steps of a record get a summary of a
 #' short window rather than nothing. Raise it if a partial window would mislead.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param vars covariate columns, or `NULL` for all numeric ones
 #' @param n length of the window, in `by` units, including the current step
 #' @param by `"step"` to count positions in the record, or `"day"`, `"month"`,

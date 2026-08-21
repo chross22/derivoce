@@ -8,10 +8,17 @@ Derived oceanographic covariates for species distribution models: spatial and
 temporal gradients, time-integrated variables, temporal lags, and fluid dynamics,
 computed from gridded ocean data.
 
-It takes the output of
-[`datamatch::accessCopernicus()`](https://github.com/chross22/datamatch), an `sf`
-point object per time step. It returns the same shape, with derived columns
-added — so every function composes in a pipe.
+It takes an `sf` point object with one row per location and time step — the
+shape every [`datamatch`](https://github.com/chross22/datamatch) access function
+returns, whichever source it read. It returns the same shape, with derived
+columns added, so every function composes in a pipe.
+
+Nothing here is tied to one product. datamatch currently serves seven sources —
+Copernicus Marine, HYCOM, CCMP winds, FVCOM, ERDDAP, seafloor terrain and
+climate indices — and derivoce works on the shape rather than the source, so an
+object of that shape works whatever produced it. The one distinction that
+matters is grid geometry, not provenance: see [Requirements on the
+input](#requirements-on-the-input).
 
 ## Installation
 
@@ -27,9 +34,9 @@ dependency**, so nothing installs it for you, and it is not on CRAN:
 remotes::install_github("chross22/datamatch")
 ```
 
-Why not even suggested? Everything here works on the *shape* `accessCopernicus()`
-returns: an `sf` POINT object with one row per grid point and time step, plus
-`YEAR`, `MONTH`, and `DAY`. Nothing in this package calls datamatch — it appears
+Why not even suggested? Everything here works on the *shape* datamatch's access
+functions return: an `sf` POINT object with one row per location and time step,
+plus `YEAR`, `MONTH`, and `DAY`. That shape is the same from every source. Nothing in this package calls datamatch — it appears
 only in documentation, in `\dontrun{}` examples, and inside warning messages that
 name which datamatch function a column came from. An object of that shape works
 whatever produced it, and the tests build their own. Declaring it anyway had a
@@ -117,9 +124,9 @@ Every default is a datamatch catalog name: `SST` and `BOTT` for
 `vertical_gradient()`, `UO` and `VO` for `eke()`, `current_speed()`, `ftle()` and
 `fsle()`, and `DEPTH` for `distance_to_isobath()`.
 
-`accessCopernicus()` returns columns under the names you asked for, rather than under
-Copernicus codes, so a dictionary fetch needs no column arguments. Here is the
-same `eke()` call twice, differing only in the fetch:
+Every access function returns columns under the names you asked for, rather than
+under the source's own codes, so a catalog fetch needs no column arguments. Here
+is the same `eke()` call twice, differing only in the fetch:
 
 ```r
 bb <- list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
@@ -136,15 +143,34 @@ env <- eke(env, u = "uo", v = "vo")
 ```
 
 `distance_to_isobath()` is the exception: its `DEPTH` column comes from
-`datamatch::attach_bathymetry()`, not from `accessCopernicus()`.
+`datamatch::attach_bathymetry()` rather than from an access function — though
+`accessFVCOM()` serves a `DEPTH` of its own, being a model with its own
+bathymetry.
 
 ## Requirements on the input
 
-Spatial derivatives are only defined on a grid, so `horizontal_gradient()`
-requires points on a **regular lon/lat lattice**. Gridded products are regular.
-Scattered observations are not. Irregular input is rejected rather than
-interpolated, because a gradient computed from interpolated data mostly measures
-the interpolation.
+Spatial derivatives are only defined on a grid, so the spatial derivations
+require points on a **regular lon/lat lattice**. That is the one place a source
+matters, and it is about geometry rather than provenance.
+
+| Input | Spatial derivations | Everything else |
+|---|---|---|
+| Regular lattice — Copernicus, HYCOM, CCMP, most ERDDAP grids | yes | yes |
+| Unstructured mesh — `accessFVCOM()` | no | yes |
+| Scattered observations | no | yes |
+
+An unstructured mesh returns one row per mesh node, and those nodes are spaced
+irregularly by design: resolution follows the coastline instead of a lattice.
+Irregular input is rejected rather than interpolated, because a gradient
+computed from interpolated data mostly measures the interpolation. Regrid first
+with `datamatch::upscale_grid()` or `downscale_grid()` if you need the spatial
+derivations on a mesh.
+
+"Everything else" is most of the package: every temporal derivation — lags,
+rolling summaries, integrals, anomalies, decomposition, heatwaves — plus
+`potential_density()`, `distance_to_shore()`, `box_anomaly()`, `index_series()`
+and the EML helpers. Those match points by coordinate and never need a lattice,
+so they work on a mesh unchanged.
 
 Central differences are undefined at the grid edge, so boundary cells come back
 `NA`. So do the first *n* steps of a lag and the first step of a temporal

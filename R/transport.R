@@ -40,7 +40,8 @@
 #' flows the other, which is exactly the situation in the Northeast Channel. Read
 #' the output as an index of variability rather than as a flux.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`, on a
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return, on a
 #'   regular lon/lat grid, with eastward and northward velocity columns
 #' @param from,to endpoints of the section, each `c(longitude, latitude)`
 #' @param u name of the eastward velocity column, in m/s

@@ -17,12 +17,19 @@ a \code{terra::SpatRaster} with one layer per variable
 \description{
 Spatial derivatives are only defined on a grid, so the points have to be put
 back onto one. Gridded ocean products come as a regular lon/lat lattice, and
-\code{datamatch::accessCopernicus()} flattens that lattice to points without moving
+datamatch's access functions flatten that lattice to points without moving
 them, so the grid can be recovered exactly from the unique coordinates.
+Copernicus, HYCOM, CCMP and most ERDDAP grids are of that kind.
 }
 \details{
-Scattered points are rejected rather than interpolated: silently gridding
-irregular data would produce a gradient field that looks plausible and is
-mostly interpolation artifact.
+An unstructured mesh is not. \code{datamatch::accessFVCOM()} returns one row per
+mesh node, and those nodes are irregularly spaced by design, which is the
+point of a mesh: resolution follows the coastline rather than a lattice.
+
+Irregular points are rejected rather than interpolated, whether they come
+from a mesh or from scattered observations. Silently gridding them would
+produce a gradient field that looks plausible and is mostly interpolation
+artifact. The derivations that need no lattice -- every temporal one, plus
+\code{\link[=distance_to_shore]{distance_to_shore()}} and \code{\link[=box_anomaly]{box_anomaly()}} -- work on a mesh unchanged.
 }
 \keyword{internal}

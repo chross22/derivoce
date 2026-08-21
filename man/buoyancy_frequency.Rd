@@ -14,7 +14,8 @@ buoyancy_frequency(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
+\item{env_dat}{an \code{sf} POINT object with one row per location and time step,
+as datamatch's access functions return}
 
 \item{shallow}{name of the density column for the shallower level, in kg/m^3
 or as sigma-theta; both give the same answer since only the difference
@@ -49,14 +50,25 @@ is fresh enough to stratify water that is barely warmer at the surface.
 }
 \section{Getting the two levels}{
 
-\code{datamatch::accessCopernicus()} takes a \code{depth} argument, so a second call at a
-different depth gives the deeper level, and the two are joined as columns on
-the same points. Compute a density for each with \code{\link[=potential_density]{potential_density()}}, then
-pass both here.
+Two routes, depending on the source.
+
+\code{datamatch::accessCopernicus()} takes a \code{depth} argument and returns one
+level per call, so a second call at a different depth gives the deeper level
+and the two are joined as columns on the same points:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{surface <- datamatch::accessCopernicus(vars = c("SST", "SSS"), depth = c(0, 1), ...)
 deep    <- datamatch::accessCopernicus(vars = c("SST", "SSS"), depth = c(90, 100), ...)
 }\if{html}{\out{</div>}}
+
+\code{accessHYCOM()} and \code{accessFVCOM()} instead serve the bottom as named
+variables, \code{BOTT} and \code{BOTS} beside \code{SST} and \code{SSS}, so one fetch carries
+both levels and the second depth is the water depth rather than a chosen
+one. That makes a surface-to-bottom \strong{density} difference available, where a
+surface-and-bottom fetch from Copernicus gives a temperature difference only:
+Copernicus serves \code{bottomT} but no bottom salinity.
+
+Either way, compute a density for each level with \code{\link[=potential_density]{potential_density()}} and
+pass both here.
 }
 
 \section{What a two-level estimate is and is not}{

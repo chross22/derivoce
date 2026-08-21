@@ -54,7 +54,8 @@
 #' to afford a parameter per calendar month; where it cannot, it is reported as
 #' zero rather than estimated badly, and the function warns.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param vars covariate columns, or `NULL` for all numeric ones
 #' @param degree polynomial degree of the trend. 1 is a straight line
 #' @param components which of `"trend"`, `"seasonal"`, `"residual"` and

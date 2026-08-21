@@ -13,7 +13,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
 library(derivoce)
 ```
 
-Copernicus gives you temperature, salinity, and currents. What concentrates
+An ocean model gives you temperature, salinity, and currents. What concentrates
 plankton is usually not those values but how they are *arranged* and how they are
 *changing*: a front rather than a temperature, food accumulated since spring
 rather than food present today. This package computes that second kind of
@@ -27,7 +27,8 @@ was produced by the code shown.
 
 Every function takes and returns the same thing: an `sf` POINT object with one
 row per grid point and time step, a column per covariate, and `YEAR`, `MONTH`,
-`DAY` columns. That is what `datamatch::accessCopernicus()` returns.
+`DAY` columns. That is what every `datamatch` access function returns, whichever
+of its seven sources it read, so nothing below is tied to a particular product.
 
 ```{r fetch, eval = FALSE}
 env <- datamatch::accessCopernicus(

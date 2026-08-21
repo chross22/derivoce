@@ -7,7 +7,8 @@
 covariate_columns(env_dat)
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
+\item{env_dat}{an \code{sf} POINT object with one row per location and time step,
+as datamatch's access functions return}
 }
 \value{
 character vector of covariate column names
@@ -18,8 +19,11 @@ Deliberately internal, and a deliberate duplicate of
 datamatch's whenever both packages are attached, for no gain: callers who want
 it have it from datamatch already. It is not imported from there because
 datamatch is a suggested rather than a hard dependency — everything in this
-package operates on the \emph{shape} \code{accessCopernicus()} returns, not on datamatch
-itself, so an object of that shape from any source works.
+package operates on the \emph{shape} datamatch's access functions return, not on
+datamatch itself, so an object of that shape from any source works. That
+shape is common to all of them -- \code{accessCopernicus()}, \code{accessHYCOM()},
+\code{accessCCMP()}, \code{accessFVCOM()} and \code{accessERDDAP()} -- and to anything else
+that produces one row per location and time step.
 }
 \details{
 \verb{<var>_source} is included and \verb{<var>_depth} is not, matching

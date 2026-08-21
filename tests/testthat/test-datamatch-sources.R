@@ -178,3 +178,71 @@ test_that("the unit table has not fallen behind datamatch's catalogue", {
               names(datamatch::climate_indices()))
   expect_equal(setdiff(served, names(datamatch_units())), character(0))
 })
+
+
+# An unstructured mesh, as datamatch's accessFVCOM() returns: one row per mesh
+# node, and the nodes irregularly spaced by design, because a mesh puts its
+# resolution where the coastline is rather than on a lattice.
+mesh_env <- function(years = 2000:2003) {
+  set.seed(42)
+  n <- 90
+  nodes <- data.frame(x = runif(n, -70, -69), y = runif(n, 42.5, 43.5))
+  frames <- list()
+  for (y in years) for (m in 1:12) {
+    g <- nodes
+    g$YEAR <- as.integer(y); g$MONTH <- as.integer(m); g$DAY <- 1L
+    g$SST <- 11 + 3 * sin(2 * pi * m / 12) + 0.1 * (y - 2000) + (g$x + 69.5)
+    g$SSS <- 32 + 0.3 * (g$x + 69.5)
+    g$UO <- 0.2 + 0.05 * (g$x + 69.5)
+    g$VO <- 0.1 - 0.05 * (g$y - 43)
+    frames[[length(frames) + 1]] <- g
+  }
+  sf::st_as_sf(do.call(rbind, frames), coords = c("x", "y"), crs = 4326)
+}
+
+
+test_that("every temporal derivation works on an unstructured mesh", {
+  # These match points by coordinate and never build a raster, so a mesh is no
+  # different to them from a lattice.
+  mesh <- mesh_env()
+
+  expect_no_error(lag_covariate(mesh, "SST", n = 1, by = "month"))
+  expect_no_error(rolling_covariate(mesh, "SST", n = 3, stat = "mean"))
+  expect_no_error(integrate_covariate(mesh, "SST"))
+  expect_no_error(cell_anomaly(mesh, "SST"))
+  expect_no_error(decompose_covariate(mesh, "SST"))
+  expect_no_error(suppressWarnings(marine_heatwave(mesh, "SST")))
+  expect_no_error(potential_density(mesh))
+  expect_no_error(eml_attributes(mesh))
+})
+
+test_that("the derivations that need only coordinates work on a mesh too", {
+  mesh <- mesh_env(2000:2001)
+
+  expect_no_error(box_anomaly(mesh, "SST", box = list(
+    xmin = -70, xmax = -69, ymin = 42.5, ymax = 43.5)))
+})
+
+test_that("a spatial derivation refuses a mesh, and says what to do", {
+  mesh <- mesh_env(2000:2001)
+
+  expect_error(horizontal_gradient(mesh, "SST"), "regular lon/lat grid")
+  expect_error(flow_deformation(mesh), "regular lon/lat grid")
+  expect_error(detect_eddies(mesh), "regular lon/lat grid")
+  expect_error(distance_to_front(mesh, "SST"), "regular lon/lat grid")
+  expect_error(ftle(mesh, integration_days = 3), "regular lon/lat grid")
+})
+
+test_that("the refusal names the mesh case and the way forward", {
+  # Passed as a promise, rasterize_step()'s failure used to surface from inside
+  # terra as "error in evaluating the argument 'x'", burying the explanation.
+  mesh <- mesh_env(2000:2001)
+
+  message <- tryCatch(horizontal_gradient(mesh, "SST"),
+                      error = function(e) conditionMessage(e))
+
+  expect_match(message, "unstructured", fixed = TRUE)
+  expect_match(message, "accessFVCOM", fixed = TRUE)
+  expect_match(message, "upscale_grid", fixed = TRUE)
+  expect_false(grepl("evaluating the argument", message, fixed = TRUE))
+})

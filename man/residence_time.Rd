@@ -16,7 +16,8 @@ residence_time(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
+\item{env_dat}{an \code{sf} POINT object with one row per location and time step,
+as datamatch's access functions return}
 
 \item{box}{named list with \code{xmin}, \code{xmax}, \code{ymin}, \code{ymax}, the region water
 is considered to be residing in. Defaults to the extent of the data, which

@@ -37,7 +37,8 @@
 #' it, since the window is usually longer. Start with a short `max_days` on a
 #' small domain.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param box named list with `xmin`, `xmax`, `ymin`, `ymax`, the region water
 #'   is considered to be residing in. Defaults to the extent of the data, which
 #'   measures retention by the domain itself and is rarely what you want

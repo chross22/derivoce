@@ -16,7 +16,8 @@ marine_heatwave(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
+\item{env_dat}{an \code{sf} POINT object with one row per location and time step,
+as datamatch's access functions return}
 
 \item{var}{the covariate to examine, typically sea surface temperature}
 
@@ -74,8 +75,8 @@ distinguishes a long mild event from a short violent one.
 \section{Time steps, not days}{
 
 Hobday et al. define an event as five or more consecutive \strong{days}. This
-works in whatever step the data is in, because
-\code{datamatch::accessCopernicus()} serves monthly as readily as daily. On daily data
+works in whatever step the data is in, because datamatch's access functions
+serve monthly, daily and sub-daily archives alike. On daily data
 \code{min_steps = 5} and \code{max_gap = 2} reproduce the published definition. On
 monthly data they do not — five consecutive months is a far rarer and larger
 thing — so the defaults here are deliberately permissive and the choice is

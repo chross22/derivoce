@@ -12,6 +12,7 @@ Computes derived oceanographic covariates from gridded ocean data, including spa
 Useful links:
 \itemize{
   \item \url{https://github.com/chross22/derivoce}
+  \item \url{https://camilleross.org/derivoce/}
   \item Report bugs at \url{https://github.com/chross22/derivoce/issues}
 }
 

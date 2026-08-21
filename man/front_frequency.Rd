@@ -17,7 +17,8 @@ front_frequency(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
+\item{env_dat}{an \code{sf} POINT object with one row per location and time step,
+as datamatch's access functions return}
 
 \item{var}{the covariate whose gradient defines a front}
 

@@ -25,7 +25,8 @@
 #' passing an object through several index functions and then calling this
 #' returns all of them at once.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param vars index columns to extract, or `NULL` to take every column that is
 #'   constant within each time step
 #' @return a data frame with `YEAR`, `MONTH`, `DAY` and one column per index,

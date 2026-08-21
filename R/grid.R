@@ -13,8 +13,11 @@ time_columns <- function() c("YEAR", "MONTH", "DAY")
 #' datamatch's whenever both packages are attached, for no gain: callers who want
 #' it have it from datamatch already. It is not imported from there because
 #' datamatch is a suggested rather than a hard dependency — everything in this
-#' package operates on the *shape* `accessCopernicus()` returns, not on datamatch
-#' itself, so an object of that shape from any source works.
+#' package operates on the *shape* datamatch's access functions return, not on
+#' datamatch itself, so an object of that shape from any source works. That
+#' shape is common to all of them -- `accessCopernicus()`, `accessHYCOM()`,
+#' `accessCCMP()`, `accessFVCOM()` and `accessERDDAP()` -- and to anything else
+#' that produces one row per location and time step.
 #'
 #' `<var>_source` is included and `<var>_depth` is not, matching
 #' `datamatch::covariate_columns()`. A source tag travels with the variable it
@@ -23,7 +26,8 @@ time_columns <- function() c("YEAR", "MONTH", "DAY")
 #' not the depth any value came from. `.datamatch_source` is datamatch's
 #' internal per-row tag and is never data.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @return character vector of covariate column names
 #' @keywords internal
 covariate_columns <- function(env_dat) {
@@ -90,12 +94,19 @@ step_rows <- function(env_dat, step) {
 #'
 #' Spatial derivatives are only defined on a grid, so the points have to be put
 #' back onto one. Gridded ocean products come as a regular lon/lat lattice, and
-#' `datamatch::accessCopernicus()` flattens that lattice to points without moving
+#' datamatch's access functions flatten that lattice to points without moving
 #' them, so the grid can be recovered exactly from the unique coordinates.
+#' Copernicus, HYCOM, CCMP and most ERDDAP grids are of that kind.
 #'
-#' Scattered points are rejected rather than interpolated: silently gridding
-#' irregular data would produce a gradient field that looks plausible and is
-#' mostly interpolation artifact.
+#' An unstructured mesh is not. `datamatch::accessFVCOM()` returns one row per
+#' mesh node, and those nodes are irregularly spaced by design, which is the
+#' point of a mesh: resolution follows the coastline rather than a lattice.
+#'
+#' Irregular points are rejected rather than interpolated, whether they come
+#' from a mesh or from scattered observations. Silently gridding them would
+#' produce a gradient field that looks plausible and is mostly interpolation
+#' artifact. The derivations that need no lattice -- every temporal one, plus
+#' [distance_to_shore()] and [box_anomaly()] -- work on a mesh unchanged.
 #'
 #' @param points an `sf` POINT object for a single time step
 #' @param vars covariate columns to include as layers
@@ -112,8 +123,16 @@ rasterize_step <- function(points, vars) {
   }
   if (!is_regular(lon) || !is_regular(lat)) {
     stop("Points are not on a regular lon/lat grid, so spatial derivatives are ",
-         "not well defined. Gridded products (Copernicus and similar) are; ",
-         "scattered observations are not.", call. = FALSE)
+         "not well defined.",
+         "\n  Regular products -- Copernicus, HYCOM, CCMP, most ERDDAP grids -- ",
+         "satisfy this. An unstructured\n  mesh does not: datamatch's ",
+         "accessFVCOM() returns one row per mesh node, and the nodes are ",
+         "spaced\n  irregularly by design. Scattered observations do not ",
+         "either.",
+         "\n  Regrid first with datamatch::upscale_grid() or downscale_grid(), ",
+         "or use the derivations that\n  need no lattice: every temporal one ",
+         "works here, as do distance_to_shore() and box_anomaly().",
+         call. = FALSE)
   }
 
   # The raster is built from the lattice's dimensions rather than handed the raw
@@ -181,7 +200,8 @@ is_regular <- function(values, tolerance = 1e-3) {
 #' Handles the split/rasterize/compute/join cycle that each spatial derivative
 #' shares, so those functions only have to say what to do to one raster.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param vars covariate columns the function needs
 #' @param fun a function taking a `SpatRaster` and returning a `SpatRaster`
 #'   whose layer names become the new columns
@@ -195,7 +215,12 @@ per_time_step <- function(env_dat, vars, fun) {
     rows <- step_rows(env_dat, steps[i, ])
     points <- env_dat[rows, ]
 
-    derived <- fun(rasterize_step(points, vars))
+    # Forced before `fun` sees it: passed as a promise, a rasterize_step()
+    # failure surfaces from inside terra as "error in evaluating the argument
+    # 'x'", which buries the explanation of what was actually wrong with the
+    # input.
+    grid <- rasterize_step(points, vars)
+    derived <- fun(grid)
     sampled <- terra::extract(derived, sf::st_coordinates(points))
 
     if (is.null(new_columns)) {

@@ -15,7 +15,8 @@ rolling_covariate(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}}
+\item{env_dat}{an \code{sf} POINT object with one row per location and time step,
+as datamatch's access functions return}
 
 \item{vars}{covariate columns, or \code{NULL} for all numeric ones}
 

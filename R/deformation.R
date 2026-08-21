@@ -45,7 +45,8 @@
 #' smooth as the grid. On a coarse product a real eddy smaller than a few cells
 #' will not appear at all.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param u name of the eastward velocity column, in m/s
 #' @param v name of the northward velocity column, in m/s
 #' @param measures which diagnostics to add. Any of `"vorticity"`,

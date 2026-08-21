@@ -25,7 +25,8 @@
 #' Distances are computed against true geodesic distance on the ellipsoid rather
 #' than a projected approximation, so they stay correct across a wide domain.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param resolution Natural Earth coastline resolution: `"medium"`, `"large"`,
 #'   or `"small"`
 #' @param margin degrees of padding around the data when cropping the coastline.

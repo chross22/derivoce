@@ -36,7 +36,8 @@
 #' Fresh water from a river mouth and ice-melt surface layers are the usual
 #' culprits.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param temperature name of the temperature column, in degrees C. Should be a
 #'   potential temperature
 #' @param salinity name of the salinity column, in PSU

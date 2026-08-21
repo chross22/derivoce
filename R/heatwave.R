@@ -26,8 +26,8 @@
 #'
 #' @section Time steps, not days:
 #' Hobday et al. define an event as five or more consecutive **days**. This
-#' works in whatever step the data is in, because
-#' `datamatch::accessCopernicus()` serves monthly as readily as daily. On daily data
+#' works in whatever step the data is in, because datamatch's access functions
+#' serve monthly, daily and sub-daily archives alike. On daily data
 #' `min_steps = 5` and `max_gap = 2` reproduce the published definition. On
 #' monthly data they do not — five consecutive months is a far rarer and larger
 #' thing — so the defaults here are deliberately permissive and the choice is
@@ -58,7 +58,8 @@
 #' events relative to recent conditions. If you want a fixed baseline, compute
 #' the threshold on a subset and apply it.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param var the covariate to examine, typically sea surface temperature
 #' @param percentile threshold percentile, between 0 and 1. Hobday et al. use
 #'   0.9 for heatwaves; the cold-spell equivalent is 0.1, which `direction`

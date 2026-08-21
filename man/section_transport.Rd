@@ -16,7 +16,8 @@ section_transport(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}, on a
+\item{env_dat}{an \code{sf} POINT object with one row per location and time step,
+as datamatch's access functions return, on a
 regular lon/lat grid, with eastward and northward velocity columns}
 
 \item{from, to}{endpoints of the section, each \code{c(longitude, latitude)}}

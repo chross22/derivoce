@@ -195,14 +195,14 @@ eml_unit_registry <- function() {
            "metersSquaredPerSecondSquared", "practicalSalinityUnit",
            "celsiusPerKilometer", "celsiusPerYear", "sverdrup",
            "millimolesPerCubicMeter", "milligramsPerSquareMeterPerDay",
-           "milligramsPerCubicMeterPerDay"),
+           "milligramsPerCubicMeterPerDay", "wattsPerSquareMeter"),
     unitType = c("frequency", "unknown", "frequency", "unknown", "dimensionless",
                  "unknown", "unknown", "volumetricRate", "amountOfSubstance",
-                 "unknown", "unknown"),
+                 "unknown", "unknown", "powerPerArea"),
     parentSI = c("hertz", NA, "hertz", NA, NA, NA, NA,
-                 "cubicMetersPerSecond", "molePerCubicMeter", NA, NA),
+                 "cubicMetersPerSecond", "molePerCubicMeter", NA, NA, "watt"),
     multiplierToSI = c(1, NA, 1 / 86400, NA, NA, NA, NA,
-                       1e6, 0.001, NA, NA),
+                       1e6, 0.001, NA, NA, 1),
     description = c(
       "Reciprocal seconds, as for vorticity, divergence, strain rate and buoyancy frequency.",
       "Reciprocal seconds squared, as for the Okubo-Weiss parameter and the square of the buoyancy frequency.",
@@ -214,7 +214,8 @@ eml_unit_registry <- function() {
       "Sverdrup, 10^6 cubic metres per second, the conventional unit of ocean volume transport.",
       "Millimoles per cubic metre, as datamatch serves nitrate, phosphate and dissolved oxygen.",
       "Milligrams per square metre per day, as datamatch serves satellite primary production.",
-      "Milligrams per cubic metre per day, as datamatch serves modelled net primary production."
+      "Milligrams per cubic metre per day, as datamatch serves modelled net primary production.",
+      "Watts per square metre, as FVCOM serves shortwave radiation and net surface heat flux."
     ),
     stringsAsFactors = FALSE
   )
@@ -258,6 +259,13 @@ datamatch_units <- function() {
     # Climate indices, from attach_climate_index(). The oscillation indices are
     # standardized anomalies; AMOC is a transport in Sverdrups.
     NAO = "dimensionless", AO = "dimensionless", AMO = "dimensionless",
-    PDO = "dimensionless", LCR = "dimensionless", AMOC = "sverdrup"
+    PDO = "dimensionless", LCR = "dimensionless", AMOC = "sverdrup",
+    # Satellite wind observation counts, from accessCCMP()
+    NOBS = "number",
+    # HYCOM adds bottom velocities beside the bottom temperature and salinity
+    UO_BOTTOM = "metersPerSecond", VO_BOTTOM = "metersPerSecond",
+    # FVCOM adds depth-averaged velocities and surface fluxes
+    UBAR = "metersPerSecond", VBAR = "metersPerSecond",
+    SWRAD = "wattsPerSquareMeter", NHF = "wattsPerSquareMeter"
   )
 }

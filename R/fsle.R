@@ -39,7 +39,8 @@
 #' substituting `max_days` would report a slow separation rate where there was
 #' none at all.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`, on a
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return, on a
 #'   regular lon/lat grid, containing eastward and northward velocity columns
 #' @param u name of the eastward velocity column, in m/s
 #' @param v name of the northward velocity column, in m/s

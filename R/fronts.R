@@ -30,7 +30,8 @@
 #' Pass `threshold` instead to set an absolute gradient value, which is the right
 #' choice when a physically meaningful cutoff is known.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param var covariate whose gradient defines the fronts
 #' @param threshold absolute gradient value above which a cell is frontal; takes
 #'   precedence over `quantile` when given
@@ -119,7 +120,8 @@ distance_to_front <- function(env_dat, var, threshold = NULL, quantile = 0.9,
 #' that of any neighbour, so the contour is found even though no cell sits
 #' exactly on it.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param var covariate whose contours are wanted
 #' @param levels one or more values to contour
 #' @param per distance unit for the result: `"km"` (default) or `"m"`

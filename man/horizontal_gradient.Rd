@@ -13,8 +13,8 @@ horizontal_gradient(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{datamatch::accessCopernicus()}, one row
-per grid point and time step}
+\item{env_dat}{an \code{sf} POINT object with one row per location and time step,
+as datamatch's access functions return}
 
 \item{vars}{covariate columns to differentiate; \code{NULL} does all of them}
 

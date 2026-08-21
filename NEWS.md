@@ -1,7 +1,36 @@
 # derivoce (development version)
 
+## Works with every datamatch source
+
+datamatch now serves seven sources — Copernicus Marine, HYCOM, CCMP winds,
+FVCOM, ERDDAP, seafloor terrain and climate indices — and the documentation
+here described only the first. It now describes the shape rather than the
+product, which is what the package has always actually required: one row per
+location and time step.
+
+* The one real distinction is grid geometry, not provenance. Spatial
+  derivations need a regular lon/lat lattice, which Copernicus, HYCOM, CCMP and
+  most ERDDAP grids give. `accessFVCOM()` returns an unstructured mesh, whose
+  nodes are irregularly spaced by design, so those derivations refuse it. Every
+  temporal derivation, plus `potential_density()`, `distance_to_shore()`,
+  `box_anomaly()`, `index_series()` and the EML helpers, works on a mesh
+  unchanged. README and `?rasterize_step` set this out, and tests pin it.
+* That refusal used to arrive as terra's "error in evaluating the argument
+  'x'", because the grid was passed to the derivation as a promise and failed
+  inside terra rather than before it. It is now forced first, so the
+  explanation survives — and the explanation now names the mesh case and points
+  at `datamatch::upscale_grid()`.
+* `eml_attributes()` knows the units of all 42 variables across the seven
+  sources, including CCMP winds, HYCOM bottom velocities, and FVCOM's
+  depth-averaged velocities, surface fluxes and wind stress.
+* Two things this documentation had recorded as impossible are not any more:
+  wind stress is served (`TAUX`, `TAUY`, `TAU`), and so is bottom salinity
+  (`BOTS`), which makes a surface-to-bottom *density* difference available where
+  only a temperature difference was before. `docs/methods.md` records both
+  corrections rather than quietly editing them away.
+
 Seven new derivations, none of which need any input
-`datamatch::accessEnvDat()` does not already serve.
+`datamatch`'s access functions do not already serve.
 
 ## Anomalies and extremes
 
@@ -67,7 +96,7 @@ largest of the three — so both warn and say which way out applies.
   conditions favour making them. Eady is a person, not a spelling of "eddy".
 
   Both need velocities or densities at two levels, which is two
-  `datamatch::accessEnvDat()` calls at different `depth` ranges joined as
+  `datamatch::accessCopernicus()` calls at different `depth` ranges joined as
   columns. A previous version of `docs/methods.md` asserted this was impossible
   because only surface values and a bottom temperature were available; that was
   wrong, and is corrected there.

@@ -17,8 +17,8 @@
 #' is dimensionally meaningless for a field measured in degrees Celsius. The
 #' magnitude here is a real rate of change with a real unit.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`, one row
-#'   per grid point and time step
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param vars covariate columns to differentiate; `NULL` does all of them
 #' @param per distance unit for the result: `"km"` (default) or `"m"`
 #' @param components also add the eastward and northward components, as
@@ -136,7 +136,8 @@ cell_size <- function(layer, per = "km") {
 #' warmer at the surface. \eqn{N^2} counts both contributions with the weights
 #' the equation of state gives them.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param surface name of the shallower temperature column
 #' @param bottom name of the deeper temperature column
 #' @param depth optional depth column name; when given, the difference is divided
@@ -187,7 +188,8 @@ vertical_gradient <- function(env_dat, surface = "SST", bottom = "BOTT",
 #'
 #' The first time step has no predecessor and is `NA`.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param vars covariate columns to differentiate; `NULL` does all of them
 #' @param per time unit for the rate: `"step"` (default, change per time step),
 #'   `"day"`, or `"month"`

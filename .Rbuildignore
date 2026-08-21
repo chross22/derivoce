@@ -13,3 +13,6 @@
 ^derivoce\.Rcheck$
 ^derivoce.*\.tar\.gz$
 ^\.lintr$
+^_pkgdown\.yml$
+^pkgdown$
+^pkgdown-site$

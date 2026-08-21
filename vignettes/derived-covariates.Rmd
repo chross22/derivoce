@@ -451,7 +451,7 @@ all. `fill_satellite_gaps()` adds a `<var>_source` factor. Naming it explicitly
 fails, while `vars = NULL` skips it silently.
 
 These warnings are a safety net, not a substitute for naming your variables once
-the object carries more than a plain `accessCopernicus()` fetch.
+the object carries more than a plain access-function fetch.
 
 ## Resampled and gap-filled input
 

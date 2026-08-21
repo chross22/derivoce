@@ -13,15 +13,26 @@
 #' is fresh enough to stratify water that is barely warmer at the surface.
 #'
 #' @section Getting the two levels:
-#' `datamatch::accessCopernicus()` takes a `depth` argument, so a second call at a
-#' different depth gives the deeper level, and the two are joined as columns on
-#' the same points. Compute a density for each with [potential_density()], then
-#' pass both here.
+#' Two routes, depending on the source.
+#'
+#' `datamatch::accessCopernicus()` takes a `depth` argument and returns one
+#' level per call, so a second call at a different depth gives the deeper level
+#' and the two are joined as columns on the same points:
 #'
 #' ```r
 #' surface <- datamatch::accessCopernicus(vars = c("SST", "SSS"), depth = c(0, 1), ...)
 #' deep    <- datamatch::accessCopernicus(vars = c("SST", "SSS"), depth = c(90, 100), ...)
 #' ```
+#'
+#' `accessHYCOM()` and `accessFVCOM()` instead serve the bottom as named
+#' variables, `BOTT` and `BOTS` beside `SST` and `SSS`, so one fetch carries
+#' both levels and the second depth is the water depth rather than a chosen
+#' one. That makes a surface-to-bottom **density** difference available, where a
+#' surface-and-bottom fetch from Copernicus gives a temperature difference only:
+#' Copernicus serves `bottomT` but no bottom salinity.
+#'
+#' Either way, compute a density for each level with [potential_density()] and
+#' pass both here.
 #'
 #' @section What a two-level estimate is and is not:
 #' It is a **bulk** stratification over the layer between the two depths, not a
@@ -39,7 +50,8 @@
 #' sits above lighter, which is genuine convective instability in winter and
 #' otherwise usually a sign that the two levels are not what you think.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param shallow name of the density column for the shallower level, in kg/m^3
 #'   or as sigma-theta; both give the same answer since only the difference
 #'   enters
@@ -99,9 +111,10 @@ buoyancy_frequency <- function(env_dat, shallow, deep, depths,
 #' each other and are not.
 #'
 #' @section What it needs:
-#' Velocities at two depths and a stratification spanning the same layer, which
-#' means two calls to `datamatch::accessCopernicus()` at different `depth` ranges
-#' joined as columns. See [buoyancy_frequency()], which produces the
+#' Velocities at two depths and a stratification spanning the same layer. From
+#' Copernicus that means two calls at different `depth` ranges joined as
+#' columns; from HYCOM it means `UO`/`VO` beside `UO_BOTTOM`/`VO_BOTTOM`, which
+#' arrive together. See [buoyancy_frequency()], which produces the
 #' stratification and explains how to choose the levels.
 #'
 #' @section What it is and is not:
@@ -117,7 +130,8 @@ buoyancy_frequency <- function(env_dat, shallow, deep, depths,
 #' and which would look like intense instability exactly where the assumption
 #' has failed.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param shallow length-2 character vector naming the eastward and northward
 #'   velocity columns at the shallower level, in m/s
 #' @param deep the same for the deeper level

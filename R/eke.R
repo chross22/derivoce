@@ -15,7 +15,8 @@
 #' afterwards gives a different quantity: speed is a non-linear function of the
 #' components, so the gradient of the speed is not the speed of the gradients.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param u name of the eastward velocity column
 #' @param v name of the northward velocity column
 #' @param name name for the new column
@@ -71,7 +72,8 @@ current_speed <- function(env_dat, u = "UO", v = "VO", name = "speed") {
 #' Means are computed per location, so a spatially varying mean circulation is
 #' removed correctly rather than being smeared into the anomaly.
 #'
-#' @param env_dat an `sf` POINT object from `datamatch::accessCopernicus()`
+#' @param env_dat an `sf` POINT object with one row per location and time step,
+#'   as datamatch's access functions return
 #' @param u name of the eastward velocity column, in m/s
 #' @param v name of the northward velocity column, in m/s
 #' @param reference `"record"`, `"climatology"`, or a positive integer number of
