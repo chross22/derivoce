@@ -11,13 +11,13 @@ Source:
 [`inst/CITATION`](https://github.com/chross22/derivoce/blob/master/inst/CITATION)
 
 Ross C (2026). *derivoce: Derived Oceanographic Covariates for Species
-Distribution Models*. R package version 0.1.0.9000,
+Distribution Models*. R package version 0.2.0,
 <https://github.com/chross22/derivoce>.
 
     @Manual{derivoce,
       title = {derivoce: Derived Oceanographic Covariates for Species Distribution Models},
       author = {Camille Ross},
       year = {2026},
-      note = {R package version 0.1.0.9000},
+      note = {R package version 0.2.0},
       url = {https://github.com/chross22/derivoce},
     }

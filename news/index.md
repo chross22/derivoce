@@ -1,6 +1,6 @@
 # Changelog
 
-## derivoce (development version)
+## derivoce 0.2.0
 
 ### Works with every datamatch source
 
@@ -28,8 +28,26 @@ required: one row per location and time step.
   forced first, so the explanation survives — and the explanation now
   names the mesh case and points at
   [`datamatch::upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.html).
+- Sub-daily data works. `accessCCMP(frequency = "6hourly")` and
+  `accessHYCOM(frequency = "3hourly")` return an `HOUR` column, and this
+  package’s copy of
+  [`time_columns()`](https://camilleross.org/derivoce/reference/time_columns.md)
+  had fallen behind datamatch’s, which includes it. The failure was
+  silent and severe: the hours of a day collapsed into one time step, so
+  gradients rasterized whichever hour wrote last, lags drew from an
+  arbitrary hour, the Lagrangian functions would have interpolated
+  between duplicate times, and `HOUR` itself was swept up as a
+  covariate. Hours are now distinct steps throughout; calendar lags land
+  on the same hour of the earlier day or month; rolling day-windows
+  trail from the instant rather than sweeping in later hours of the
+  current day; and
+  [`index_series()`](https://camilleross.org/derivoce/reference/index_series.md)
+  keeps the hour. A test now compares
+  [`covariate_columns()`](https://camilleross.org/derivoce/reference/covariate_columns.md)
+  behaviourally against datamatch’s own whenever datamatch is installed,
+  so this particular drift cannot recur unnoticed.
 - [`eml_attributes()`](https://camilleross.org/derivoce/reference/eml_attributes.md)
-  knows the units of all 42 variables across the seven sources,
+  knows the units of all 44 variables across the seven sources,
   including CCMP winds, HYCOM bottom velocities, and FVCOM’s
   depth-averaged velocities, surface fluxes and wind stress.
 - Two things this documentation had recorded as impossible are not any

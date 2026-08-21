@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">derivoce</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,19 +44,20 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="derivoce-development-version">derivoce (development version)<a class="anchor" aria-label="anchor" href="#derivoce-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.0" id="derivoce-020">derivoce 0.2.0<a class="anchor" aria-label="anchor" href="#derivoce-020"></a></h2>
 <div class="section level3">
-<h3 id="works-with-every-datamatch-source-development-version">Works with every datamatch source<a class="anchor" aria-label="anchor" href="#works-with-every-datamatch-source-development-version"></a></h3>
+<h3 id="works-with-every-datamatch-source-0-2-0">Works with every datamatch source<a class="anchor" aria-label="anchor" href="#works-with-every-datamatch-source-0-2-0"></a></h3>
 <p>datamatch now serves seven sources — Copernicus Marine, HYCOM, CCMP winds, FVCOM, ERDDAP, seafloor terrain and climate indices — and the documentation here described only the first. It now describes the shape rather than the product, which is what the package has always actually required: one row per location and time step.</p>
 <ul><li>The one real distinction is grid geometry, not provenance. Spatial derivations need a regular lon/lat lattice, which Copernicus, HYCOM, CCMP and most ERDDAP grids give. <code>accessFVCOM()</code> returns an unstructured mesh, whose nodes are irregularly spaced by design, so those derivations refuse it. Every temporal derivation, plus <code><a href="../reference/potential_density.html">potential_density()</a></code>, <code><a href="../reference/distance_to_shore.html">distance_to_shore()</a></code>, <code><a href="../reference/box_anomaly.html">box_anomaly()</a></code>, <code><a href="../reference/index_series.html">index_series()</a></code> and the EML helpers, works on a mesh unchanged. README and <code><a href="../reference/rasterize_step.html">?rasterize_step</a></code> set this out, and tests pin it.</li>
 <li>That refusal used to arrive as terra’s “error in evaluating the argument ‘x’”, because the grid was passed to the derivation as a promise and failed inside terra rather than before it. It is now forced first, so the explanation survives — and the explanation now names the mesh case and points at <code><a href="https://camilleross.org/datamatch/reference/upscale_grid.html" class="external-link">datamatch::upscale_grid()</a></code>.</li>
+<li>Sub-daily data works. <code>accessCCMP(frequency = "6hourly")</code> and <code>accessHYCOM(frequency = "3hourly")</code> return an <code>HOUR</code> column, and this package’s copy of <code><a href="../reference/time_columns.html">time_columns()</a></code> had fallen behind datamatch’s, which includes it. The failure was silent and severe: the hours of a day collapsed into one time step, so gradients rasterized whichever hour wrote last, lags drew from an arbitrary hour, the Lagrangian functions would have interpolated between duplicate times, and <code>HOUR</code> itself was swept up as a covariate. Hours are now distinct steps throughout; calendar lags land on the same hour of the earlier day or month; rolling day-windows trail from the instant rather than sweeping in later hours of the current day; and <code><a href="../reference/index_series.html">index_series()</a></code> keeps the hour. A test now compares <code><a href="../reference/covariate_columns.html">covariate_columns()</a></code> behaviourally against datamatch’s own whenever datamatch is installed, so this particular drift cannot recur unnoticed.</li>
 <li>
-<code><a href="../reference/eml_attributes.html">eml_attributes()</a></code> knows the units of all 42 variables across the seven sources, including CCMP winds, HYCOM bottom velocities, and FVCOM’s depth-averaged velocities, surface fluxes and wind stress.</li>
+<code><a href="../reference/eml_attributes.html">eml_attributes()</a></code> knows the units of all 44 variables across the seven sources, including CCMP winds, HYCOM bottom velocities, and FVCOM’s depth-averaged velocities, surface fluxes and wind stress.</li>
 <li>Two things this documentation had recorded as impossible are not any more: wind stress is served (<code>TAUX</code>, <code>TAUY</code>, <code>TAU</code>), and so is bottom salinity (<code>BOTS</code>), which makes a surface-to-bottom <em>density</em> difference available where only a temperature difference was before. <code>docs/methods.md</code> records both corrections rather than quietly editing them away.</li>
 </ul><p>Seven new derivations, none of which need any input <code>datamatch</code>’s access functions do not already serve.</p>
 </div>
 <div class="section level3">
-<h3 id="anomalies-and-extremes-development-version">Anomalies and extremes<a class="anchor" aria-label="anchor" href="#anomalies-and-extremes-development-version"></a></h3>
+<h3 id="anomalies-and-extremes-0-2-0">Anomalies and extremes<a class="anchor" aria-label="anchor" href="#anomalies-and-extremes-0-2-0"></a></h3>
 <ul><li>
 <code><a href="../reference/cell_anomaly.html">cell_anomaly()</a></code> removes each cell’s own mean, leaving the departure rather than the geography — the cell-wise counterpart of <code><a href="../reference/box_anomaly.html">box_anomaly()</a></code>. <code>standardize = TRUE</code> gives a z-score, comparable across places of different variability at the cost of the magnitude.</li>
 <li>
@@ -70,7 +71,7 @@
 </ul><p>Both fail silently given too little history — a monthly climatology over one year is exactly zero everywhere, and a 90th percentile over three values is the largest of the three — so both warn and say which way out applies.</p>
 </div>
 <div class="section level3">
-<h3 id="flow-structure-development-version">Flow structure<a class="anchor" aria-label="anchor" href="#flow-structure-development-version"></a></h3>
+<h3 id="flow-structure-0-2-0">Flow structure<a class="anchor" aria-label="anchor" href="#flow-structure-0-2-0"></a></h3>
 <ul><li>
 <code><a href="../reference/flow_deformation.html">flow_deformation()</a></code> gives vorticity, divergence, the two strain components and their magnitude, the Okubo-Weiss parameter, and the Rossby number. It fills the gap between <code><a href="../reference/eke.html">eke()</a></code>, which needs a series, and <code><a href="../reference/ftle.html">ftle()</a></code>/<code><a href="../reference/fsle.html">fsle()</a></code>, which need trajectories.</li>
 <li>
@@ -83,7 +84,7 @@
 <code><a href="../reference/front_frequency.html">front_frequency()</a></code> measures how reliably a place is frontal, where <code><a href="../reference/distance_to_front.html">distance_to_front()</a></code> measures how far one was at a moment.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="water-properties-and-history-development-version">Water properties and history<a class="anchor" aria-label="anchor" href="#water-properties-and-history-development-version"></a></h3>
+<h3 id="water-properties-and-history-0-2-0">Water properties and history<a class="anchor" aria-label="anchor" href="#water-properties-and-history-0-2-0"></a></h3>
 <ul><li><p><code><a href="../reference/potential_density.html">potential_density()</a></code> is the UNESCO (1983) one-atmosphere equation of state, reproducing the published check values to within 5e-6 kg/m^3.</p></li>
 <li><p><code><a href="../reference/buoyancy_frequency.html">buoyancy_frequency()</a></code> computes N^2 between two depths, the stratification measure <code><a href="../reference/vertical_gradient.html">vertical_gradient()</a></code> only approximates with a temperature difference. That matters where salinity varies: Scotian Shelf inflow is fresh enough to stratify water barely warmer at the surface.</p></li>
 <li>
@@ -93,7 +94,7 @@
 <li><p><code><a href="../reference/rolling_covariate.html">rolling_covariate()</a></code> summarises a trailing window — mean, sd, min, max, sum, median, range — with the same step-versus-calendar distinction as <code><a href="../reference/lag_covariate.html">lag_covariate()</a></code>, on the same month counter.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="metadata-development-version">Metadata<a class="anchor" aria-label="anchor" href="#metadata-development-version"></a></h3>
+<h3 id="metadata-0-2-0">Metadata<a class="anchor" aria-label="anchor" href="#metadata-0-2-0"></a></h3>
 <ul><li>
 <code><a href="../reference/eml_attributes.html">eml_attributes()</a></code> describes the derived columns as an Ecological Metadata Language attribute table, in the shape <code>EML::set_attributes()</code> consumes. Derived covariates are the hardest part of a dataset to document, because their meaning lives in how they were computed rather than in what was measured, and that knowledge is already here.</li>
 <li>
@@ -104,7 +105,7 @@
 </ul><p>No dependency on the <code>EML</code> package: derivoce hands over the table and lets EML write the XML. Units that depend on the source column, such as a gradient’s, come back as <code>NA</code> unless <code>units</code> says what the source holds — a guessed unit in an archived dataset is worse than a visible gap.</p>
 </div>
 <div class="section level3">
-<h3 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h3>
+<h3 id="documentation-0-2-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-0"></a></h3>
 <ul><li>
 <code>docs/lcr-extension-experiment.md</code> now records the second attempt at extending the Labrador Current retroflection index. Daily fields with OceanParcels clear the obstacle that stopped the monthly attempt and still do not reproduce the published series; the arrival regions, the particle count and the domain were each tested and eliminated as explanations.</li>
 </ul></div>
