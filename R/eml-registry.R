@@ -266,6 +266,9 @@ datamatch_units <- function() {
     UO_BOTTOM = "metersPerSecond", VO_BOTTOM = "metersPerSecond",
     # FVCOM adds depth-averaged velocities and surface fluxes
     UBAR = "metersPerSecond", VBAR = "metersPerSecond",
-    SWRAD = "wattsPerSquareMeter", NHF = "wattsPerSquareMeter"
+    SWRAD = "wattsPerSquareMeter", NHF = "wattsPerSquareMeter",
+    # The built-in ERDDAP datasets add a satellite SST uncertainty and an
+    # ice fraction beside variables already named above
+    SST_ERROR = "celsius", ICE = "dimensionless"
   )
 }

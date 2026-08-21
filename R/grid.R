@@ -4,7 +4,24 @@
 #' Time-step columns that are not covariates
 #'
 #' @keywords internal
-time_columns <- function() c("YEAR", "MONTH", "DAY")
+time_columns <- function() c("YEAR", "MONTH", "DAY", "HOUR")
+
+#' Numeric time of each step, in days, including the hour when there is one
+#'
+#' `HOUR` arrives with sub-daily fetches -- `accessCCMP(frequency = "6hourly")`
+#' and `accessHYCOM(frequency = "3hourly")` -- and is absent otherwise. Every
+#' place that turns the time columns into a number goes through here, so that
+#' hourly steps are distinct instants rather than duplicates of their day:
+#' duplicate times would collapse steps, and in the Lagrangian functions they
+#' would corrupt the interpolation between velocity fields.
+#'
+#' @param tbl a data frame carrying the time columns
+#' @return numeric days, with an hour fraction when `HOUR` is present
+#' @keywords internal
+step_time_days <- function(tbl) {
+  days <- as.numeric(as.Date(paste(tbl$YEAR, tbl$MONTH, tbl$DAY, sep = "-")))
+  if ("HOUR" %in% names(tbl)) days + tbl$HOUR / 24 else days
+}
 
 #' Covariate column names in an environmental data object
 #'
@@ -73,8 +90,9 @@ documented_columns <- function(env_dat) {
 #' @return a data frame of unique time steps, ordered chronologically
 #' @keywords internal
 time_steps <- function(env_dat) {
-  steps <- unique(sf::st_drop_geometry(env_dat)[time_columns()])
-  steps <- steps[order(steps$YEAR, steps$MONTH, steps$DAY), , drop = FALSE]
+  present <- intersect(time_columns(), names(env_dat))
+  steps <- unique(sf::st_drop_geometry(env_dat)[present])
+  steps <- steps[do.call(order, steps[present]), , drop = FALSE]
   rownames(steps) <- NULL
   steps
 }
@@ -86,8 +104,10 @@ time_steps <- function(env_dat) {
 #' @return integer vector of row indices
 #' @keywords internal
 step_rows <- function(env_dat, step) {
-  which(env_dat$YEAR == step$YEAR & env_dat$MONTH == step$MONTH &
-          env_dat$DAY == step$DAY)
+  match_all <- env_dat$YEAR == step$YEAR & env_dat$MONTH == step$MONTH &
+    env_dat$DAY == step$DAY
+  if ("HOUR" %in% names(step)) match_all <- match_all & env_dat$HOUR == step$HOUR
+  which(match_all)
 }
 
 #' Rasterize one time step's points onto their own grid

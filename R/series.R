@@ -79,7 +79,7 @@ index_series <- function(env_dat, vars = NULL) {
     }
   }
 
-  out <- steps[, intersect(c("YEAR", "MONTH", "DAY"), names(steps)),
+  out <- steps[, intersect(time_columns(), names(steps)),
                drop = FALSE]
   for (v in vars) {
     # Constant within the step, so the first non-missing value represents it.

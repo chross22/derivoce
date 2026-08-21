@@ -145,8 +145,11 @@ window_steps <- function(steps, i, n, by) {
   if (identical(by, "step")) return(seq(max(1L, i - n + 1L), i))
 
   if (identical(by, "day")) {
-    dates <- as.Date(paste(steps$YEAR, steps$MONTH, steps$DAY, sep = "-"))
-    return(which(dates <= dates[i] & dates > dates[i] - n))
+    # In days with an hour fraction where there is one, so on a sub-daily
+    # record the window trails from this instant rather than sweeping in
+    # later hours of the current day.
+    when <- step_time_days(steps)
+    return(which(when <= when[i] & when > when[i] - n))
   }
 
   months_back <- if (identical(by, "year")) n * 12 else n

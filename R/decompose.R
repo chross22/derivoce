@@ -192,8 +192,8 @@ decompose_one <- function(y, t, month, degree) {
 #' @return numeric vector of days, one per row
 #' @keywords internal
 elapsed_days <- function(env_dat) {
-  dates <- as.Date(paste(env_dat$YEAR, env_dat$MONTH, env_dat$DAY, sep = "-"))
-  as.numeric(dates - min(dates, na.rm = TRUE))
+  days <- step_time_days(sf::st_drop_geometry(env_dat))
+  days - min(days, na.rm = TRUE)
 }
 
 #' Warn about cells with too little history to decompose

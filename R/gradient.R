@@ -230,8 +230,7 @@ temporal_gradient <- function(env_dat, vars = NULL,
 step_spacing <- function(steps, per = "step") {
   if (per == "step") return(c(NA_real_, rep(1, nrow(steps) - 1)))
 
-  dates <- as.Date(paste(steps$YEAR, steps$MONTH, steps$DAY, sep = "-"))
-  days <- c(NA_real_, as.numeric(diff(dates)))
+  days <- c(NA_real_, diff(step_time_days(steps)))
   if (per == "day") days else days / 30.4375  # mean month length
 }
 
@@ -242,7 +241,7 @@ step_spacing <- function(steps, per = "step") {
 #' @return integer vector, one per row of `env_dat`
 #' @keywords internal
 match_step_index <- function(env_dat, steps) {
-  key <- function(y, m, d) paste(y, m, d, sep = "-")
-  match(key(env_dat$YEAR, env_dat$MONTH, env_dat$DAY),
-        key(steps$YEAR, steps$MONTH, steps$DAY))
+  key_cols <- intersect(time_columns(), names(steps))
+  key <- function(tbl) do.call(paste, c(unname(tbl[key_cols]), sep = "-"))
+  match(key(sf::st_drop_geometry(env_dat)), key(steps))
 }

@@ -155,11 +155,15 @@ lag_source_step <- function(steps, n, by) {
     return(source)
   }
 
+  # On a sub-daily record a calendar lag means the same hour, one day or one
+  # month before; without the hour in the key, every hour of a day would draw
+  # from whichever hour happened to be listed first.
+  hour <- if ("HOUR" %in% names(steps)) steps$HOUR else 0L
+
   if (identical(by, "day")) {
     # Real dates, so month lengths and leap years take care of themselves.
     current <- as.Date(paste(steps$YEAR, steps$MONTH, steps$DAY, sep = "-"))
-    target <- current - n
-    return(match(target, current))
+    return(match(paste(current - n, hour), paste(current, hour)))
   }
 
   # Months and years are the same arithmetic, done on a month counter so that
@@ -168,8 +172,8 @@ lag_source_step <- function(steps, n, by) {
   counter <- steps$YEAR * 12 + (steps$MONTH - 1)
   target <- counter - months_back
 
-  match(paste(target %/% 12, target %% 12 + 1, steps$DAY),
-        paste(steps$YEAR, steps$MONTH, steps$DAY))
+  match(paste(target %/% 12, target %% 12 + 1, steps$DAY, hour),
+        paste(steps$YEAR, steps$MONTH, steps$DAY, hour))
 }
 
 #' Time-integrated covariate

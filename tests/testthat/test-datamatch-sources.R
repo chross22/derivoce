@@ -173,10 +173,33 @@ test_that("the unit table has not fallen behind datamatch's catalogue", {
   skip_if_not(requireNamespace("datamatch", quietly = TRUE),
               "datamatch not installed")
 
-  served <- c(names(datamatch::copernicus_variables()),
-              names(datamatch::bathymetry_variables()),
-              names(datamatch::climate_indices()))
+  served <- unique(c(
+    names(datamatch::copernicus_variables()),
+    names(datamatch::ccmp_variables()),
+    names(datamatch::hycom_variables()),
+    names(datamatch::fvcom_variables()),
+    unlist(lapply(datamatch::erddap_datasets(),
+                  function(d) names(d$variables))),
+    names(datamatch::bathymetry_variables()),
+    names(datamatch::climate_indices())
+  ))
   expect_equal(setdiff(served, names(datamatch_units())), character(0))
+})
+
+test_that("covariate_columns has not drifted from datamatch's again", {
+  # The HOUR gap this file pins was exactly such a drift: the duplicate here
+  # fell behind datamatch's own time_columns() and sub-daily fetches broke
+  # silently. Comparing behaviour on a column zoo keeps the two in lockstep.
+  skip_if_not(requireNamespace("datamatch", quietly = TRUE),
+              "datamatch not installed")
+
+  env <- datamatch_env(2000:2001)
+  env$HOUR <- 12L
+  env$SST_depth <- 0.5
+  env$.datamatch_source <- "copernicus"
+
+  expect_equal(derivoce:::covariate_columns(env),
+               datamatch::covariate_columns(env))
 })
 
 
@@ -245,4 +268,125 @@ test_that("the refusal names the mesh case and the way forward", {
   expect_match(message, "accessFVCOM", fixed = TRUE)
   expect_match(message, "upscale_grid", fixed = TRUE)
   expect_false(grepl("evaluating the argument", message, fixed = TRUE))
+})
+
+
+# A sub-daily fetch, as accessCCMP(frequency = "6hourly") and
+# accessHYCOM(frequency = "3hourly") return: an HOUR column beside the usual
+# three. datamatch's own time_columns() includes HOUR, and this package's
+# duplicate had drifted behind it, which collapsed the four hours of a day
+# into one time step -- silently. Gradients rasterized whichever hour wrote
+# last, lags drew from an arbitrary hour, and HOUR itself was swept up as a
+# covariate. Everything below pins the repaired behaviour.
+hourly_env <- function(days = 1:5, hours = c(0L, 6L, 12L, 18L)) {
+  lon <- seq(-70, -69, by = 0.25); lat <- seq(42.5, 43.5, by = 0.25)
+  frames <- list()
+  for (d in days) for (h in hours) {
+    g <- expand.grid(x = lon, y = lat)
+    g$YEAR <- 2020L; g$MONTH <- 1L; g$DAY <- as.integer(d); g$HOUR <- h
+    g$WSPD <- 8 + 2 * sin(2 * pi * h / 24) + 0.5 * d + 0.2 * (g$x + 69.5)
+    g$UWND <- 5 + 0.1 * h + 0.1 * (g$x + 69.5)
+    g$VWND <- 2 - 0.05 * h - 0.1 * (g$y - 43)
+    frames[[length(frames) + 1]] <- g
+  }
+  sf::st_as_sf(do.call(rbind, frames), coords = c("x", "y"), crs = 4326)
+}
+
+wind_at <- function(env, d, h) {
+  rows <- env$DAY == d & env$HOUR == h
+  env[rows, ][order(sf::st_coordinates(env[rows, ])[, 1],
+                    sf::st_coordinates(env[rows, ])[, 2]), ]
+}
+
+
+test_that("hours are distinct time steps, not duplicates of their day", {
+  env <- hourly_env()
+
+  steps <- derivoce:::time_steps(env)
+
+  expect_equal(nrow(steps), 20)
+  expect_true("HOUR" %in% names(steps))
+  # Ordered within the day as well as across days.
+  expect_equal(steps$HOUR[steps$DAY == 1], c(0L, 6L, 12L, 18L))
+})
+
+test_that("HOUR is a time column, not a covariate", {
+  # datamatch's covariate_columns() excludes it; the duplicate here must agree,
+  # or vars = NULL would lag and differentiate the clock.
+  env <- hourly_env()
+
+  expect_false("HOUR" %in% derivoce:::covariate_columns(env))
+  # The input column survives, of course; what must not exist is an anomaly
+  # of the clock.
+  expect_false("HOUR_anom" %in% names(suppressWarnings(cell_anomaly(env))))
+})
+
+test_that("a one-step lag on hourly data is the previous hour", {
+  env <- hourly_env()
+
+  out <- lag_covariate(env, "WSPD", n = 1, by = "step")
+
+  expect_equal(wind_at(out, 2, 6)$WSPD_lag1, wind_at(env, 2, 0)$WSPD)
+  # And across the day boundary: hour 0 draws from the last hour of yesterday.
+  expect_equal(wind_at(out, 2, 0)$WSPD_lag1, wind_at(env, 1, 18)$WSPD)
+})
+
+test_that("a calendar-day lag lands on the same hour of the previous day", {
+  env <- hourly_env()
+
+  out <- lag_covariate(env, "WSPD", n = 1, by = "day")
+
+  # Hour 6 discriminates: the sinusoid gives hours 0 and 12 the same value,
+  # so those two could not tell a same-hour match from a first-hour match.
+  expect_equal(wind_at(out, 3, 6)$WSPD_lag1day, wind_at(env, 2, 6)$WSPD)
+  expect_false(isTRUE(all.equal(wind_at(out, 3, 6)$WSPD_lag1day,
+                                wind_at(env, 2, 0)$WSPD)))
+})
+
+test_that("spatial derivations see each hour's own field", {
+  env <- hourly_env(days = 1, hours = c(0L, 12L))
+
+  out <- horizontal_gradient(env, "UWND")
+
+  # The zonal wind gradient is the same 0.1 per degree at both hours, but the
+  # fields differ by 1.2 m/s -- so if hours collapsed, one of them rasterized
+  # over the other and this comparison of the raw fields would fail.
+  expect_equal(wind_at(out, 1, 12)$UWND - wind_at(out, 1, 0)$UWND,
+               rep(1.2, 25))
+  expect_false(any(is.na(wind_at(out, 1, 12)$UWND_grad[7])))
+})
+
+test_that("a rolling day-window on hourly data trails from the instant", {
+  env <- hourly_env()
+
+  out <- rolling_covariate(env, "WSPD", n = 1, by = "day", stat = "max")
+
+  # The trailing 1-day window at day 3 hour 0 covers (day2 h6, day2 h12,
+  # day2 h18, day3 h0], whose per-location maximum is day 2 hour 6. A window
+  # computed on whole dates would sweep in the rest of day 3, and day 3 hour 6
+  # is strictly larger everywhere, so the two disagree at every location.
+  at <- function(d, h) wind_at(env, d, h)$WSPD
+  expected <- pmax(at(2, 6), at(2, 12), at(2, 18), at(3, 0))
+
+  expect_equal(wind_at(out, 3, 0)$WSPD_max1day, expected)
+  expect_true(all(wind_at(out, 3, 0)$WSPD_max1day < at(3, 6)))
+})
+
+test_that("index_series keeps the hour", {
+  env <- hourly_env(days = 1:2)
+  env$NAO <- rep(seq_len(8), each = 25)  # one value per (day, hour) step
+
+  series <- index_series(env, "NAO")
+
+  expect_true("HOUR" %in% names(series))
+  expect_equal(nrow(series), 8)
+})
+
+test_that("daily data is untouched by hour support", {
+  # No HOUR column, no change: the canonical trio still keys everything.
+  env <- datamatch_env(2000:2001)
+
+  steps <- derivoce:::time_steps(env)
+  expect_false("HOUR" %in% names(steps))
+  expect_equal(nrow(steps), 24)
 })

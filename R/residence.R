@@ -77,8 +77,7 @@ residence_time <- function(env_dat, box = NULL, u = "UO", v = "VO",
   box <- if (is.null(box)) extent_box(env_dat) else check_box(box)
 
   steps <- time_steps(env_dat)
-  step_times <- as.numeric(as.Date(paste(steps$YEAR, steps$MONTH, steps$DAY,
-                                          sep = "-")))
+  step_times <- step_time_days(steps)
   velocity <- lapply(seq_len(nrow(steps)), function(i) {
     rasterize_step(env_dat[step_rows(env_dat, steps[i, ]), ], c(u, v))
   })
