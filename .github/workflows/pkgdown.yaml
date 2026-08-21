@@ -40,6 +40,9 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          # rnaturalearthhires is not on CRAN. Same line as R-CMD-check.yaml —
+          # without it pak cannot solve the dependency graph at all.
+          extra-repositories: 'https://ropensci.r-universe.dev'
           extra-packages: any::pkgdown, local::.
           needs: website
 
