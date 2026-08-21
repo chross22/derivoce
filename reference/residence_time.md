@@ -1,0 +1,120 @@
+# How long water stays in a place
+
+Releases a particle at every point inside a box and advects it until it
+leaves, giving the time the water starting there remained. Long
+residence means a retentive place — a gyre, a basin, the lee of a bank —
+where anything with a life stage measured in weeks can complete it
+without being swept out. Short residence means water is passing through.
+
+## Usage
+
+``` r
+residence_time(
+  env_dat,
+  box = NULL,
+  u = "UO",
+  v = "VO",
+  max_days = 60,
+  step_hours = 6,
+  direction = c("forward", "backward"),
+  name = NULL
+)
+```
+
+## Arguments
+
+- env_dat:
+
+  an `sf` POINT object with one row per location and time step, as
+  datamatch's access functions return
+
+- box:
+
+  named list with `xmin`, `xmax`, `ymin`, `ymax`, the region water is
+  considered to be residing in. Defaults to the extent of the data,
+  which measures retention by the domain itself and is rarely what you
+  want
+
+- u:
+
+  name of the eastward velocity column, in m/s
+
+- v:
+
+  name of the northward velocity column, in m/s
+
+- max_days:
+
+  longest residence measured; particles still inside at this point are
+  censored here
+
+- step_hours:
+
+  integration step
+
+- direction:
+
+  `"forward"` for how long water will stay, `"backward"` for how long it
+  has already been there
+
+- name:
+
+  name for the new column
+
+## Value
+
+`env_dat` with a residence time column, in days. `NA` outside the box
+and for particles that left the velocity field without leaving the box
+
+## Details
+
+This is the quantity behind a great deal of plankton distribution that
+concentration alone cannot explain. *Calanus* accumulates in the deep
+basins of the Gulf of Maine partly because the circulation holds water
+there long enough, and a covariate that says so is closer to the
+mechanism than one that says the water is currently cold.
+
+## Censoring, which is not optional to think about
+
+A particle still inside the box when `max_days` runs out has a residence
+time of *at least* that, not equal to it. The column records `max_days`
+for those, which is right-censored data, and treating it as a
+measurement will bias every summary of it downwards — the more retentive
+the site, the worse.
+
+The function warns with the fraction censored. If that fraction is large
+the honest options are to raise `max_days`, or to treat the column as
+censored and model it accordingly, or to use it only as an ordering
+rather than as a duration. What it is not safe to do is average it.
+
+## Resolution
+
+Membership is tested once per step, so a residence time is the first
+check after the particle actually left: at or above the true value, by
+less than `step_hours`. That is the resolution of the answer, and on a
+short window it is a large share of it: a 6-hour step resolves a 2-day
+residence to about one part in eight. Shorten the step when the
+residences being compared are themselves short.
+
+## Cost
+
+One particle per point per time step, integrated up to `max_days` at
+`step_hours`. That is the same order of work as
+[`ftle()`](https://camilleross.org/derivoce/reference/ftle.md) and
+rather more of it, since the window is usually longer. Start with a
+short `max_days` on a small domain.
+
+## See also
+
+[`ftle()`](https://camilleross.org/derivoce/reference/ftle.md),
+[`fsle()`](https://camilleross.org/derivoce/reference/fsle.md),
+[`box_anomaly()`](https://camilleross.org/derivoce/reference/box_anomaly.md)
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Retention in the eastern Gulf of Maine.
+env <- residence_time(env, box = eastern_gom_box(), max_days = 60)
+} # }
+```
