@@ -37,12 +37,14 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
+          # rnaturalearthhires is not on CRAN, and pak cannot solve the
+          # dependency graph without somewhere to find it. This input belongs to
+          # setup-r, not setup-r-dependencies — putting it on the latter parses
+          # fine and silently does nothing.
+          extra-repositories: 'https://ropensci.r-universe.dev'
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          # rnaturalearthhires is not on CRAN. Same line as R-CMD-check.yaml —
-          # without it pak cannot solve the dependency graph at all.
-          extra-repositories: 'https://ropensci.r-universe.dev'
           extra-packages: any::pkgdown, local::.
           needs: website
 
