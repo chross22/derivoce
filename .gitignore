@@ -20,3 +20,6 @@ glorys_*.nc
 /lcr-pipeline/output/
 __pycache__/
 .pytest_cache/
+
+# generated pkgdown site
+pkgdown-site/

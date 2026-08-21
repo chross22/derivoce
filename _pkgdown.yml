@@ -1,0 +1,90 @@
+# Served from camilleross.org/derivoce/, not chross22.github.io: GitHub applies
+# the user site's custom domain to every project page on the account. This must
+# name where visitors actually land, or the canonical link, sitemap and og:url
+# all point at a hostname nobody uses and search engines see two of each page.
+url: https://camilleross.org/derivoce/
+
+# NOT docs/. Several of these packages keep hand-written design notes and
+# methods write-ups in docs/, tracked in git, and a pkgdown build would erase
+# them. pkgdown refuses outright when it finds a docs/ it did not create; this
+# names a directory that is unambiguously generated.
+destination: pkgdown-site
+
+template:
+  bootstrap: 5
+  light-switch: true
+
+reference:
+- title: Gradients and fronts
+  desc: >
+    A front is where a field changes sharply, not where it is large. These
+    compute the change and then locate it.
+  contents:
+  - distance_to_contour
+  - distance_to_front
+  - distance_to_isobath
+  - distance_to_shore
+  - front_frequency
+  - horizontal_gradient
+  - temporal_gradient
+  - vertical_gradient
+
+- title: Flow and mixing
+  desc: >
+    Quantities derived from velocity fields: how fast, how deformed, how
+    strongly stratified, and how long water stays.
+  contents:
+  - buoyancy_frequency
+  - current_speed
+  - eady_growth_rate
+  - eke
+  - flow_deformation
+  - potential_density
+  - residence_time
+  - water_mass_fraction
+
+- title: Coherent structures
+  desc: >
+    Eddies, and the Lyapunov exponents that reveal the transport barriers
+    between them.
+  contents:
+  - detect_eddies
+  - distance_to_eddy
+  - fsle
+  - ftle
+
+- title: Time treatments
+  desc: >
+    The same field asked about over a different window: lagged by calendar
+    units, integrated, rolled, or expressed as an anomaly.
+  contents:
+  - box_anomaly
+  - cell_anomaly
+  - decompose_covariate
+  - integrate_covariate
+  - lag_covariate
+  - marine_heatwave
+  - rolling_covariate
+
+- title: Named regions and sections
+  desc: >
+    Standing definitions for the Gulf of Maine features this work returns
+    to, so a section is computed the same way every time.
+  contents:
+  - eastern_gom_box
+  - eastern_gom_salinity
+  - northeast_channel_inflow
+  - scotian_shelf_inflow
+  - scotian_shelf_inflow_section
+  - section_transport
+
+- title: Indices and metadata
+  desc: >
+    Series assembled from the above, and the EML pieces that travel with
+    them.
+  contents:
+  - derived_indices
+  - eml_attributes
+  - eml_col_classes
+  - eml_custom_units
+  - index_series
