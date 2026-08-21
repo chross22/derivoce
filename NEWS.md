@@ -1,4 +1,4 @@
-# derivoce (development version)
+# derivoce 0.2.0
 
 ## Works with every datamatch source
 
