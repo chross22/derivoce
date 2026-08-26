@@ -44,6 +44,25 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="derivoce-development-version">derivoce (development version)<a class="anchor" aria-label="anchor" href="#derivoce-development-version"></a></h2>
+<div class="section level3">
+<h3 id="eddies-development-version">Eddies<a class="anchor" aria-label="anchor" href="#eddies-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/detect_eddies.html">detect_eddies()</a></code> reported <code>in_eddy = 0</code> where there was no velocity to judge. That is the same value a cell gets when it was measured and found not to be an eddy, so over a masked product every land cell arrived as a confident absence, indistinguishable downstream from a real one — as did the outermost ring of the grid, where the central difference has no neighbours. <code>okubo_weiss</code>, <code>polarity</code> and <code>radius</code> were already <code>NA</code> in both places; only <code>in_eddy</code> disagreed. It is now <code>NA</code> there too, and 0 only where there was something to judge and it was not an eddy.</li>
+<li>
+<code><a href="../reference/detect_eddies.html">?detect_eddies</a></code> now says what <code>radius</code> does and does not measure. The threshold is a multiple of the standard deviation of Okubo-Weiss for the whole time step, so it is one absolute level applied to every eddy at once: a strong eddy loses almost nothing of its core to it, a weak one loses most. Two eddies of the same physical size can report very different radii if one is spinning faster. On Gaussian vortices with 25 to 60 km cores, moving <code>threshold</code> from 0.05 to 1.5 changes the strongest eddy’s radius by 3 percent and the weakest by more than half. Hold <code>threshold</code> fixed across anything being compared, and read <code>radius</code> as an index rather than a measurement.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixes-development-version">Fixes<a class="anchor" aria-label="anchor" href="#fixes-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/flow_deformation.html">flow_deformation()</a></code> failed on a projected grid whatever <code>measures</code> asked for. All seven layers were built and then subset, so <code>rossby</code> was computed on every call and <code><a href="../reference/coriolis.html">coriolis()</a></code> stopped for want of a latitude — a request for vorticity alone died citing a measure the caller had not named. Only the requested measures are evaluated now, and <code>rossby</code> is the only one a projected grid refuses.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h3>
+<ul><li>The package is titled and described by what it computes rather than by one use for it. Nothing here is specific to species distribution models: it takes gridded ocean data in and returns derived columns, and what happens next is the caller’s business.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="derivoce-020">derivoce 0.2.0<a class="anchor" aria-label="anchor" href="#derivoce-020"></a></h2>
 <div class="section level3">
 <h3 id="works-with-every-datamatch-source-0-2-0">Works with every datamatch source<a class="anchor" aria-label="anchor" href="#works-with-every-datamatch-source-0-2-0"></a></h3>
@@ -113,7 +132,7 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="derivoce-010">derivoce 0.1.0<a class="anchor" aria-label="anchor" href="#derivoce-010"></a></h2>
 <p>First release.</p>
-<p>derivoce takes the output of <code><a href="https://camilleross.org/datamatch/reference/accessEnvDat.html" class="external-link">datamatch::accessEnvDat()</a></code> — an <code>sf</code> point object per time step — and returns the same shape with derived columns added, so derived covariates flow into a species distribution model alongside the variables they came from.</p>
+<p>derivoce takes the output of <code><a href="https://camilleross.org/datamatch/reference/accessEnvDat.html" class="external-link">datamatch::accessEnvDat()</a></code> — an <code>sf</code> point object per time step — and returns the same shape with derived columns added, so derived covariates travel into whatever analysis follows alongside the variables they came from.</p>
 <div class="section level3">
 <h3 id="gradients-and-change-over-time-0-1-0">Gradients and change over time<a class="anchor" aria-label="anchor" href="#gradients-and-change-over-time-0-1-0"></a></h3>
 <ul><li>

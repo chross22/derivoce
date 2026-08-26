@@ -32,4 +32,5 @@ eddy_patches(rast, u, v, threshold, min_cells, per = "km")
 
 ## Value
 
-a list of `SpatRaster`s: `patches`, `polarity`, `radius`
+a list of `SpatRaster`s: `patches`, `polarity`, `radius`, and `defined`,
+which is 1 where Okubo-Weiss has a value and `NA` where it does not

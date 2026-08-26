@@ -1,4 +1,4 @@
-# derivoce: Derived Oceanographic Covariates for Species Distribution Models
+# derivoce: Derived Oceanographic Covariates from Gridded Ocean Data
 
 Computes derived oceanographic covariates from gridded ocean data,
 including spatial and temporal gradients, time-integrated variables,
@@ -10,8 +10,8 @@ temperature-salinity endmember mixing, and regional property anomalies,
 with named cases for Scotian Shelf inflow to the Gulf of Maine and the
 Northeast Channel. Takes the output of datamatch::accessEnvDat() (an sf
 point object per time step) and returns the same shape with derived
-columns added, so derived covariates flow into a species distribution
-model alongside the variables they came from.
+columns added, so derived covariates travel into whatever analysis
+follows alongside the variables they came from.
 
 ## See also
 

@@ -60,7 +60,8 @@ detect_eddies(
 
 ## Value
 
-`env_dat` with one column per requested measure
+`env_dat` with one column per requested measure. `in_eddy` is 1, 0 or
+`NA`; `polarity` and `radius` are `NA` outside an eddy
 
 ## Details
 
@@ -95,10 +96,34 @@ to be a numerical artefact of the differencing than a feature.
 
 - **radius** is the equivalent radius of the eddy, \\\sqrt{A/\pi}\\ for
   its area \\A\\, in `per` units. Real eddies are not discs, so this is
-  a size, not a shape.
+  a size, not a shape. See below for what it does and does not measure.
 
 Cells outside any eddy get 0 for `in_eddy` and `NA` for the others,
-because they have no eddy to describe.
+because they have no eddy to describe. Cells where there was nothing to
+judge get `NA` for all three: the outermost ring, where the central
+difference has no neighbours, and anywhere the velocity itself is
+missing, which over a masked product is land. Those are not the same as
+being outside an eddy, and `in_eddy` does not report them as 0 – a
+fabricated zero over land is indistinguishable from a measured one, and
+would be used as though it were.
+
+## Radius measures the patch, not the eddy
+
+The threshold is a multiple of \\\sigma_W\\ for the whole time step, so
+it is one absolute level applied to every eddy in the field at once. A
+strong eddy has \\\|W\|\\ far below that level over nearly its whole
+core and loses almost nothing to it; a weak one only dips below it near
+its centre, and the patch that survives is a fraction of the feature.
+Two eddies of the same physical size can therefore report very different
+radii if one is spinning faster than the other.
+
+On a field of Gaussian vortices with cores of 25 to 60 km, raising
+`threshold` from 0.05 to 1.5 moves the reported radius of the strongest
+eddy by 3 percent and that of the weakest by more than half. `radius` is
+comparable between eddies of similar strength, and between time steps
+only where \\\sigma_W\\ is stable. Where the question is size as such,
+treat it as an index rather than a measurement, and hold `threshold`
+fixed across everything being compared.
 
 ## What this is not
 

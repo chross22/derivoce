@@ -114,7 +114,8 @@ which a cell counts as rotational. Positive; 0.2 follows the literature</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>env_dat</code> with one column per requested measure</p>
+    <p><code>env_dat</code> with one column per requested measure. <code>in_eddy</code> is 1, 0
+or <code>NA</code>; <code>polarity</code> and <code>radius</code> are <code>NA</code> outside an eddy</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -150,9 +151,33 @@ sign of the eddy's mean vorticity. In the northern hemisphere cyclonic is
 counter-clockwise and upwelling at the core.</p></li>
 <li><p><strong>radius</strong> is the equivalent radius of the eddy, \(\sqrt{A/\pi}\) for its
 area \(A\), in <code>per</code> units. Real eddies are not discs, so this is a size,
-not a shape.</p></li>
+not a shape. See below for what it does and does not measure.</p></li>
 </ul><p>Cells outside any eddy get 0 for <code>in_eddy</code> and <code>NA</code> for the others, because
-they have no eddy to describe.</p>
+they have no eddy to describe. Cells where there was nothing to judge get
+<code>NA</code> for all three: the outermost ring, where the central difference has no
+neighbours, and anywhere the velocity itself is missing, which over a masked
+product is land. Those are not the same as being outside an eddy, and
+<code>in_eddy</code> does not report them as 0 – a fabricated zero over land is
+indistinguishable from a measured one, and would be used as though it were.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="radius-measures-the-patch-not-the-eddy">Radius measures the patch, not the eddy<a class="anchor" aria-label="anchor" href="#radius-measures-the-patch-not-the-eddy"></a></h2>
+
+
+<p>The threshold is a multiple of \(\sigma_W\) for the whole time step, so it
+is one absolute level applied to every eddy in the field at once. A strong
+eddy has \(|W|\) far below that level over nearly its whole core and loses
+almost nothing to it; a weak one only dips below it near its centre, and the
+patch that survives is a fraction of the feature. Two eddies of the same
+physical size can therefore report very different radii if one is spinning
+faster than the other.</p>
+<p>On a field of Gaussian vortices with cores of 25 to 60 km, raising
+<code>threshold</code> from 0.05 to 1.5 moves the reported radius of the strongest eddy
+by 3 percent and that of the weakest by more than half. <code>radius</code> is
+comparable between eddies of similar strength, and between time steps only
+where \(\sigma_W\) is stable. Where the question is size as such, treat it
+as an index rather than a measurement, and hold <code>threshold</code> fixed across
+everything being compared.</p>
     </div>
     <div class="section level2">
     <h2 id="what-this-is-not">What this is not<a class="anchor" aria-label="anchor" href="#what-this-is-not"></a></h2>
