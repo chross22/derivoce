@@ -1,5 +1,25 @@
 # derivoce (development version)
 
+## Eddies
+
+* `detect_eddies()` reported `in_eddy = 0` where there was no velocity to
+  judge. That is the same value a cell gets when it was measured and found not
+  to be an eddy, so over a masked product every land cell arrived as a
+  confident absence, indistinguishable downstream from a real one — as did the
+  outermost ring of the grid, where the central difference has no neighbours.
+  `okubo_weiss`, `polarity` and `radius` were already `NA` in both places; only
+  `in_eddy` disagreed. It is now `NA` there too, and 0 only where there was
+  something to judge and it was not an eddy.
+* `?detect_eddies` now says what `radius` does and does not measure. The
+  threshold is a multiple of the standard deviation of Okubo-Weiss for the
+  whole time step, so it is one absolute level applied to every eddy at once: a
+  strong eddy loses almost nothing of its core to it, a weak one loses most.
+  Two eddies of the same physical size can report very different radii if one
+  is spinning faster. On Gaussian vortices with 25 to 60 km cores, moving
+  `threshold` from 0.05 to 1.5 changes the strongest eddy's radius by 3 percent
+  and the weakest by more than half. Hold `threshold` fixed across anything
+  being compared, and read `radius` as an index rather than a measurement.
+
 ## Fixes
 
 * `flow_deformation()` failed on a projected grid whatever `measures` asked

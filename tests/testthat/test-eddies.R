@@ -52,14 +52,67 @@ test_that("both vortex cores are found", {
   expect_true(any(out$in_eddy[near(env, -67.5, 43.5)] == 1))
 })
 
-test_that("in_eddy is 1 inside and 0 outside, never NA", {
+test_that("in_eddy is 1 inside and 0 outside wherever there is a value", {
   env <- eddy_field()
 
   out <- detect_eddies(env, measures = "in_eddy")
 
-  expect_true(all(out$in_eddy %in% c(0, 1)))
-  # The far corner is quiet water, well away from either vortex.
-  expect_equal(unique(out$in_eddy[near(env, -70.4, 41.9, tol = 0.15)]), 0)
+  interior <- !is.na(out$in_eddy)
+  expect_true(all(out$in_eddy[interior] %in% c(0, 1)))
+  # The far corner is quiet water, well away from either vortex. It also
+  # reaches the edge of the grid, where there is no derivative and so no
+  # answer, so the water there is what is being checked.
+  corner <- out$in_eddy[near(env, -70.4, 41.9, tol = 0.15)]
+  expect_equal(unique(corner[!is.na(corner)]), 0)
+})
+
+test_that("in_eddy is NA where there was nothing to judge, not 0", {
+  # 0 means "measured, and not an eddy". A cell with no velocity has not been
+  # measured, and saying 0 there puts a fabricated absence in the same column
+  # as the real ones.
+  env <- eddy_field()
+  masked <- sf::st_coordinates(env)[, 1] > -68.6 &
+    sf::st_coordinates(env)[, 1] < -68.2
+  env$UO[masked] <- NA
+  env$VO[masked] <- NA
+
+  out <- detect_eddies(env)
+
+  expect_true(all(is.na(out$in_eddy[masked])))
+  expect_true(all(is.na(out$polarity[masked])))
+  expect_true(all(is.na(out$radius[masked])))
+  # Water either side of the mask still gets an answer.
+  expect_true(any(out$in_eddy[!masked] == 1))
+  expect_true(any(out$in_eddy[!masked] == 0))
+})
+
+test_that("the undifferentiable outer ring is NA, and only the outer ring", {
+  env <- eddy_field(months = 1)
+
+  out <- detect_eddies(env, measures = "in_eddy")
+
+  xy <- sf::st_coordinates(env)
+  edge <- xy[, 1] %in% range(xy[, 1]) | xy[, 2] %in% range(xy[, 2])
+  expect_equal(is.na(out$in_eddy), edge)
+})
+
+test_that("a step with no eddies still separates water from no data", {
+  # Pure strain: no rotation anywhere, so nothing is found. The cells with
+  # velocity should still say 0 rather than inheriting the empty case's NA.
+  grid <- expand.grid(x = seq(-70, -68, by = 0.1), y = seq(42, 44, by = 0.1))
+  grid$UO <- (grid$x + 69)
+  grid$VO <- -(grid$y - 43)
+  grid$YEAR <- 2020L; grid$MONTH <- 1L; grid$DAY <- 1L
+  env <- sf::st_as_sf(grid, coords = c("x", "y"), crs = 4326)
+  masked <- grid$x > -68.6 & grid$x < -68.4
+  env$UO[masked] <- NA
+  env$VO[masked] <- NA
+
+  out <- detect_eddies(env, measures = "in_eddy")
+
+  expect_true(all(is.na(out$in_eddy[masked])))
+  expect_true(any(out$in_eddy == 0, na.rm = TRUE))
+  expect_equal(sum(out$in_eddy, na.rm = TRUE), 0)
 })
 
 test_that("polarity separates counter-clockwise from clockwise", {
@@ -67,8 +120,8 @@ test_that("polarity separates counter-clockwise from clockwise", {
 
   out <- detect_eddies(env)
 
-  ccw <- out$polarity[near(env, -69.5, 42.5) & out$in_eddy == 1]
-  cw <- out$polarity[near(env, -67.5, 43.5) & out$in_eddy == 1]
+  ccw <- out$polarity[which(near(env, -69.5, 42.5) & out$in_eddy == 1)]
+  cw <- out$polarity[which(near(env, -67.5, 43.5) & out$in_eddy == 1)]
 
   expect_true(all(ccw == 1))
   expect_true(all(cw == -1))
@@ -92,7 +145,7 @@ test_that("cells outside an eddy have no eddy to describe", {
 
   out <- detect_eddies(env)
 
-  outside <- out$in_eddy == 0
+  outside <- which(out$in_eddy == 0)
   expect_true(all(is.na(out$polarity[outside])))
   expect_true(all(is.na(out$radius[outside])))
 })
@@ -129,7 +182,7 @@ test_that("min_cells discards small patches", {
   loose <- detect_eddies(env, min_cells = 1, measures = "in_eddy")
   strict <- detect_eddies(env, min_cells = 400, measures = "in_eddy")
 
-  expect_gt(sum(loose$in_eddy), sum(strict$in_eddy))
+  expect_gt(sum(loose$in_eddy, na.rm = TRUE), sum(strict$in_eddy, na.rm = TRUE))
 })
 
 test_that("a flow with no rotation yields no eddies", {
@@ -142,7 +195,7 @@ test_that("a flow with no rotation yields no eddies", {
 
   out <- detect_eddies(env, measures = "in_eddy")
 
-  expect_equal(sum(out$in_eddy), 0)
+  expect_equal(sum(out$in_eddy, na.rm = TRUE), 0)
 })
 
 test_that("distance to an eddy is zero inside it and rises with separation", {

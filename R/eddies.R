@@ -33,10 +33,32 @@
 #'   counter-clockwise and upwelling at the core.
 #' * **radius** is the equivalent radius of the eddy, \eqn{\sqrt{A/\pi}} for its
 #'   area \eqn{A}, in `per` units. Real eddies are not discs, so this is a size,
-#'   not a shape.
+#'   not a shape. See below for what it does and does not measure.
 #'
 #' Cells outside any eddy get 0 for `in_eddy` and `NA` for the others, because
-#' they have no eddy to describe.
+#' they have no eddy to describe. Cells where there was nothing to judge get
+#' `NA` for all three: the outermost ring, where the central difference has no
+#' neighbours, and anywhere the velocity itself is missing, which over a masked
+#' product is land. Those are not the same as being outside an eddy, and
+#' `in_eddy` does not report them as 0 -- a fabricated zero over land is
+#' indistinguishable from a measured one, and would be used as though it were.
+#'
+#' @section Radius measures the patch, not the eddy:
+#' The threshold is a multiple of \eqn{\sigma_W} for the whole time step, so it
+#' is one absolute level applied to every eddy in the field at once. A strong
+#' eddy has \eqn{|W|} far below that level over nearly its whole core and loses
+#' almost nothing to it; a weak one only dips below it near its centre, and the
+#' patch that survives is a fraction of the feature. Two eddies of the same
+#' physical size can therefore report very different radii if one is spinning
+#' faster than the other.
+#'
+#' On a field of Gaussian vortices with cores of 25 to 60 km, raising
+#' `threshold` from 0.05 to 1.5 moves the reported radius of the strongest eddy
+#' by 3 percent and that of the weakest by more than half. `radius` is
+#' comparable between eddies of similar strength, and between time steps only
+#' where \eqn{\sigma_W} is stable. Where the question is size as such, treat it
+#' as an index rather than a measurement, and hold `threshold` fixed across
+#' everything being compared.
 #'
 #' @section What this is not:
 #' Detection per time step, with no identity between steps. Nothing here tracks
@@ -60,7 +82,8 @@
 #' @param measures any of `"in_eddy"`, `"polarity"` and `"radius"`
 #' @param per distance unit for the radius, `"km"` or `"m"`
 #' @param suffix appended to each measure to name its column
-#' @return `env_dat` with one column per requested measure
+#' @return `env_dat` with one column per requested measure. `in_eddy` is 1, 0
+#'   or `NA`; `polarity` and `radius` are `NA` outside an eddy
 #' @references
 #' Isern-Fontanet J, Garcia-Ladona E, Font J (2003). Identification of marine
 #' eddies from altimetric maps. *Journal of Atmospheric and Oceanic Technology*
@@ -88,7 +111,10 @@ detect_eddies <- function(env_dat, u = "UO", v = "VO", threshold = 0.2,
     found <- eddy_patches(rast, u, v, threshold, min_cells, per)
 
     layers <- list(
-      in_eddy = terra::ifel(is.na(found$patches), 0, 1),
+      # `defined` is 1 or NA, so multiplying carries the missingness through:
+      # NA where there was nothing to judge, 0 where there was and it is not an
+      # eddy, 1 where it is.
+      in_eddy = found$defined * terra::ifel(is.na(found$patches), 0, 1),
       polarity = found$polarity,
       radius = found$radius
     )[measures]
@@ -171,7 +197,9 @@ distance_to_eddy <- function(env_dat, u = "UO", v = "VO", threshold = 0.2,
 #' @param threshold multiple of sd(W) below which a cell is rotational
 #' @param min_cells smallest patch kept
 #' @param per `"km"` or `"m"`, for the radius
-#' @return a list of `SpatRaster`s: `patches`, `polarity`, `radius`
+#' @return a list of `SpatRaster`s: `patches`, `polarity`, `radius`, and
+#'   `defined`, which is 1 where Okubo-Weiss has a value and `NA` where it does
+#'   not
 #' @keywords internal
 eddy_patches <- function(rast, u, v, threshold, min_cells, per = "km") {
   du <- gradient_layers(rast[[u]], per = "m")
@@ -181,8 +209,16 @@ eddy_patches <- function(rast, u, v, threshold, min_cells, per = "km") {
   shear <- dv[[2]] + du[[3]]
   okubo <- normal^2 + shear^2 - vorticity^2
 
+  # Which cells there is any answer for at all. Okubo-Weiss is NA wherever the
+  # central difference had nothing to work with: the outer ring of the grid,
+  # and anywhere the velocity itself is missing, which over a masked product is
+  # land. Carried alongside the patches so detect_eddies() can tell "measured,
+  # and not an eddy" from "nothing was measured here".
+  defined <- terra::ifel(is.na(okubo), NA, 1)
+
   blank <- terra::ifel(is.na(okubo), NA, NA)
-  empty <- list(patches = blank, polarity = blank, radius = blank)
+  empty <- list(patches = blank, polarity = blank, radius = blank,
+                defined = defined)
 
   spread <- terra::global(okubo, "sd", na.rm = TRUE)[1, 1]
   if (!is.finite(spread) || spread == 0) return(empty)
@@ -210,7 +246,8 @@ eddy_patches <- function(rast, u, v, threshold, min_cells, per = "km") {
   list(
     patches = patches,
     polarity = terra::subst(patches, from = ids, to = sign(spin[[2]])),
-    radius = terra::subst(patches, from = ids, to = sqrt(area[[2]] / pi))
+    radius = terra::subst(patches, from = ids, to = sqrt(area[[2]] / pi)),
+    defined = defined
   )
 }
 

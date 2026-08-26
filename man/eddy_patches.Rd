@@ -18,7 +18,9 @@ eddy_patches(rast, u, v, threshold, min_cells, per = "km")
 \item{per}{\code{"km"} or \code{"m"}, for the radius}
 }
 \value{
-a list of \code{SpatRaster}s: \code{patches}, \code{polarity}, \code{radius}
+a list of \code{SpatRaster}s: \code{patches}, \code{polarity}, \code{radius}, and
+\code{defined}, which is 1 where Okubo-Weiss has a value and \code{NA} where it does
+not
 }
 \description{
 Label rotation-dominated patches within one time step

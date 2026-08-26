@@ -67,7 +67,7 @@ eml_fixed_registry <- function() {
       definition = "Rossby number, relative vorticity divided by the Coriolis parameter.",
       unit = "dimensionless"),
     in_eddy = list(
-      definition = "Whether the cell lies inside an identified eddy: 1 inside, 0 outside.",
+      definition = "Whether the cell lies inside an identified eddy: 1 inside, 0 outside, missing where Okubo-Weiss could not be computed.",
       unit = "dimensionless", number = "integer"),
     polarity = list(
       definition = "Sense of rotation of the eddy containing this cell: +1 cyclonic, -1 anticyclonic.",
