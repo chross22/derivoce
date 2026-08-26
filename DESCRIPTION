@@ -1,5 +1,5 @@
 Package: derivoce
-Title: Derived Oceanographic Covariates for Species Distribution Models
+Title: Derived Oceanographic Covariates from Gridded Ocean Data
 Version: 0.2.0
 Authors@R:
     person("Camille", "Ross", email = "camille.ross@maine.edu", role = c("aut", "cre"),
@@ -14,7 +14,7 @@ Description: Computes derived oceanographic covariates from gridded ocean data,
     Scotian Shelf inflow to the Gulf of Maine and the Northeast Channel. Takes
     the output of datamatch::accessEnvDat() (an sf point object per time step)
     and returns the same shape with derived columns added, so derived covariates
-    flow into a species distribution model alongside the variables they came
+    travel into whatever analysis follows alongside the variables they came
     from.
 License: MIT + file LICENSE
 Encoding: UTF-8

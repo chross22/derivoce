@@ -4,9 +4,9 @@
 [![R-CMD-check](https://github.com/chross22/derivoce/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chross22/derivoce/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-Derived oceanographic covariates for species distribution models: spatial and
-temporal gradients, time-integrated variables, temporal lags, and fluid dynamics,
-computed from gridded ocean data. 
+Derived oceanographic covariates: spatial and temporal gradients,
+time-integrated variables, temporal lags, and fluid dynamics, computed from
+gridded ocean data.
 
 It takes an `sf` point object with one row per location and time step — the
 shape every [`datamatch`](https://github.com/chross22/datamatch) access function

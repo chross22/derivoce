@@ -7,7 +7,7 @@ citHeader(
 bibentry(
   bibtype = "Manual",
   key     = "derivoce",
-  title   = "derivoce: Derived Oceanographic Covariates for Species Distribution Models",
+  title   = "derivoce: Derived Oceanographic Covariates from Gridded Ocean Data",
   author  = person("Camille", "Ross"),
   year    = format(Sys.Date(), "%Y"),
   note    = paste0("R package version ", meta$Version),

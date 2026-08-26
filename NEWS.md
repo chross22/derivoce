@@ -29,6 +29,13 @@
   requested measures are evaluated now, and `rossby` is the only one a
   projected grid refuses.
 
+## Documentation
+
+* The package is titled and described by what it computes rather than by one
+  use for it. Nothing here is specific to species distribution models: it takes
+  gridded ocean data in and returns derived columns, and what happens next is
+  the caller's business.
+
 # derivoce 0.2.0
 
 ## Works with every datamatch source
@@ -192,7 +199,7 @@ First release.
 
 derivoce takes the output of `datamatch::accessEnvDat()` — an `sf` point object
 per time step — and returns the same shape with derived columns added, so
-derived covariates flow into a species distribution model alongside the
+derived covariates travel into whatever analysis follows alongside the
 variables they came from.
 
 ## Gradients and change over time
