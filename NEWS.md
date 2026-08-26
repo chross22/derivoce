@@ -1,3 +1,14 @@
+# derivoce (development version)
+
+## Fixes
+
+* `flow_deformation()` failed on a projected grid whatever `measures` asked
+  for. All seven layers were built and then subset, so `rossby` was computed on
+  every call and `coriolis()` stopped for want of a latitude — a request for
+  vorticity alone died citing a measure the caller had not named. Only the
+  requested measures are evaluated now, and `rossby` is the only one a
+  projected grid refuses.
+
 # derivoce 0.2.0
 
 ## Works with every datamatch source

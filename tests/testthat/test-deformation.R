@@ -188,3 +188,21 @@ test_that("the outermost ring is NA, as for every central difference", {
   expect_true(any(is.na(result$divergence)))
   expect_true(any(is.finite(result$divergence)))
 })
+
+
+test_that("a projected grid only stops the measure that needs latitude", {
+  # The Rossby number is the one measure that cannot be computed without
+  # latitude. Building all seven layers and then subsetting would evaluate it
+  # on every call, so a request for vorticity alone on a projected grid would
+  # fail citing a measure the caller never asked for.
+  grid <- expand.grid(x = seq(0, 4e4, by = 1e4), y = seq(0, 4e4, by = 1e4))
+  grid$UO <- grid$y / 1e5
+  grid$VO <- -grid$x / 1e5
+  grid$YEAR <- 2020
+  grid$MONTH <- 1
+  grid$DAY <- 1L
+  env <- sf::st_as_sf(grid, coords = c("x", "y"), crs = "EPSG:32619")
+
+  expect_no_error(flow_deformation(env, measures = all_measures))
+  expect_error(flow_deformation(env, measures = "rossby"), "projected grid")
+})

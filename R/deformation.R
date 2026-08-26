@@ -100,15 +100,20 @@ flow_deformation <- function(env_dat, u = "UO", v = "VO",
     normal_strain <- du_dx - dv_dy
     shear_strain <- dv_dx + du_dy
 
-    layers <- list(
-      vorticity = vorticity,
-      divergence = du_dx + dv_dy,
-      normal_strain = normal_strain,
-      shear_strain = shear_strain,
-      strain_rate = sqrt(normal_strain^2 + shear_strain^2),
-      okubo_weiss = normal_strain^2 + shear_strain^2 - vorticity^2,
-      rossby = vorticity / coriolis(rast)
-    )[measures]
+    # switch() rather than a list subset, so only the requested measures are
+    # evaluated. Building all seven and then dropping six would call coriolis()
+    # on every call, and it stops on a projected grid -- which would fail a
+    # request for vorticity alone, citing a measure the caller never asked for.
+    layers <- lapply(measures, function(measure) {
+      switch(measure,
+             vorticity = vorticity,
+             divergence = du_dx + dv_dy,
+             normal_strain = normal_strain,
+             shear_strain = shear_strain,
+             strain_rate = sqrt(normal_strain^2 + shear_strain^2),
+             okubo_weiss = normal_strain^2 + shear_strain^2 - vorticity^2,
+             rossby = vorticity / coriolis(rast))
+    })
 
     out <- do.call(c, unname(layers))
     names(out) <- paste0(measures, suffix)
