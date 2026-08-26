@@ -6,7 +6,7 @@
 
 Derived oceanographic covariates for species distribution models: spatial and
 temporal gradients, time-integrated variables, temporal lags, and fluid dynamics,
-computed from gridded ocean data.
+computed from gridded ocean data. 
 
 It takes an `sf` point object with one row per location and time step — the
 shape every [`datamatch`](https://github.com/chross22/datamatch) access function
