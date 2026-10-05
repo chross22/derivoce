@@ -4,7 +4,7 @@
 \alias{warn_residence}
 \title{Report how much of the result is censored or unknown}
 \usage{
-warn_residence(released, censored, escaped, max_days)
+warn_residence(released, censored, escaped, max_days, beyond = 0L)
 }
 \arguments{
 \item{released}{particles released}
@@ -14,6 +14,8 @@ warn_residence(released, censored, escaped, max_days)
 \item{escaped}{particles that left the velocity field without leaving the box}
 
 \item{max_days}{the window}
+
+\item{beyond}{particles still inside the box when the record ended}
 }
 \value{
 invisible \code{NULL}

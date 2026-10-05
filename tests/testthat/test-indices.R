@@ -124,7 +124,7 @@ test_that("eastern_gom_salinity is box_anomaly over a fixed, inspectable box", {
 
   env <- make_env(function(lon, lat, year, month) 32 + month,
                   lon = seq(-68, -66, by = 0.25), lat = seq(43, 44.5, by = 0.25),
-                  months = 1:3)
+                  years = 2020:2021, months = 1:3)
   env$SSS <- env$SST
 
   result <- eastern_gom_salinity(env)
@@ -177,4 +177,23 @@ test_that("markdown rendering is a valid pipe table", {
                   integer(1))
   expect_equal(length(unique(cells)), 1)
   expect_match(markdown, "`scotian_shelf_inflow()`", fixed = TRUE)
+})
+
+test_that("a climatology from a single year warns that every anomaly is zero", {
+  # One value per calendar month, so each month's mean is that value and the
+  # anomaly is exactly zero. A column of zeros looks like a quiet year.
+  env <- make_env(function(lon, lat, year, month) month, months = 1:12)
+
+  expect_warning(
+    result <- box_anomaly(env, "SST", whole_box, reference = "climatology"),
+    "single box mean"
+  )
+  expect_true(all(result$SST_box_anom == 0))
+})
+
+test_that("a climatology from several years stays quiet", {
+  env <- make_env(function(lon, lat, year, month) month,
+                  years = 2020:2022, months = 1:12)
+
+  expect_false(warned(box_anomaly(env, "SST", whole_box, reference = "climatology")))
 })

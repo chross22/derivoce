@@ -757,9 +757,13 @@ different physical lengths.
 result, but it is not an exponential separation rate, and `ln` of it would be
 negative. Clamping reports zero separation rather than a negative exponent.
 
-**Particles are clamped at the ends of the record** rather than extrapolated: one
-that runs past the available fields is held in the last known flow, a milder error
-than inventing velocities.
+**Particles that run past the ends of the record are lost.** Time steps within
+`integration_days` of the end of the series (the start, for a backward run) return
+`NA`, as do FSLE and residence-time steps whose parcels need flow the record does
+not have. Earlier versions held the first or last field steady instead, which
+returned finite values that were steady-flow results rather than the record's own,
+and no warning could separate them from real ones. A particle that answers before
+the record ends (leaves the box, or separates to the target) still has its answer.
 
 ### On monthly data
 

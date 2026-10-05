@@ -45,6 +45,9 @@ standard deviation say different things about a place than their sum does.
 \details{
 The window is \strong{trailing and inclusive}: it ends at the current step and
 includes it. A three-month mean at March covers January, February and March.
+On a record finer than monthly, \code{"month"} and \code{"year"} windows reach back by
+calendar month but stop at the current step, so a daily record's monthly
+maximum on the 10th covers the 1st to the 10th, never the days after it.
 }
 \section{Steps or calendar time}{
 

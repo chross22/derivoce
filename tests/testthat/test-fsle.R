@@ -10,7 +10,8 @@ test_that("FSLE recovers the analytic exponent of a saddle flow", {
     x <- (lon + 69) * metres_per_degree * cos_ref
     y <- (lat - 42.5) * metres_per_degree
     cbind(rate_per_day * x / 86400, -rate_per_day * y / 86400)
-  }, lon = seq(-69.4, -68.6, by = 0.1), lat = seq(42.2, 42.8, by = 0.1))
+  }, lon = seq(-69.4, -68.6, by = 0.1), lat = seq(42.2, 42.8, by = 0.1),
+  months = 1:6)
 
   result <- fsle(env, final_separation = 20, max_days = 120, step_hours = 6)
   values <- result$backward_fsle[!is.na(result$backward_fsle)]
@@ -31,7 +32,8 @@ test_that("the exponent is insensitive to the separation threshold in a steady s
     x <- (lon + 69) * metres_per_degree * cos_ref
     y <- (lat - 42.5) * metres_per_degree
     cbind(rate_per_day * x / 86400, -rate_per_day * y / 86400)
-  }, lon = seq(-69.4, -68.6, by = 0.1), lat = seq(42.2, 42.8, by = 0.1))
+  }, lon = seq(-69.4, -68.6, by = 0.1), lat = seq(42.2, 42.8, by = 0.1),
+  months = 1:6)
 
   near <- fsle(env, final_separation = 15, max_days = 120)
   far <- fsle(env, final_separation = 30, max_days = 120)
@@ -49,7 +51,8 @@ test_that("a stronger strain field separates parcels faster", {
       x <- (lon + 69) * metres_per_degree * cos_ref
       y <- (lat - 42.5) * metres_per_degree
       cbind(rate * x / 86400, -rate * y / 86400)
-    }, lon = seq(-69.4, -68.6, by = 0.1), lat = seq(42.2, 42.8, by = 0.1))
+    }, lon = seq(-69.4, -68.6, by = 0.1), lat = seq(42.2, 42.8, by = 0.1),
+  months = 1:6)
   }
 
   weak <- fsle(saddle(0.05), final_separation = 20, max_days = 120)

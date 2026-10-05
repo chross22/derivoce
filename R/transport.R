@@ -29,9 +29,11 @@
 #'
 #' Sample points on land or outside the domain have no velocity. They are
 #' dropped rather than counted as zero flow, since zero would understate the
-#' transport while looking like a measurement. If fewer than `min_coverage` of
-#' the points survive, the step returns `NA`: a transport integrated over half a
-#' section is not that section's transport.
+#' transport while looking like a measurement. The flow over the surviving points
+#' is scaled to the full length of the section, which assumes the missing part
+#' carries what the rest does. If fewer than `min_coverage` of the points
+#' survive, the step returns `NA`: a transport integrated over half a section is
+#' not that section's transport.
 #'
 #' @section What this is not:
 #' A surface-velocity field integrated along a line is a **proxy for**, not a
@@ -100,7 +102,10 @@ section_transport <- function(env_dat, from, to, u = "UO", v = "VO",
     usable <- !is.na(normal)
 
     if (mean(usable) >= min_coverage && any(usable)) {
-      result[rows] <- sum(normal[usable]) * geometry$ds
+      # Scaled to the whole section: summing only the usable points would
+      # treat the dropped ones as zero flow, which is the understatement the
+      # coverage rule above is meant to prevent.
+      result[rows] <- sum(normal[usable]) * geometry$ds / mean(usable)
       covered <- covered + 1
     }
   }

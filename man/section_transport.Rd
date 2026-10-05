@@ -71,9 +71,11 @@ is not under-resolved relative to the data it is drawn on.
 
 Sample points on land or outside the domain have no velocity. They are
 dropped rather than counted as zero flow, since zero would understate the
-transport while looking like a measurement. If fewer than \code{min_coverage} of
-the points survive, the step returns \code{NA}: a transport integrated over half a
-section is not that section's transport.
+transport while looking like a measurement. The flow over the surviving points
+is scaled to the full length of the section, which assumes the missing part
+carries what the rest does. If fewer than \code{min_coverage} of the points
+survive, the step returns \code{NA}: a transport integrated over half a section is
+not that section's transport.
 }
 
 \section{What this is not}{

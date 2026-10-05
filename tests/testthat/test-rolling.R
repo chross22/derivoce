@@ -203,3 +203,25 @@ test_that("a missing covariate is an error", {
   env <- rolling_field(c(1, 2, 3))
   expect_error(rolling_covariate(env, "NOPE"), "NOPE")
 })
+
+test_that("a calendar window on daily data never includes later days", {
+  # Daily record over two months. The window is trailing, so on 1 January the
+  # monthly maximum can only be that day's own value: counting by month alone
+  # would sweep in the other thirty days of January, which are the future.
+  days <- seq(as.Date("2020-01-01"), as.Date("2020-02-29"), by = "day")
+  frame <- data.frame(
+    x = -70, y = 43,
+    YEAR = as.integer(format(days, "%Y")),
+    MONTH = as.integer(format(days, "%m")),
+    DAY = as.integer(format(days, "%d")),
+    SST = seq_along(days)
+  )
+  env <- sf::st_as_sf(frame, coords = c("x", "y"), crs = 4326)
+
+  result <- rolling_covariate(env, "SST", n = 1, by = "month", stat = "max")
+
+  expect_equal(result$SST_max1month, result$SST[seq_along(days)][
+    pmax(seq_along(days), 1)])
+  expect_equal(result$SST_max1month[1], 1)
+  expect_equal(result$SST_max1month[10], 10)
+})

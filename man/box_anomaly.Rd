@@ -23,7 +23,9 @@ as datamatch's access functions return}
 \item{reference}{\code{"climatology"} (the default) removes a separate mean per
 calendar month, so only departures from the usual conditions for that month
 survive. \code{"record"} removes one mean over the whole series, leaving the
-seasonal cycle in. \code{"none"} returns the box mean itself.}
+seasonal cycle in. \code{"none"} returns the box mean itself. A climatology
+needs several years: a calendar month seen only once is its own mean, so its
+anomaly is exactly zero and the function warns.}
 
 \item{name}{name for the new column}
 }

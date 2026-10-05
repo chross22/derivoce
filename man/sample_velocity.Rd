@@ -19,6 +19,7 @@ sample_velocity(positions, time, velocity, times)
 two-column matrix of eastward and northward velocity, in m/s
 }
 \description{
-Sample the velocity field at positions and a time
+Times outside the record return \code{NA} rather than the nearest field held
+steady, so a particle that runs past either end is lost.
 }
 \keyword{internal}

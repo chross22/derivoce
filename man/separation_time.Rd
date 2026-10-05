@@ -36,7 +36,9 @@ separation_time(
 \item{times}{numeric time of each raster, in days}
 }
 \value{
-numeric vector of times in days; \code{NA} where the target was never met
+numeric vector of times in days; \code{NA} where the target was never met.
+Attributes count the pairs lost to the domain, the pairs that ran past the
+end of the record, and the pairs still unseparated.
 }
 \description{
 Advects each seed together with an eastward and a northward companion,

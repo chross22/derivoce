@@ -141,3 +141,19 @@ test_that("transport is one value per time step, broadcast to every row", {
   expect_true(all(per_step == 1))
   expect_warning(horizontal_gradient(result, "transport"), "Spatially uniform")
 })
+
+test_that("a section partly outside the data is scaled up, not read as zero flow", {
+  # The section runs 1.2 degrees north from 42.2 but the data stop at 43, so a
+  # third of its sample points have no velocity. They are dropped, so the
+  # transport must still be speed times the FULL length: summing only the
+  # surviving points would report two thirds of it with no sign anything was
+  # missing.
+  env <- uniform_flow(east = 1)
+
+  result <- section_transport(env, from = c(-69, 42.2), to = c(-69, 43.4))
+  expected <- 1.2 * 111320
+
+  got <- unique(stats::na.omit(result$transport))
+  expect_equal(length(got), 1)
+  expect_lt(abs(got - expected) / expected, 0.02)
+})

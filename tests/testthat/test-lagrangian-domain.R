@@ -47,7 +47,8 @@ test_that("FSLE blames the domain when parcels are lost before separating", {
   # Fast uniform flow: pairs never separate, but they leave the box first, so
   # the binding constraint is max_days against the size of the box.
   env <- make_flow(function(lon, lat) cbind(rep(-0.2, length(lon)), rep(0, length(lon))),
-                   lon = seq(-70, -69, by = 0.05), lat = seq(42, 43, by = 0.05))
+                   lon = seq(-70, -69, by = 0.05), lat = seq(42, 43, by = 0.05),
+                   months = 1:3)
 
   message <- tryCatch(fsle(env, final_separation = 50, max_days = 60),
                       warning = conditionMessage)
@@ -59,7 +60,8 @@ test_that("FSLE blames the domain when parcels are lost before separating", {
 test_that("FSLE blames the strain when parcels stay put and never separate", {
   # Almost motionless: nothing leaves the box, and nothing separates either.
   env <- make_flow(function(lon, lat) cbind(rep(1e-4, length(lon)), rep(0, length(lon))),
-                   lon = seq(-70, -68, by = 0.05), lat = seq(42, 43, by = 0.05))
+                   lon = seq(-70, -68, by = 0.05), lat = seq(42, 43, by = 0.05),
+                   months = 1:3)
 
   message <- tryCatch(fsle(env, final_separation = 50, max_days = 5),
                       warning = conditionMessage)
@@ -70,9 +72,11 @@ test_that("FSLE blames the strain when parcels stay put and never separate", {
 
 test_that("the two FSLE diagnoses are distinguished, not merged", {
   lost_case <- make_flow(function(lon, lat) cbind(rep(-0.2, length(lon)), rep(0, length(lon))),
-                         lon = seq(-70, -69, by = 0.05), lat = seq(42, 43, by = 0.05))
+                         lon = seq(-70, -69, by = 0.05), lat = seq(42, 43, by = 0.05),
+                         months = 1:3)
   still_case <- make_flow(function(lon, lat) cbind(rep(1e-4, length(lon)), rep(0, length(lon))),
-                          lon = seq(-70, -68, by = 0.05), lat = seq(42, 43, by = 0.05))
+                          lon = seq(-70, -68, by = 0.05), lat = seq(42, 43, by = 0.05),
+                          months = 1:3)
 
   lost <- tryCatch(fsle(lost_case, max_days = 60), warning = conditionMessage)
   still <- tryCatch(fsle(still_case, max_days = 5), warning = conditionMessage)
@@ -96,4 +100,39 @@ test_that("the headline distinguishes empty from nearly empty", {
                "no values at all")
   expect_match(tryCatch(warn_lagrangian("ftle", 0.95, "d", "a"), warning = conditionMessage),
                "almost nothing")
+})
+
+test_that("a particle that runs past the end of the record is lost, not frozen", {
+  # Three monthly fields, 0, 31 and 60 days apart. A 40-day integration fits
+  # inside the record only from the first step forward and the last step
+  # backward. Elsewhere the old behaviour held the boundary field steady and
+  # returned finite values that were steady-flow results, not the record's.
+  env <- make_flow(function(lon, lat) cbind(rep(0.01, length(lon)), rep(0, length(lon))),
+                   months = 1:3)
+
+  missing_by_step <- function(direction) {
+    result <- suppressWarnings(
+      ftle(env, integration_days = 40, step_hours = 24, direction = direction))
+    tapply(result[[paste0(direction, "_ftle")]], result$MONTH,
+           function(z) mean(is.na(z)))
+  }
+
+  forward <- missing_by_step("forward")
+  expect_lt(forward[["1"]], 1)
+  expect_equal(forward[["2"]], 1)
+  expect_equal(forward[["3"]], 1)
+
+  backward <- missing_by_step("backward")
+  expect_equal(backward[["1"]], 1)
+  expect_equal(backward[["2"]], 1)
+  expect_lt(backward[["3"]], 1)
+})
+
+test_that("a record shorter than the integration time returns nothing and says so", {
+  env <- make_flow(function(lon, lat) cbind(rep(0.1, length(lon)), rep(0, length(lon))),
+                   months = 1:2)
+
+  expect_warning(result <- ftle(env, integration_days = 40, step_hours = 24),
+                 "NA")
+  expect_true(all(is.na(result$backward_ftle)))
 })

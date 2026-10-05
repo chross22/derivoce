@@ -89,7 +89,11 @@ residence_time <- function(env_dat, box = NULL, u = "UO", v = "VO",
   result <- rep(NA_real_, nrow(env_dat))
   censored <- 0L
   escaped <- 0L
+  beyond <- 0L
   released <- 0L
+  # Where the fields stop. A particle still inside the box at that point has no
+  # flow to follow, which says nothing about whether it would have stayed.
+  record_end <- if (sign > 0) max(step_times) else min(step_times)
 
   for (i in seq_len(nrow(steps))) {
     rows <- step_rows(env_dat, steps[i, ])
@@ -113,25 +117,27 @@ residence_time <- function(env_dat, box = NULL, u = "UO", v = "VO",
 
       still_here <- inside_box(positions, box)
       lost <- !stats::complete.cases(positions)
+      past_record <- (time - record_end) * sign > 1e-6
       # Out of the box is an answer; out of the velocity field is not.
       done <- which(!still_here & !lost & is.na(elapsed))
       elapsed[done] <- k * step_days
       gone <- which(lost & is.na(elapsed))
-      elapsed[gone] <- -Inf
+      elapsed[gone] <- if (past_record) -1 else -Inf
 
       if (all(!is.na(elapsed))) break
     }
 
     escaped <- escaped + sum(is.infinite(elapsed))
+    beyond <- beyond + sum(elapsed == -1, na.rm = TRUE)
     still_inside <- is.na(elapsed)
     censored <- censored + sum(still_inside)
     elapsed[still_inside] <- max_days
-    elapsed[is.infinite(elapsed)] <- NA_real_
+    elapsed[is.infinite(elapsed) | elapsed == -1] <- NA_real_
 
     result[rows[active]] <- elapsed
   }
 
-  warn_residence(released, censored, escaped, max_days)
+  warn_residence(released, censored, escaped, max_days, beyond)
   env_dat[[name %||% paste0(direction, "_residence")]] <- result
   env_dat
 }
@@ -165,9 +171,10 @@ extent_box <- function(env_dat) {
 #' @param censored particles still inside when the window ended
 #' @param escaped particles that left the velocity field without leaving the box
 #' @param max_days the window
+#' @param beyond particles still inside the box when the record ended
 #' @return invisible `NULL`
 #' @keywords internal
-warn_residence <- function(released, censored, escaped, max_days) {
+warn_residence <- function(released, censored, escaped, max_days, beyond = 0L) {
   if (released == 0) {
     warning("No points fall inside the box, so nothing was released.",
             call. = FALSE)
@@ -185,6 +192,19 @@ warn_residence <- function(released, censored, escaped, max_days) {
       "biased downwards -- most severely at the most retentive sites,",
       "\n  which is usually the comparison being made. Raise max_days, or ",
       "treat the column as censored\n  rather than as a duration.",
+      call. = FALSE
+    )
+  }
+
+  # Like the margin lost to the domain edge, a few steps at the end of the
+  # record are expected, so only a record that gives almost nothing is reported.
+  if (beyond / released >= 0.9) {
+    warning(
+      beyond, " of ", released, " particles were still inside the box when the ",
+      "record ended, and are NA.",
+      "\n  Fields are never held steady past the first or last time step, so a ",
+      "particle with no flow\n  left to follow has no residence time. Fetch a ",
+      "longer series, or lower max_days.",
       call. = FALSE
     )
   }

@@ -92,6 +92,7 @@ fsle <- function(env_dat, u = "UO", v = "VO", final_separation = 50,
   sign <- if (direction == "backward") -1 else 1
   result <- rep(NA_real_, nrow(env_dat))
   lost <- 0
+  past_record <- 0
   unseparated <- 0
   delta_0 <- NA_real_
 
@@ -115,6 +116,7 @@ fsle <- function(env_dat, u = "UO", v = "VO", final_separation = 50,
                                velocity = velocity, times = step_times)
 
     lost <- lost + attr(elapsed, "lost")
+    past_record <- past_record + attr(elapsed, "past_record")
     unseparated <- unseparated + attr(elapsed, "unseparated")
 
     result[rows] <- log(final_separation / delta_0) / elapsed
@@ -128,12 +130,22 @@ fsle <- function(env_dat, u = "UO", v = "VO", final_separation = 50,
     detail = paste0(
       unseparated, " parcel pairs never reached the ", final_separation,
       " km target within max_days = ", max_days, ", and ", lost,
-      " drifted out of the velocity field first. Over ", max_days,
+      " drifted out of the velocity field first",
+      if (past_record > 0) paste0(
+        ", and ", past_record, " ran past the end of the record, where there ",
+        "is no flow to follow"),
+      ". Over ", max_days,
       " days this field's median speed (", signif(scale$speed, 2),
       " m/s) carries a parcel about ", signif(reach, 2),
       " km, against a domain of ", signif(scale$width_km, 2), " by ",
       signif(scale$height_km, 2), " km."),
-    advice = if (lost > unseparated) {
+    advice = if (past_record > lost + unseparated) {
+      paste0(
+        "Most ran out of record: a step within max_days of the ",
+        if (direction == "backward") "start" else "end", " of the series has no ",
+        "flow to follow, and fields are never held steady past it. Fetch a ",
+        "longer series, or shorten max_days.")
+    } else if (lost > unseparated) {
       paste0(
         "Most were lost to the domain rather than to a lack of strain, so the ",
         "binding constraint is max_days against the size of the box. Shorten ",
@@ -186,7 +198,9 @@ default_separation <- function(seeds) {
 #' @param step_days step size in days
 #' @param velocity list of two-layer `SpatRaster`s
 #' @param times numeric time of each raster, in days
-#' @return numeric vector of times in days; `NA` where the target was never met
+#' @return numeric vector of times in days; `NA` where the target was never met.
+#'   Attributes count the pairs lost to the domain, the pairs that ran past the
+#'   end of the record, and the pairs still unseparated.
 #' @keywords internal
 separation_time <- function(seeds, delta_0, delta_f, start_time, sign, max_days,
                             step_days, velocity, times) {
@@ -206,6 +220,10 @@ separation_time <- function(seeds, delta_0, delta_f, start_time, sign, max_days,
   # The two ways a parcel goes unanswered call for different fixes, so they are
   # counted apart rather than both just becoming NA.
   lost_count <- 0
+  past_record_count <- 0
+  # Where the fields stop. A step that needs flow beyond it cannot be taken,
+  # which is a shortage of record rather than a parcel leaving the domain.
+  record_end <- if (sign > 0) max(times) else min(times)
 
   # Only parcels still short of the target are advected. Without this, every
   # parcel is integrated for the full max_days even after its answer is known,
@@ -229,13 +247,16 @@ separation_time <- function(seeds, delta_0, delta_f, start_time, sign, max_days,
     lost <- is.na(separation)
     reached <- !lost & separation >= delta_f
     elapsed[active[reached]] <- step * step_days
-    lost_count <- lost_count + sum(lost)
+    past_record <- (time - record_end) * sign > 1e-6
+    lost_count <- lost_count + sum(lost & !past_record)
+    past_record_count <- past_record_count + sum(lost & past_record)
 
     active <- active[!reached & !lost]
     if (length(active) == 0) break
   }
 
   attr(elapsed, "lost") <- lost_count
+  attr(elapsed, "past_record") <- past_record_count
   attr(elapsed, "unseparated") <- length(active)
   elapsed
 }

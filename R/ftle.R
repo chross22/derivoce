@@ -133,7 +133,10 @@ ftle <- function(env_dat, u = "UO", v = "VO", integration_days = 14,
     advice = paste0(
       "Shorten integration_days, or fetch a larger bounding box. Either way a ",
       "margin of roughly speed x integration_days is lost along the ", edge,
-      " edge, so the usable area is always smaller than the area fetched.")
+      " edge, so the usable area is always smaller than the area fetched. ",
+      "Time steps within integration_days of the ",
+      if (direction == "backward") "start" else "end",
+      " of the series are NA too: no flow is held steady past the record.")
   )
 
   env_dat[[name %||% paste0(direction, "_ftle")]] <- result
@@ -203,6 +206,9 @@ velocity_at <- function(positions, time, velocity, times) {
 
 #' Sample the velocity field at positions and a time
 #'
+#' Times outside the record return `NA` rather than the nearest field held
+#' steady, so a particle that runs past either end is lost.
+#'
 #' @inheritParams velocity_at
 #' @return two-column matrix of eastward and northward velocity, in m/s
 #' @keywords internal
@@ -211,9 +217,15 @@ sample_velocity <- function(positions, time, velocity, times) {
     return(as.matrix(terra::extract(velocity[[1]], positions, method = "bilinear")))
   }
 
-  # Clamp to the ends of the record rather than extrapolating: a particle that
-  # runs past the available fields is held in the last known flow, which is a
-  # milder error than inventing velocities.
+  # Outside the record there is no flow to sample. Holding the first or last
+  # field steady would return finite values that look like measurements but are
+  # steady-flow results, and nothing downstream could tell them apart, so the
+  # particle has no velocity and is lost like one that left the domain. The
+  # tolerance absorbs floating-point drift in accumulated step times.
+  tolerance <- 1e-6
+  if (time < min(times) - tolerance || time > max(times) + tolerance) {
+    return(matrix(NA_real_, nrow(positions), 2))
+  }
   time <- min(max(time, min(times)), max(times))
   upper <- findInterval(time, times, all.inside = TRUE) + 1
   lower <- upper - 1

@@ -1,5 +1,36 @@
 # derivoce (development version)
 
+## Silent wrong values
+
+Four functions returned a plausible number where the right answer was a warning
+or an `NA`. Each now has a test that fails on the old behaviour.
+
+* `section_transport()` and the indices built on it summed only the sample
+  points that had a velocity, which counts the dropped ones as zero flow. A
+  uniform flow across a section with a third of its points off the data
+  returned two thirds of the transport, with no sign anything was missing,
+  although the documentation said dropped points were not counted as zero. The
+  flow over the surviving points is now scaled to the whole section. The
+  `min_coverage` rule is unchanged.
+* `ftle()`, `fsle()` and `residence_time()` held the first or last velocity
+  field steady once a particle ran past either end of the record, and returned
+  finite values that were steady-flow results rather than the record's. Nothing
+  could flag them, because they were not `NA`. Past the record there is now no
+  flow: `ftle()` is `NA` for steps within `integration_days` of the end of the
+  series (the start, for a backward run), and `fsle()` and `residence_time()`
+  count those particles apart from ones that left the domain, so each
+  diagnosis names its own cause. A particle that answers before the record ends
+  keeps its answer. A series shorter than the integration time now returns
+  `NA` and warns, where before it returned numbers.
+* `rolling_covariate()` with `by = "month"` or `"year"` on a record finer than
+  monthly counted the later days of the current month, so a daily series'
+  monthly maximum on the 1st included the whole month. The window is trailing:
+  it reaches back by calendar month and stops at the current step. Monthly
+  records are unchanged.
+* `box_anomaly(reference = "climatology")` on a record with one value per
+  calendar month returned an anomaly of exactly zero for every step. It now
+  warns, as `cell_anomaly()` already did.
+
 ## Eddies
 
 * `detect_eddies()` reported `in_eddy = 0` where there was no velocity to

@@ -67,7 +67,7 @@ test_that("a steady current gives the crossing time the geometry implies", {
   xy <- sf::st_coordinates(env)
   west <- abs(xy[, 1] - -69.5) < 1e-9 & abs(xy[, 2] - 43) < 1e-9
   expected <- 1 / degrees_per_day(speed, 43)
-  got <- unique(result$forward_residence[west])
+  got <- unique(stats::na.omit(result$forward_residence[west]))
 
   # The box is only checked once a step, so the answer is the first check after
   # the particle actually left: at or above the analytic time, by less than one
@@ -87,7 +87,7 @@ test_that("a finer step resolves the crossing more closely", {
       residence_time(env, box, max_days = 60, step_hours = step_hours))
     xy <- sf::st_coordinates(env)
     west <- abs(xy[, 1] - -69.5) < 1e-9 & abs(xy[, 2] - 43) < 1e-9
-    unique(r$forward_residence[west])
+    unique(stats::na.omit(r$forward_residence[west]))
   }
 
   expect_lt(abs(west_value(1) - expected), abs(west_value(12) - expected))

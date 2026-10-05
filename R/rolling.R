@@ -8,6 +8,9 @@
 #'
 #' The window is **trailing and inclusive**: it ends at the current step and
 #' includes it. A three-month mean at March covers January, February and March.
+#' On a record finer than monthly, `"month"` and `"year"` windows reach back by
+#' calendar month but stop at the current step, so a daily record's monthly
+#' maximum on the 10th covers the 1st to the 10th, never the days after it.
 #'
 #' @section Steps or calendar time:
 #' `by = "step"` counts positions in the record and `by = "day"`, `"month"` or
@@ -152,7 +155,12 @@ window_steps <- function(steps, i, n, by) {
     return(which(when <= when[i] & when > when[i] - n))
   }
 
+  # Calendar months reach back from this step's month, but never forward in
+  # time: on a record finer than monthly, the later days of the current month
+  # are still in the future.
   months_back <- if (identical(by, "year")) n * 12 else n
   counter <- steps$YEAR * 12 + (steps$MONTH - 1)
-  which(counter <= counter[i] & counter > counter[i] - months_back)
+  when <- step_time_days(steps)
+  which(counter <= counter[i] & counter > counter[i] - months_back &
+          when <= when[i])
 }

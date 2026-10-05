@@ -22,7 +22,9 @@
 #' @param reference `"climatology"` (the default) removes a separate mean per
 #'   calendar month, so only departures from the usual conditions for that month
 #'   survive. `"record"` removes one mean over the whole series, leaving the
-#'   seasonal cycle in. `"none"` returns the box mean itself.
+#'   seasonal cycle in. `"none"` returns the box mean itself. A climatology
+#'   needs several years: a calendar month seen only once is its own mean, so its
+#'   anomaly is exactly zero and the function warns.
 #' @param name name for the new column
 #' @return `env_dat` with an anomaly column added, in the units of `var`
 #' @examples
@@ -61,6 +63,18 @@ box_anomaly <- function(env_dat, var, box,
   box_mean <- vapply(seq_len(nrow(steps)), function(i) {
     mean(values[step_index == i & inside], na.rm = TRUE)
   }, numeric(1))
+
+  if (reference == "climatology") {
+    per_month <- table(steps$MONTH[!is.na(box_mean)])
+    if (length(per_month) == 0 || min(per_month) < 2) {
+      warning("box_anomaly(): some calendar months have a single box mean, so ",
+              "their anomaly is exactly zero.",
+              "\n  A monthly climatology needs several years: with one year ",
+              "there is one value per month to average.",
+              "\n  Fetch a longer series, or use reference = \"record\" to ",
+              "compare against the whole-series mean instead.", call. = FALSE)
+    }
+  }
 
   anomaly <- switch(
     reference,
