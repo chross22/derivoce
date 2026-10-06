@@ -108,26 +108,23 @@ data.frame(
 `CHL_int` is the running sum from January, which is what a copepod
 integrates.
 
-Note `by = "month"`. Counting *steps* is only unambiguous when the
-series is complete: in a monthly record missing April, a one-step lag
-makes March the predecessor of May and says nothing about it. Counting
-calendar months returns `NA` there instead.
+`by` is required and counts calendar time. In a monthly record missing
+April, counting positions would make March the predecessor of May and
+say nothing about it, so that option does not exist: a calendar month
+with no April to look back to returns `NA`.
 
 ``` r
 
 gappy <- env[env$MONTH != 4, ]
 
-by_step <- lag_covariate(gappy, "SST", n = 1, by = "step")
 by_month <- lag_covariate(gappy, "SST", n = 1, by = "month")
 
-c(step = mean(is.na(by_step$SST_lag1)),
-  month = mean(is.na(by_month$SST_lag1month)))
-#>  step month 
-#>   0.2   0.4
+mean(is.na(by_month$SST_lag1month))
+#> [1] 0.4
 ```
 
-The calendar version has more `NA` because May genuinely has no April to
-look back to. That is the honest answer.
+The proportion of `NA` is higher than for a complete record because May
+genuinely has no April to look back to. That is the honest answer.
 
 A vector of lags builds an autoregressive set in one call:
 
@@ -156,10 +153,10 @@ The window is trailing and inclusive, so March covers January to March.
 Early steps have less history than the window asks for; `min_obs`
 decides whether they get a summary of what is there or an `NA`.
 
-`by = "month"` counts calendar time and `by = "step"` counts positions
-in the record. They agree exactly until the series has a gap, and then
-diverge silently — which is why the distinction is an argument rather
-than an assumption.
+`by` counts calendar time, as in
+[`lag_covariate()`](https://camilleross.org/derivoce/reference/lag_covariate.md).
+A gap in the record shortens the window rather than reaching back to an
+earlier month.
 
 ## Distance to a front
 
@@ -483,7 +480,7 @@ box <- list(xmin = -68.8, xmax = -68.2, ymin = 42.2, ymax = 42.8)
 flow <- residence_time(flow, box, max_days = 20, step_hours = 12)
 round(summary(flow$forward_residence), 1)
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.     NAs 
-#>     0.5     2.5     4.5     4.8     7.0    10.0     544
+#>     0.5     2.5     4.5     4.8     7.0    10.0     713
 ```
 
 Points outside the box are `NA`. Anything still inside after `max_days`
@@ -614,7 +611,7 @@ not change between months, so lagging it returns the column unchanged:
 ``` r
 
 env$DEPTH <- 100 + 20 * (sf::st_coordinates(env)[, 1] + 70)
-result <- tryCatch(lag_covariate(env, "DEPTH"),
+result <- tryCatch(lag_covariate(env, "DEPTH", by = "month"),
                    warning = function(w) conditionMessage(w))
 cat(substr(result, 1, 180))
 #> Static covariate(s) in a temporal operation: DEPTH.
@@ -755,9 +752,7 @@ inputs.
   products be credited in any publication using them; see
   <https://marine.copernicus.eu/> for the current wording and the DOI of
   the specific product and version you fetched.
-  [`datamatch::index_dictionary()`](https://camilleross.org/datamatch/reference/index_dictionary.html)
-  and
-  [`datamatch::variable_dictionary()`](https://camilleross.org/datamatch/reference/variable_dictionary.html)
+  `datamatch::index_dictionary()` and `datamatch::variable_dictionary()`
   report which product each variable came from.
 - **Natural Earth** provides the coastlines behind
   [`distance_to_shore()`](https://camilleross.org/derivoce/reference/distance_to_shore.md).
@@ -765,7 +760,7 @@ inputs.
   <https://www.naturalearthdata.com/>
 - **NOAA ETOPO**, via `marmap`, is the source of the depth grid used to
   place and check the named sections, and of `DEPTH` when it comes from
-  [`datamatch::fetch_bathymetry()`](https://camilleross.org/datamatch/reference/fetch_bathymetry.html).
+  `datamatch::fetch_bathymetry()`.
 
 ### Software
 

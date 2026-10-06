@@ -84,7 +84,7 @@ differentiated or summed, so the request cannot be honoured — but is skipped
 silently when <code>vars = NULL</code> swept it up. A caller who did not name
 <code>CHL_source</code> did not mean it, and failing the whole call over a column they
 never asked for would make the <code>NULL</code> default unusable on any object that has
-been through <code><a href="https://camilleross.org/datamatch/reference/fill_satellite_gaps.html" class="external-link">datamatch::fill_satellite_gaps()</a></code>.</p>
+been through <code>datamatch::fill_satellite_gaps()</code>.</p>
 <p>A <strong>degenerate</strong> column — static where the operation is temporal, spatially
 uniform where it is spatial — is only a warning, because the computation is
 well defined and the caller may have meant it. See <code><a href="warn_degenerate.html">warn_degenerate()</a></code>.</p>

@@ -2,6 +2,79 @@
 
 ## derivoce (development version)
 
+### Calendar time only
+
+Every function that looks back in time now counts in calendar units, and
+none has a default unit. Counting positions in the record
+(`by = "step"`) is removed: across a gap it reaches the wrong month
+without saying so, so a “one-month” lag could silently be a two-month
+one.
+
+- [`lag_covariate()`](https://camilleross.org/derivoce/reference/lag_covariate.md),
+  [`rolling_covariate()`](https://camilleross.org/derivoce/reference/rolling_covariate.md)
+  and
+  [`temporal_gradient()`](https://camilleross.org/derivoce/reference/temporal_gradient.md)
+  require `by`, one of `"hour"`, `"day"`, `"month"` or `"year"`.
+  [`front_frequency()`](https://camilleross.org/derivoce/reference/front_frequency.md)
+  requires it when `n` is given. Omitting it, or passing `"step"`, is an
+  error that says why. This is a breaking change: calls that relied on
+  the old default must now name the unit.
+- Default column names always carry the unit: `SST_lag1month`,
+  `SST_mean3month`. Previously a position count gave `SST_lag1` and
+  `SST_mean3`.
+- [`temporal_gradient()`](https://camilleross.org/derivoce/reference/temporal_gradient.md)
+  takes the lag unit as `by` and expresses the rate `per` that unit by
+  default, which makes a monthly gradient exactly per month. A step with
+  no predecessor one calendar unit earlier is `NA`, where a gap used to
+  give a rate quietly spanning two months. `per = "month"` also no
+  longer divides by 30.4375 days when `by = "month"`, which had made it
+  about 5% off.
+- `"hour"` is a calendar unit, for sub-daily records that used to be
+  lagged by position.
+- [`integrate_covariate()`](https://camilleross.org/derivoce/reference/integrate_covariate.md)
+  with a numeric `window` still counts steps.
+
+### Silent wrong values
+
+Four functions returned a plausible number where the right answer was a
+warning or an `NA`. Each now has a test that fails on the old behaviour.
+
+- [`section_transport()`](https://camilleross.org/derivoce/reference/section_transport.md)
+  and the indices built on it summed only the sample points that had a
+  velocity, which counts the dropped ones as zero flow. A uniform flow
+  across a section with a third of its points off the data returned two
+  thirds of the transport, with no sign anything was missing, although
+  the documentation said dropped points were not counted as zero. The
+  flow over the surviving points is now scaled to the whole section. The
+  `min_coverage` rule is unchanged.
+- [`ftle()`](https://camilleross.org/derivoce/reference/ftle.md),
+  [`fsle()`](https://camilleross.org/derivoce/reference/fsle.md) and
+  [`residence_time()`](https://camilleross.org/derivoce/reference/residence_time.md)
+  held the first or last velocity field steady once a particle ran past
+  either end of the record, and returned finite values that were
+  steady-flow results rather than the record’s. Nothing could flag them,
+  because they were not `NA`. Past the record there is now no flow:
+  [`ftle()`](https://camilleross.org/derivoce/reference/ftle.md) is `NA`
+  for steps within `integration_days` of the end of the series (the
+  start, for a backward run), and
+  [`fsle()`](https://camilleross.org/derivoce/reference/fsle.md) and
+  [`residence_time()`](https://camilleross.org/derivoce/reference/residence_time.md)
+  count those particles apart from ones that left the domain, so each
+  diagnosis names its own cause. A particle that answers before the
+  record ends keeps its answer. A series shorter than the integration
+  time now returns `NA` and warns, where before it returned numbers.
+- [`rolling_covariate()`](https://camilleross.org/derivoce/reference/rolling_covariate.md)
+  with `by = "month"` or `"year"` on a record finer than monthly counted
+  the later days of the current month, so a daily series’ monthly
+  maximum on the 1st included the whole month. The window is trailing:
+  it reaches back by calendar month and stops at the current step.
+  Monthly records are unchanged.
+- `box_anomaly(reference = "climatology")` on a record with one value
+  per calendar month returned an anomaly of exactly zero for every step.
+  It now warns, as
+  [`cell_anomaly()`](https://camilleross.org/derivoce/reference/cell_anomaly.md)
+  already did.
+
 ### Eddies
 
 - [`detect_eddies()`](https://camilleross.org/derivoce/reference/detect_eddies.md)
@@ -70,8 +143,7 @@ required: one row per location and time step.
   argument ‘x’”, because the grid was passed to the derivation as a
   promise and failed inside terra rather than before it. It is now
   forced first, so the explanation survives — and the explanation now
-  names the mesh case and points at
-  [`datamatch::upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.html).
+  names the mesh case and points at `datamatch::upscale_grid()`.
 - Sub-daily data works. `accessCCMP(frequency = "6hourly")` and
   `accessHYCOM(frequency = "3hourly")` return an `HOUR` column, and this
   package’s copy of
@@ -251,11 +323,10 @@ gap.
 
 First release.
 
-derivoce takes the output of
-[`datamatch::accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.html)
-— an `sf` point object per time step — and returns the same shape with
-derived columns added, so derived covariates travel into whatever
-analysis follows alongside the variables they came from.
+derivoce takes the output of `datamatch::accessEnvDat()` — an `sf` point
+object per time step — and returns the same shape with derived columns
+added, so derived covariates travel into whatever analysis follows
+alongside the variables they came from.
 
 ### Gradients and change over time
 
@@ -345,8 +416,8 @@ a single season. How that was done is recorded in `docs/`.
 - Covariates that cannot be informed by the data given — too few time
   steps for a lag, too small a domain for a Lyapunov exponent — warn
   rather than returning a column of `NA` without comment.
-- [`datamatch::attach_climate_index()`](https://camilleross.org/datamatch/reference/attach_climate_index.html)
-  serves `LCR`, the Labrador Current retroflection index, only for
-  1993–2014. Two attempts to recompute it so the series could be
-  extended are recorded in `docs/lcr-extension-experiment.md`; neither
-  reproduces the published index, and the reasons are documented there.
+- `datamatch::attach_climate_index()` serves `LCR`, the Labrador Current
+  retroflection index, only for 1993–2014. Two attempts to recompute it
+  so the series could be extended are recorded in
+  `docs/lcr-extension-experiment.md`; neither reproduces the published
+  index, and the reasons are documented there.

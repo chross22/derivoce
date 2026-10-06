@@ -20,8 +20,7 @@ distance_to_isobath(
 - env_dat:
 
   an `sf` POINT object carrying a depth column.
-  [`datamatch::attach_bathymetry()`](https://camilleross.org/datamatch/reference/attach_bathymetry.html)
-  adds one, named `DEPTH`.
+  `datamatch::attach_bathymetry()` adds one, named `DEPTH`.
 
 - depth:
 

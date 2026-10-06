@@ -8,13 +8,7 @@ lagged value can carry more signal than the concurrent one.
 ## Usage
 
 ``` r
-lag_covariate(
-  env_dat,
-  vars = NULL,
-  n = 1,
-  by = c("step", "day", "month", "year"),
-  suffix = NULL
-)
+lag_covariate(env_dat, vars = NULL, n = 1, by, suffix = NULL)
 ```
 
 ## Arguments
@@ -35,42 +29,34 @@ lag_covariate(
 
 - by:
 
-  what `n` counts: `"step"` (the default), `"day"`, `"month"`, or
-  `"year"`
+  what `n` counts: `"hour"`, `"day"`, `"month"` or `"year"`. Required.
 
 - suffix:
 
-  suffix for the new columns. The default includes `n`, and the unit too
-  unless it is `"step"`, so `SST_lag1` and `SST_lag1month` cannot be
-  confused for each other. Supply one entry per lag when `n` has
-  several.
+  suffix for the new columns. The default names both `n` and the unit,
+  as in `SST_lag1month`. Supply one entry per lag when `n` has several.
 
 ## Value
 
 `env_dat` with a lagged column per covariate and lag. Steps with no
 predecessor are `NA`.
 
-## Lag by calendar units, not by position
+## Lag by calendar units
 
-`by` decides what `n` counts, and the distinction matters:
+`by` is required and says what `n` counts: `"hour"`, `"day"`, `"month"`
+or `"year"`. `n = 3` with `by = "month"` finds the step stamped exactly
+three calendar months earlier, and returns `NA` if there is no such
+step.
 
-- `"step"` (the default) counts **positions in the series**. `n = 1` is
-  the previous time step, whatever period that represents. This is only
-  unambiguous when the steps are evenly spaced and complete.
-
-- `"day"`, `"month"`, `"year"` count **calendar time**. `n = 3` with
-  `by = "month"` finds the step stamped exactly three calendar months
-  earlier, and returns `NA` if there is no such step.
-
-Prefer a calendar unit whenever the lag has a biological meaning. "Three
-months ago" is a statement about the organism; "three steps ago" is a
-statement about how the data happened to be fetched, and the two stop
-agreeing the moment a month is missing from the record.
-
-A gap makes them disagree silently. In a monthly series missing April,
-`by = "step"` treats March as May's predecessor, so a one-step lag
-quietly becomes a two-month one. `by = "month"` returns `NA` for May
-instead, because April genuinely is not there.
+There is no default and no option to count positions in the series.
+"Three months ago" is a statement about the organism; "three steps ago"
+is a statement about how the data happened to be fetched, and the two
+stop agreeing the moment a month is missing. In a monthly series missing
+April, a position count would treat March as May's predecessor and
+quietly turn a one-month lag into a two-month one. A calendar lag
+returns `NA` for May instead, because April genuinely is not there. With
+no default, the unit is chosen on purpose: a guess would be right for a
+daily record and wrong for a monthly one.
 
 Calendar lags are matched on the exact `YEAR`/`MONTH`/`DAY` stamp. For
 monthly products, whose day is always 1, that is exact. For daily
@@ -82,16 +68,9 @@ time steps, which is what gridded products give.
 
 ## Reproducing the published lag
 
-Ross et al. (2023) used a **one-month** lag of sea surface temperature.
-On a complete monthly series that is `n = 1` either way, but the
-faithful form is the calendar one:
+Ross et al. (2023) used a **one-month** lag of sea surface temperature:
 
     lag_covariate(env, "SST", n = 1, by = "month")
-
-The two part company the moment a month is missing from the record,
-where `by = "step"` reaches back to whatever step precedes the gap and
-calls it one month. Use `by = "month"` when the intent is the published
-lag.
 
 ## Several lags at once
 
@@ -104,9 +83,7 @@ offsets, entered together as predictors.
 
 With `by = "year"` this gives the same calendar month in each preceding
 year, so the seasonal cycle is held fixed and what remains is the
-interannual signal. That is usually the intended comparison, and it is
-not what `by = "step"` with `n = 12` gives on a record with any month
-missing.
+interannual signal.
 
 ## References
 
@@ -119,10 +96,7 @@ thresholds. *Marine Ecology Progress Series* **703**, 1-16.
 
 ``` r
 if (FALSE) { # \dontrun{
-env <- lag_covariate(env, "SST")                      # SST_lag1, previous step
-env <- lag_covariate(env, "CHL", n = 2)               # CHL_lag2
-
-# Calendar lags, which say what they mean
+env <- lag_covariate(env, "SST", by = "month")        # SST_lag1month
 env <- lag_covariate(env, "CHL", n = 3, by = "month") # CHL_lag3month
 env <- lag_covariate(env, "SST", n = 1, by = "year")  # same month last year
 env <- lag_covariate(env, "SST", n = 30, by = "day")  # daily products

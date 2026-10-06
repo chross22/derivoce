@@ -172,23 +172,21 @@ up since the season began rather than the food present that instant.</p>
 <span><span class="co">#&gt; 6     6 1.90    7.65</span></span></code></pre></div>
 <p><code>CHL_int</code> is the running sum from January, which is what a
 copepod integrates.</p>
-<p>Note <code>by = "month"</code>. Counting <em>steps</em> is only
-unambiguous when the series is complete: in a monthly record missing
-April, a one-step lag makes March the predecessor of May and says
-nothing about it. Counting calendar months returns <code>NA</code> there
-instead.</p>
+<p><code>by</code> is required and counts calendar time. In a monthly
+record missing April, counting positions would make March the
+predecessor of May and say nothing about it, so that option does not
+exist: a calendar month with no April to look back to returns
+<code>NA</code>.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gappy</span> <span class="op">&lt;-</span> <span class="va">env</span><span class="op">[</span><span class="va">env</span><span class="op">$</span><span class="va">MONTH</span> <span class="op">!=</span> <span class="fl">4</span>, <span class="op">]</span></span>
 <span></span>
-<span><span class="va">by_step</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">gappy</span>, <span class="st">"SST"</span>, n <span class="op">=</span> <span class="fl">1</span>, by <span class="op">=</span> <span class="st">"step"</span><span class="op">)</span></span>
 <span><span class="va">by_month</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">gappy</span>, <span class="st">"SST"</span>, n <span class="op">=</span> <span class="fl">1</span>, by <span class="op">=</span> <span class="st">"month"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>step <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">by_step</span><span class="op">$</span><span class="va">SST_lag1</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  month <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">by_month</span><span class="op">$</span><span class="va">SST_lag1month</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;  step month </span></span>
-<span><span class="co">#&gt;   0.2   0.4</span></span></code></pre></div>
-<p>The calendar version has more <code>NA</code> because May genuinely
-has no April to look back to. That is the honest answer.</p>
+<span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">by_month</span><span class="op">$</span><span class="va">SST_lag1month</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.4</span></span></code></pre></div>
+<p>The proportion of <code>NA</code> is higher than for a complete
+record because May genuinely has no April to look back to. That is the
+honest answer.</p>
 <p>A vector of lags builds an autoregressive set in one call:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"SST"</span>, n <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, by <span class="op">=</span> <span class="st">"year"</span><span class="op">)</span></span>
@@ -208,10 +206,9 @@ sum.</p>
 March. Early steps have less history than the window asks for;
 <code>min_obs</code> decides whether they get a summary of what is there
 or an <code>NA</code>.</p>
-<p><code>by = "month"</code> counts calendar time and
-<code>by = "step"</code> counts positions in the record. They agree
-exactly until the series has a gap, and then diverge silently — which is
-why the distinction is an argument rather than an assumption.</p>
+<p><code>by</code> counts calendar time, as in
+<code><a href="../reference/lag_covariate.html">lag_covariate()</a></code>. A gap in the record shortens the window
+rather than reaching back to an earlier month.</p>
 </div>
 <div class="section level2">
 <h2 id="distance-to-a-front">Distance to a front<a class="anchor" aria-label="anchor" href="#distance-to-a-front"></a>
@@ -470,7 +467,7 @@ not returned.</p>
 <span><span class="va">flow</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/residence_time.html">residence_time</a></span><span class="op">(</span><span class="va">flow</span>, <span class="va">box</span>, max_days <span class="op">=</span> <span class="fl">20</span>, step_hours <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">flow</span><span class="op">$</span><span class="va">forward_residence</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.     NAs </span></span>
-<span><span class="co">#&gt;     0.5     2.5     4.5     4.8     7.0    10.0     544</span></span></code></pre></div>
+<span><span class="co">#&gt;     0.5     2.5     4.5     4.8     7.0    10.0     713</span></span></code></pre></div>
 <p>Points outside the box are <code>NA</code>. Anything still inside
 after <code>max_days</code> is recorded as <code>max_days</code>, which
 is <strong>right-censored</strong>: its real residence is at least that,
@@ -574,7 +571,7 @@ not change between months, so lagging it returns the column
 unchanged:</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">env</span><span class="op">$</span><span class="va">DEPTH</span> <span class="op">&lt;-</span> <span class="fl">100</span> <span class="op">+</span> <span class="fl">20</span> <span class="op">*</span> <span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_coordinates.html" class="external-link">st_coordinates</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">+</span> <span class="fl">70</span><span class="op">)</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span><span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"DEPTH"</span><span class="op">)</span>,</span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span><span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"DEPTH"</span>, by <span class="op">=</span> <span class="st">"month"</span><span class="op">)</span>,</span>
 <span>                   warning <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">w</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">conditionMessage</a></span><span class="op">(</span><span class="va">w</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/substr.html" class="external-link">substr</a></span><span class="op">(</span><span class="va">result</span>, <span class="fl">1</span>, <span class="fl">180</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Static covariate(s) in a temporal operation: DEPTH.</span></span>
@@ -716,8 +713,8 @@ fields these covariates are derived from, chiefly the GLORYS12V1 global
 ocean reanalysis (<code>GLOBAL_MULTIYEAR_PHY_001_030</code>). Copernicus
 asks that products be credited in any publication using them; see <a href="https://marine.copernicus.eu/" class="external-link uri">https://marine.copernicus.eu/</a> for the current wording
 and the DOI of the specific product and version you fetched.
-<code><a href="https://camilleross.org/datamatch/reference/index_dictionary.html" class="external-link">datamatch::index_dictionary()</a></code> and
-<code><a href="https://camilleross.org/datamatch/reference/variable_dictionary.html" class="external-link">datamatch::variable_dictionary()</a></code> report which product each
+<code>datamatch::index_dictionary()</code> and
+<code>datamatch::variable_dictionary()</code> report which product each
 variable came from.</li>
 <li>
 <strong>Natural Earth</strong> provides the coastlines behind
@@ -728,7 +725,7 @@ variable came from.</li>
 <strong>NOAA ETOPO</strong>, via <code>marmap</code>, is the source
 of the depth grid used to place and check the named sections, and of
 <code>DEPTH</code> when it comes from
-<code><a href="https://camilleross.org/datamatch/reference/fetch_bathymetry.html" class="external-link">datamatch::fetch_bathymetry()</a></code>.</li>
+<code>datamatch::fetch_bathymetry()</code>.</li>
 </ul>
 </div>
 <div class="section level3">

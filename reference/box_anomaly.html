@@ -86,7 +86,9 @@ as datamatch's access functions return</p></dd>
 <dd><p><code>"climatology"</code> (the default) removes a separate mean per
 calendar month, so only departures from the usual conditions for that month
 survive. <code>"record"</code> removes one mean over the whole series, leaving the
-seasonal cycle in. <code>"none"</code> returns the box mean itself.</p></dd>
+seasonal cycle in. <code>"none"</code> returns the box mean itself. A climatology
+needs several years: a calendar month seen only once is its own mean, so its
+anomaly is exactly zero and the function warns.</p></dd>
 
 
 <dt id="arg-name">name<a class="anchor" aria-label="anchor" href="#arg-name"></a></dt>

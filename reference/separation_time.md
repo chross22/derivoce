@@ -59,4 +59,6 @@ separation_time(
 
 ## Value
 
-numeric vector of times in days; `NA` where the target was never met
+numeric vector of times in days; `NA` where the target was never met.
+Attributes count the pairs lost to the domain, the pairs that ran past
+the end of the record, and the pairs still unseparated.

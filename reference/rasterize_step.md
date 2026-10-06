@@ -31,11 +31,10 @@ with one layer per variable
 
 ## Details
 
-An unstructured mesh is not.
-[`datamatch::accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.html)
-returns one row per mesh node, and those nodes are irregularly spaced by
-design, which is the point of a mesh: resolution follows the coastline
-rather than a lattice.
+An unstructured mesh is not. `datamatch::accessFVCOM()` returns one row
+per mesh node, and those nodes are irregularly spaced by design, which
+is the point of a mesh: resolution follows the coastline rather than a
+lattice.
 
 Irregular points are rejected rather than interpolated, whether they
 come from a mesh or from scattered observations. Silently gridding them

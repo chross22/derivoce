@@ -83,7 +83,7 @@ Copernicus, HYCOM, CCMP and most ERDDAP grids are of that kind.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>An unstructured mesh is not. <code><a href="https://camilleross.org/datamatch/reference/accessFVCOM.html" class="external-link">datamatch::accessFVCOM()</a></code> returns one row per
+    <p>An unstructured mesh is not. <code>datamatch::accessFVCOM()</code> returns one row per
 mesh node, and those nodes are irregularly spaced by design, which is the
 point of a mesh: resolution follows the coastline rather than a lattice.</p>
 <p>Irregular points are rejected rather than interpolated, whether they come

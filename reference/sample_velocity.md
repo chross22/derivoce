@@ -1,6 +1,7 @@
 # Sample the velocity field at positions and a time
 
-Sample the velocity field at positions and a time
+Times outside the record return `NA` rather than the nearest field held
+steady, so a particle that runs past either end is lost.
 
 ## Usage
 

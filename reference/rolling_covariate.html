@@ -66,7 +66,7 @@ standard deviation say different things about a place than their sum does.</p>
 <span>  <span class="va">env_dat</span>,</span>
 <span>  vars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>  by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"step"</span>, <span class="st">"day"</span>, <span class="st">"month"</span>, <span class="st">"year"</span><span class="op">)</span>,</span>
+<span>  <span class="va">by</span>,</span>
 <span>  stat <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"sd"</span>, <span class="st">"min"</span>, <span class="st">"max"</span>, <span class="st">"sum"</span>, <span class="st">"median"</span>, <span class="st">"range"</span><span class="op">)</span>,</span>
 <span>  min_obs <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  suffix <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -91,8 +91,8 @@ as datamatch's access functions return</p></dd>
 
 
 <dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
-<dd><p><code>"step"</code> to count positions in the record, or <code>"day"</code>, <code>"month"</code>,
-<code>"year"</code> to count calendar time</p></dd>
+<dd><p>what <code>n</code> counts: <code>"hour"</code>, <code>"day"</code>, <code>"month"</code> or <code>"year"</code>.
+Required.</p></dd>
 
 
 <dt id="arg-stat">stat<a class="anchor" aria-label="anchor" href="#arg-stat"></a></dt>
@@ -115,21 +115,21 @@ as datamatch's access functions return</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The window is <strong>trailing and inclusive</strong>: it ends at the current step and
-includes it. A three-month mean at March covers January, February and March.</p>
+includes it. A three-month mean at March covers January, February and March.
+On a record finer than monthly, <code>"month"</code> and <code>"year"</code> windows reach back by
+calendar month but stop at the current step, so a daily record's monthly
+maximum on the 10th covers the 1st to the 10th, never the days after it.</p>
     </div>
     <div class="section level2">
-    <h2 id="steps-or-calendar-time">Steps or calendar time<a class="anchor" aria-label="anchor" href="#steps-or-calendar-time"></a></h2>
+    <h2 id="calendar-time">Calendar time<a class="anchor" aria-label="anchor" href="#calendar-time"></a></h2>
 
 
-<p><code>by = "step"</code> counts positions in the record and <code>by = "day"</code>, <code>"month"</code> or
-<code>"year"</code> count calendar time, exactly as in <code><a href="lag_covariate.html">lag_covariate()</a></code>. The two agree
-until the record has a gap and then disagree silently: on a monthly series
-missing April, a three-<em>step</em> window at June covers March, May and June,
-while a three-<em>month</em> window covers April, May and June and finds only two of
-them.</p>
-<p>Which is right depends on the question. "The mean of the last three months"
-is a statement about the ocean and wants <code>by = "month"</code>. "The mean of the
-last three observations" is a statement about the record.</p>
+<p><code>by</code> is required and says what <code>n</code> counts: <code>"hour"</code>, <code>"day"</code>, <code>"month"</code> or
+<code>"year"</code>, as in <code><a href="lag_covariate.html">lag_covariate()</a></code>. There is no option to count positions in the record and
+no default unit. On a monthly series missing April, a three-<em>step</em> window at
+June would cover March, May and June and call it three months. A calendar
+window covers April, May and June and finds only two of them, which <code>min_obs</code>
+can then reject.</p>
     </div>
     <div class="section level2">
     <h2 id="windows-that-are-not-full">Windows that are not full<a class="anchor" aria-label="anchor" href="#windows-that-are-not-full"></a></h2>

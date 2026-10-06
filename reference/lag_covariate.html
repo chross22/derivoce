@@ -59,13 +59,7 @@ carry more signal than the concurrent one.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lag_covariate</span><span class="op">(</span></span>
-<span>  <span class="va">env_dat</span>,</span>
-<span>  vars <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  n <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"step"</span>, <span class="st">"day"</span>, <span class="st">"month"</span>, <span class="st">"year"</span><span class="op">)</span>,</span>
-<span>  suffix <span class="op">=</span> <span class="cn">NULL</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lag_covariate</span><span class="op">(</span><span class="va">env_dat</span>, vars <span class="op">=</span> <span class="cn">NULL</span>, n <span class="op">=</span> <span class="fl">1</span>, <span class="va">by</span>, suffix <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -87,14 +81,13 @@ column per lag.</p></dd>
 
 
 <dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
-<dd><p>what <code>n</code> counts: <code>"step"</code> (the default), <code>"day"</code>, <code>"month"</code>, or
-<code>"year"</code></p></dd>
+<dd><p>what <code>n</code> counts: <code>"hour"</code>, <code>"day"</code>, <code>"month"</code> or <code>"year"</code>.
+Required.</p></dd>
 
 
 <dt id="arg-suffix">suffix<a class="anchor" aria-label="anchor" href="#arg-suffix"></a></dt>
-<dd><p>suffix for the new columns. The default includes <code>n</code>, and the
-unit too unless it is <code>"step"</code>, so <code>SST_lag1</code> and <code>SST_lag1month</code> cannot be
-confused for each other. Supply one entry per lag when <code>n</code> has several.</p></dd>
+<dd><p>suffix for the new columns. The default names both <code>n</code> and the
+unit, as in <code>SST_lag1month</code>. Supply one entry per lag when <code>n</code> has several.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -103,24 +96,20 @@ confused for each other. Supply one entry per lag when <code>n</code> has severa
 predecessor are <code>NA</code>.</p>
     </div>
     <div class="section level2">
-    <h2 id="lag-by-calendar-units-not-by-position">Lag by calendar units, not by position<a class="anchor" aria-label="anchor" href="#lag-by-calendar-units-not-by-position"></a></h2>
+    <h2 id="lag-by-calendar-units">Lag by calendar units<a class="anchor" aria-label="anchor" href="#lag-by-calendar-units"></a></h2>
 
 
-<p><code>by</code> decides what <code>n</code> counts, and the distinction matters:</p>
-<ul><li><p><code>"step"</code> (the default) counts <strong>positions in the series</strong>. <code>n = 1</code> is
-the previous time step, whatever period that represents. This is only
-unambiguous when the steps are evenly spaced and complete.</p></li>
-<li><p><code>"day"</code>, <code>"month"</code>, <code>"year"</code> count <strong>calendar time</strong>. <code>n = 3</code> with
-<code>by = "month"</code> finds the step stamped exactly three calendar months
-earlier, and returns <code>NA</code> if there is no such step.</p></li>
-</ul><p>Prefer a calendar unit whenever the lag has a biological meaning. "Three
+<p><code>by</code> is required and says what <code>n</code> counts: <code>"hour"</code>, <code>"day"</code>, <code>"month"</code> or
+<code>"year"</code>. <code>n = 3</code> with <code>by = "month"</code> finds the step stamped exactly three calendar
+months earlier, and returns <code>NA</code> if there is no such step.</p>
+<p>There is no default and no option to count positions in the series. "Three
 months ago" is a statement about the organism; "three steps ago" is a
 statement about how the data happened to be fetched, and the two stop agreeing
-the moment a month is missing from the record.</p>
-<p>A gap makes them disagree silently. In a monthly series missing April,
-<code>by = "step"</code> treats March as May's predecessor, so a one-step lag quietly
-becomes a two-month one. <code>by = "month"</code> returns <code>NA</code> for May instead, because
-April genuinely is not there.</p>
+the moment a month is missing. In a monthly series missing April, a position
+count would treat March as May's predecessor and quietly turn a one-month lag
+into a two-month one. A calendar lag returns <code>NA</code> for May instead, because
+April genuinely is not there. With no default, the unit is chosen on purpose:
+a guess would be right for a daily record and wrong for a monthly one.</p>
 <p>Calendar lags are matched on the exact <code>YEAR</code>/<code>MONTH</code>/<code>DAY</code> stamp. For monthly
 products, whose day is always 1, that is exact. For daily products,
 <code>by = "month"</code> from the 31st looks for a 31st, and months that have no 31st
@@ -132,13 +121,8 @@ steps, which is what gridded products give.</p>
     <h2 id="reproducing-the-published-lag">Reproducing the published lag<a class="anchor" aria-label="anchor" href="#reproducing-the-published-lag"></a></h2>
 
 
-<p>Ross et al. (2023) used a <strong>one-month</strong> lag of sea surface temperature. On a
-complete monthly series that is <code>n = 1</code> either way, but the faithful form is
-the calendar one:</p>
+<p>Ross et al. (2023) used a <strong>one-month</strong> lag of sea surface temperature:</p>
 <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">lag_covariate</span>(env, <span class="st">"SST"</span>, <span class="at">n =</span> <span class="dv">1</span>, <span class="at">by =</span> <span class="st">"month"</span>)</span></code></pre><p></p></div>
-<p>The two part company the moment a month is missing from the record, where
-<code>by = "step"</code> reaches back to whatever step precedes the gap and calls it one
-month. Use <code>by = "month"</code> when the intent is the published lag.</p>
     </div>
     <div class="section level2">
     <h2 id="several-lags-at-once">Several lags at once<a class="anchor" aria-label="anchor" href="#several-lags-at-once"></a></h2>
@@ -151,8 +135,7 @@ entered together as predictors.</p>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co"># adds SST_lag1year, SST_lag2year, SST_lag3year</span></span></code></pre><p></p></div>
 <p>With <code>by = "year"</code> this gives the same calendar month in each preceding year,
 so the seasonal cycle is held fixed and what remains is the interannual
-signal. That is usually the intended comparison, and it is not what
-<code>by = "step"</code> with <code>n = 12</code> gives on a record with any month missing.</p>
+signal.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -164,10 +147,7 @@ North Atlantic right whale prey based on Calanus finmarchicus thresholds.
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu">lag_covariate</span><span class="op">(</span><span class="va">env</span>, <span class="st">"SST"</span><span class="op">)</span>                      <span class="co"># SST_lag1, previous step</span></span></span>
-<span class="r-in"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu">lag_covariate</span><span class="op">(</span><span class="va">env</span>, <span class="st">"CHL"</span>, n <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>               <span class="co"># CHL_lag2</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Calendar lags, which say what they mean</span></span></span>
+<span class="r-in"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu">lag_covariate</span><span class="op">(</span><span class="va">env</span>, <span class="st">"SST"</span>, by <span class="op">=</span> <span class="st">"month"</span><span class="op">)</span>        <span class="co"># SST_lag1month</span></span></span>
 <span class="r-in"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu">lag_covariate</span><span class="op">(</span><span class="va">env</span>, <span class="st">"CHL"</span>, n <span class="op">=</span> <span class="fl">3</span>, by <span class="op">=</span> <span class="st">"month"</span><span class="op">)</span> <span class="co"># CHL_lag3month</span></span></span>
 <span class="r-in"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu">lag_covariate</span><span class="op">(</span><span class="va">env</span>, <span class="st">"SST"</span>, n <span class="op">=</span> <span class="fl">1</span>, by <span class="op">=</span> <span class="st">"year"</span><span class="op">)</span>  <span class="co"># same month last year</span></span></span>
 <span class="r-in"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu">lag_covariate</span><span class="op">(</span><span class="va">env</span>, <span class="st">"SST"</span>, n <span class="op">=</span> <span class="fl">30</span>, by <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span>  <span class="co"># daily products</span></span></span>

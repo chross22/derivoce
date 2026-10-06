@@ -88,8 +88,8 @@ env <- datamatch::accessCopernicus(
 env <- env |>
   horizontal_gradient("SST") |>          # SST_grad, degrees C per km
   vertical_gradient() |>                 # SST - BOTT, the defaults
-  temporal_gradient("SST") |>
-  lag_covariate("SST") |>                # SST_lag1
+  temporal_gradient("SST", by = "month") |>
+  lag_covariate("SST", by = "month") |>  # SST_lag1month
   integrate_covariate("SST")             # SST_int
 ```
 
@@ -160,9 +160,9 @@ env <- eke(env, u = "uo", v = "vo")
 
 [`distance_to_isobath()`](https://camilleross.org/derivoce/reference/distance_to_isobath.md)
 is the exception: its `DEPTH` column comes from
-[`datamatch::attach_bathymetry()`](https://camilleross.org/datamatch/reference/attach_bathymetry.html)
-rather than from an access function — though `accessFVCOM()` serves a
-`DEPTH` of its own, being a model with its own bathymetry.
+`datamatch::attach_bathymetry()` rather than from an access function —
+though `accessFVCOM()` serves a `DEPTH` of its own, being a model with
+its own bathymetry.
 
 ## Requirements on the input
 
@@ -181,9 +181,8 @@ An unstructured mesh returns one row per mesh node, and those nodes are
 spaced irregularly by design: resolution follows the coastline instead
 of a lattice. Irregular input is rejected rather than interpolated,
 because a gradient computed from interpolated data mostly measures the
-interpolation. Regrid first with
-[`datamatch::upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.html)
-or `downscale_grid()` if you need the spatial derivations on a mesh.
+interpolation. Regrid first with `datamatch::upscale_grid()` or
+`downscale_grid()` if you need the spatial derivations on a mesh.
 
 “Everything else” is most of the package: every temporal derivation —
 lags, rolling summaries, integrals, anomalies, decomposition, heatwaves

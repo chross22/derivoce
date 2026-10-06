@@ -17,7 +17,7 @@ front_frequency(
   scope = c("record", "step"),
   per = c("km", "m"),
   n = NULL,
-  by = c("step", "day", "month", "year"),
+  by = NULL,
   name = NULL
 )
 ```
@@ -57,8 +57,9 @@ front_frequency(
 
 - by:
 
-  `"step"`, `"day"`, `"month"` or `"year"`, as in
-  [`rolling_covariate()`](https://camilleross.org/derivoce/reference/rolling_covariate.md)
+  what `n` counts, `"hour"`, `"day"`, `"month"` or `"year"`, as in
+  [`rolling_covariate()`](https://camilleross.org/derivoce/reference/rolling_covariate.md).
+  Required when `n` is given, and unused otherwise.
 
 - name:
 

@@ -15,7 +15,7 @@ rolling_covariate(
   env_dat,
   vars = NULL,
   n = 3,
-  by = c("step", "day", "month", "year"),
+  by,
   stat = c("mean", "sd", "min", "max", "sum", "median", "range"),
   min_obs = 1L,
   suffix = NULL
@@ -39,8 +39,7 @@ rolling_covariate(
 
 - by:
 
-  `"step"` to count positions in the record, or `"day"`, `"month"`,
-  `"year"` to count calendar time
+  what `n` counts: `"hour"`, `"day"`, `"month"` or `"year"`. Required.
 
 - stat:
 
@@ -63,21 +62,21 @@ rolling_covariate(
 
 The window is **trailing and inclusive**: it ends at the current step
 and includes it. A three-month mean at March covers January, February
-and March.
+and March. On a record finer than monthly, `"month"` and `"year"`
+windows reach back by calendar month but stop at the current step, so a
+daily record's monthly maximum on the 10th covers the 1st to the 10th,
+never the days after it.
 
-## Steps or calendar time
+## Calendar time
 
-`by = "step"` counts positions in the record and `by = "day"`, `"month"`
-or `"year"` count calendar time, exactly as in
+`by` is required and says what `n` counts: `"hour"`, `"day"`, `"month"`
+or `"year"`, as in
 [`lag_covariate()`](https://camilleross.org/derivoce/reference/lag_covariate.md).
-The two agree until the record has a gap and then disagree silently: on
-a monthly series missing April, a three-*step* window at June covers
-March, May and June, while a three-*month* window covers April, May and
-June and finds only two of them.
-
-Which is right depends on the question. "The mean of the last three
-months" is a statement about the ocean and wants `by = "month"`. "The
-mean of the last three observations" is a statement about the record.
+There is no option to count positions in the record and no default unit.
+On a monthly series missing April, a three-*step* window at June would
+cover March, May and June and call it three months. A calendar window
+covers April, May and June and finds only two of them, which `min_obs`
+can then reject.
 
 ## Windows that are not full
 

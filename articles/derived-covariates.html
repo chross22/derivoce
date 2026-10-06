@@ -125,11 +125,11 @@ difference stands in for stratification only where salinity is uniform,
 and Scotian Shelf inflow is fresh enough to stratify water barely warmer
 at the surface.</p>
 <p>Pass a <code>depth</code> column for a per-metre rate instead of a
-total difference. <code><a href="https://camilleross.org/datamatch/reference/attach_bathymetry.html" class="external-link">datamatch::attach_bathymetry()</a></code> supplies
+total difference. <code>datamatch::attach_bathymetry()</code> supplies
 that column:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bathy</span> <span class="op">&lt;-</span> <span class="fu">datamatch</span><span class="fu">::</span><span class="fu"><a href="https://camilleross.org/datamatch/reference/fetch_bathymetry.html" class="external-link">fetch_bathymetry</a></span><span class="op">(</span>bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
-<span><span class="va">env</span>   <span class="op">&lt;-</span> <span class="fu">datamatch</span><span class="fu">::</span><span class="fu"><a href="https://camilleross.org/datamatch/reference/attach_bathymetry.html" class="external-link">attach_bathymetry</a></span><span class="op">(</span><span class="va">env</span>, <span class="va">bathy</span>, <span class="st">"DEPTH"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">bathy</span> <span class="op">&lt;-</span> <span class="fu">datamatch</span><span class="fu">::</span><span class="fu">fetch_bathymetry</span><span class="op">(</span>bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
+<span><span class="va">env</span>   <span class="op">&lt;-</span> <span class="fu">datamatch</span><span class="fu">::</span><span class="fu">attach_bathymetry</span><span class="op">(</span><span class="va">env</span>, <span class="va">bathy</span>, <span class="st">"DEPTH"</span><span class="op">)</span></span>
 <span><span class="va">env</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/vertical_gradient.html">vertical_gradient</a></span><span class="op">(</span><span class="va">env</span>, depth <span class="op">=</span> <span class="st">"DEPTH"</span><span class="op">)</span>   <span class="co"># degrees C per metre</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -137,14 +137,14 @@ that column:</p>
 </h3>
 <ul>
 <li>
-<code><a href="../reference/temporal_gradient.html">temporal_gradient()</a></code> gives the rate of change between
-consecutive steps, per step, per day, or per month. How fast conditions
-are shifting, as distinct from what they are.</li>
+<code><a href="../reference/temporal_gradient.html">temporal_gradient()</a></code> gives the rate of change since the
+previous calendar month, day or year, per hour, day, month or year. How
+fast conditions are shifting, as distinct from what they are.</li>
 <li>
-<code><a href="../reference/lag_covariate.html">lag_covariate()</a></code> gives the value <em>n</em> steps back.
-Populations respond with a delay: a bloom feeds the animals sampled a
-month later, not those sampled during it. Ross et al. (2023) used a
-one-month SST lag, which is <code>by = "month"</code> here.</li>
+<code><a href="../reference/lag_covariate.html">lag_covariate()</a></code> gives the value <em>n</em> calendar
+units back. Populations respond with a delay: a bloom feeds the animals
+sampled a month later, not those sampled during it. Ross et al. (2023)
+used a one-month SST lag, which is <code>by = "month"</code> here.</li>
 <li>
 <code><a href="../reference/integrate_covariate.html">integrate_covariate()</a></code> accumulates over preceding steps.
 A survey samples the food built up since the season began, not the food
@@ -165,22 +165,24 @@ March covers January to March.</li>
 <p>Locations are matched by coordinate, not row order, so time steps
 need not list their points in the same order.</p>
 <div class="section level4">
-<h4 id="lag-by-calendar-time-not-by-position">Lag by calendar time, not by position<a class="anchor" aria-label="anchor" href="#lag-by-calendar-time-not-by-position"></a>
+<h4 id="lags-count-calendar-time">Lags count calendar time<a class="anchor" aria-label="anchor" href="#lags-count-calendar-time"></a>
 </h4>
-<p><code><a href="../reference/lag_covariate.html">lag_covariate()</a></code> counts steps by default, which is only
-unambiguous when the series is evenly spaced and complete.
-<code>by</code> counts calendar time instead:</p>
+<p><code>by</code> says what <code>n</code> counts, and it is required:
+<code>"hour"</code>, <code>"day"</code>, <code>"month"</code> or
+<code>"year"</code>. There is no default and no way to count positions
+in the series:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"CHL"</span>, n <span class="op">=</span> <span class="fl">3</span>, by <span class="op">=</span> <span class="st">"month"</span><span class="op">)</span>   <span class="co"># CHL_lag3month</span></span>
 <span><span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"SST"</span>, n <span class="op">=</span> <span class="fl">1</span>, by <span class="op">=</span> <span class="st">"year"</span><span class="op">)</span>    <span class="co"># same month, last year</span></span>
 <span><span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"SST"</span>, n <span class="op">=</span> <span class="fl">30</span>, by <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span>    <span class="co"># daily products</span></span></code></pre></div>
-<p>Prefer a calendar unit whenever the lag means something biological.
-“Three months ago” is a claim about the organism. “Three steps ago” is a
-claim about how the data was fetched, and the two stop agreeing the
-moment a month is missing. In a monthly series missing April,
-<code>by = "step"</code> makes March the predecessor of May, so a
-one-step lag is quietly a two-month one. <code>by = "month"</code>
-returns <code>NA</code> there instead.</p>
+<p>“Three months ago” is a claim about the organism. “Three steps ago”
+would be a claim about how the data was fetched, and the two stop
+agreeing the moment a month is missing. In a monthly series missing
+April, a position count would make March the predecessor of May, so a
+one-month lag would quietly be a two-month one. A calendar lag returns
+<code>NA</code> there instead. There is no default unit because the
+right one depends on the data: a daily record and a monthly one differ,
+and a wrong guess would be silent.</p>
 <p><code>n</code> may be a vector, which is what an autoregressive
 design needs:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -191,11 +193,9 @@ varies only the year, so the seasonal cycle drops out and what remains
 is interannual.</p>
 <p><code><a href="../reference/rolling_covariate.html">rolling_covariate()</a></code> takes the same <code>by</code>,
 computed on the same month counter, so a window and a lag of the same
-size agree about what a month is. The two disagree only once the record
-has a gap, and then silently: on a monthly series missing April, a
-three-<em>step</em> window at June covers March, May and June, while a
-three-<em>month</em> window covers April, May and June and finds only
-two of them. <code>min_obs</code> decides whether a window that short is
+size agree about what a month is. On a monthly series missing April, a
+three-month window at June covers April, May and June and finds only two
+of them. <code>min_obs</code> decides whether a window that short is
 summarised anyway or returned as <code>NA</code>.</p>
 </div>
 </div>
@@ -583,7 +583,7 @@ datamatch now attaches columns that are not covariates to differentiate.
 Asking for a derivative that cannot say anything gets a warning naming
 the column:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"DEPTH"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lag_covariate.html">lag_covariate</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"DEPTH"</span>, by <span class="op">=</span> <span class="st">"month"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Static covariate(s) in a temporal operation: DEPTH.</span></span>
 <span><span class="co">#&gt;   These hold the same value at each location in every time step, so a lag</span></span>
 <span><span class="co">#&gt;   reproduces the column, a temporal gradient is zero, and an integral is a</span></span>

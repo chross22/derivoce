@@ -35,8 +35,7 @@ vertical_gradient(
 
   optional depth column name; when given, the difference is divided by
   depth to give a per-metre rate rather than a total difference.
-  [`datamatch::attach_bathymetry()`](https://camilleross.org/datamatch/reference/attach_bathymetry.html)
-  supplies a `DEPTH` column.
+  `datamatch::attach_bathymetry()` supplies a `DEPTH` column.
 
 - name:
 

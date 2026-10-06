@@ -25,7 +25,7 @@ lag_source_step(steps, n, by)
 
 - by:
 
-  `"step"`, `"day"`, `"month"`, or `"year"`
+  `"hour"`, `"day"`, `"month"`, or `"year"`
 
 ## Value
 

@@ -38,8 +38,7 @@ cannot be differentiated or summed, so the request cannot be honoured —
 but is skipped silently when `vars = NULL` swept it up. A caller who did
 not name `CHL_source` did not mean it, and failing the whole call over a
 column they never asked for would make the `NULL` default unusable on
-any object that has been through
-[`datamatch::fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.html).
+any object that has been through `datamatch::fill_satellite_gaps()`.
 
 A **degenerate** column — static where the operation is temporal,
 spatially uniform where it is spatial — is only a warning, because the

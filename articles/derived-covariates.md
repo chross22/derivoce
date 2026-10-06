@@ -47,9 +47,7 @@ stratification only where salinity is uniform, and Scotian Shelf inflow
 is fresh enough to stratify water barely warmer at the surface.
 
 Pass a `depth` column for a per-metre rate instead of a total
-difference.
-[`datamatch::attach_bathymetry()`](https://camilleross.org/datamatch/reference/attach_bathymetry.html)
-supplies that column:
+difference. `datamatch::attach_bathymetry()` supplies that column:
 
 ``` r
 
@@ -61,14 +59,14 @@ env   <- vertical_gradient(env, depth = "DEPTH")   # degrees C per metre
 ### Temporal gradients, lags, and integrals
 
 - [`temporal_gradient()`](https://camilleross.org/derivoce/reference/temporal_gradient.md)
-  gives the rate of change between consecutive steps, per step, per day,
-  or per month. How fast conditions are shifting, as distinct from what
-  they are.
+  gives the rate of change since the previous calendar month, day or
+  year, per hour, day, month or year. How fast conditions are shifting,
+  as distinct from what they are.
 - [`lag_covariate()`](https://camilleross.org/derivoce/reference/lag_covariate.md)
-  gives the value *n* steps back. Populations respond with a delay: a
-  bloom feeds the animals sampled a month later, not those sampled
-  during it. Ross et al. (2023) used a one-month SST lag, which is
-  `by = "month"` here.
+  gives the value *n* calendar units back. Populations respond with a
+  delay: a bloom feeds the animals sampled a month later, not those
+  sampled during it. Ross et al. (2023) used a one-month SST lag, which
+  is `by = "month"` here.
 - [`integrate_covariate()`](https://camilleross.org/derivoce/reference/integrate_covariate.md)
   accumulates over preceding steps. A survey samples the food built up
   since the season began, not the food present at that instant. The
@@ -88,11 +86,11 @@ env   <- vertical_gradient(env, depth = "DEPTH")   # degrees C per metre
 Locations are matched by coordinate, not row order, so time steps need
 not list their points in the same order.
 
-#### Lag by calendar time, not by position
+#### Lags count calendar time
 
-[`lag_covariate()`](https://camilleross.org/derivoce/reference/lag_covariate.md)
-counts steps by default, which is only unambiguous when the series is
-evenly spaced and complete. `by` counts calendar time instead:
+`by` says what `n` counts, and it is required: `"hour"`, `"day"`,
+`"month"` or `"year"`. There is no default and no way to count positions
+in the series:
 
 ``` r
 
@@ -101,12 +99,14 @@ lag_covariate(env, "SST", n = 1, by = "year")    # same month, last year
 lag_covariate(env, "SST", n = 30, by = "day")    # daily products
 ```
 
-Prefer a calendar unit whenever the lag means something biological.
-“Three months ago” is a claim about the organism. “Three steps ago” is a
-claim about how the data was fetched, and the two stop agreeing the
-moment a month is missing. In a monthly series missing April,
-`by = "step"` makes March the predecessor of May, so a one-step lag is
-quietly a two-month one. `by = "month"` returns `NA` there instead.
+“Three months ago” is a claim about the organism. “Three steps ago”
+would be a claim about how the data was fetched, and the two stop
+agreeing the moment a month is missing. In a monthly series missing
+April, a position count would make March the predecessor of May, so a
+one-month lag would quietly be a two-month one. A calendar lag returns
+`NA` there instead. There is no default unit because the right one
+depends on the data: a daily record and a monthly one differ, and a
+wrong guess would be silent.
 
 `n` may be a vector, which is what an autoregressive design needs:
 
@@ -122,12 +122,10 @@ interannual.
 
 [`rolling_covariate()`](https://camilleross.org/derivoce/reference/rolling_covariate.md)
 takes the same `by`, computed on the same month counter, so a window and
-a lag of the same size agree about what a month is. The two disagree
-only once the record has a gap, and then silently: on a monthly series
-missing April, a three-*step* window at June covers March, May and June,
-while a three-*month* window covers April, May and June and finds only
-two of them. `min_obs` decides whether a window that short is summarised
-anyway or returned as `NA`.
+a lag of the same size agree about what a month is. On a monthly series
+missing April, a three-month window at June covers April, May and June
+and finds only two of them. `min_obs` decides whether a window that
+short is summarised anyway or returned as `NA`.
 
 ### Anomalies, extremes, and density
 
@@ -502,7 +500,7 @@ derivative that cannot say anything gets a warning naming the column:
 
 ``` r
 
-lag_covariate(env, "DEPTH")
+lag_covariate(env, "DEPTH", by = "month")
 #> Warning: Static covariate(s) in a temporal operation: DEPTH.
 #>   These hold the same value at each location in every time step, so a lag
 #>   reproduces the column, a temporal gradient is zero, and an integral is a

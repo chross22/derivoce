@@ -3,9 +3,7 @@
 The named region-scale indices, what each measures, what it needs as
 input, and where the concept comes from. All are derived from gridded
 fields rather than downloaded, which distinguishes them from the climate
-indices
-[`datamatch::attach_climate_index()`](https://camilleross.org/datamatch/reference/attach_climate_index.html)
-serves.
+indices `datamatch::attach_climate_index()` serves.
 
 ## Usage
 

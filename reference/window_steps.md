@@ -27,7 +27,7 @@ window_steps(steps, i, n, by)
 
 - by:
 
-  `"step"`, `"day"`, `"month"`, or `"year"`
+  `"hour"`, `"day"`, `"month"`, or `"year"`
 
 ## Value
 

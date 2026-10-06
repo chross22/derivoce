@@ -67,7 +67,7 @@ common use.</p>
 
 <dl><dt id="arg-env-dat">env_dat<a class="anchor" aria-label="anchor" href="#arg-env-dat"></a></dt>
 <dd><p>an <code>sf</code> POINT object carrying a depth column.
-<code><a href="https://camilleross.org/datamatch/reference/attach_bathymetry.html" class="external-link">datamatch::attach_bathymetry()</a></code> adds one, named <code>DEPTH</code>.</p></dd>
+<code>datamatch::attach_bathymetry()</code> adds one, named <code>DEPTH</code>.</p></dd>
 
 
 <dt id="arg-depth">depth<a class="anchor" aria-label="anchor" href="#arg-depth"></a></dt>
@@ -90,8 +90,8 @@ common use.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">bathy</span> <span class="op">&lt;-</span> <span class="fu">datamatch</span><span class="fu">::</span><span class="fu"><a href="https://camilleross.org/datamatch/reference/fetch_bathymetry.html" class="external-link">fetch_bathymetry</a></span><span class="op">(</span>bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu">datamatch</span><span class="fu">::</span><span class="fu"><a href="https://camilleross.org/datamatch/reference/attach_bathymetry.html" class="external-link">attach_bathymetry</a></span><span class="op">(</span><span class="va">env</span>, <span class="va">bathy</span>, <span class="st">"DEPTH"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">bathy</span> <span class="op">&lt;-</span> <span class="fu">datamatch</span><span class="fu">::</span><span class="fu">fetch_bathymetry</span><span class="op">(</span>bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu">datamatch</span><span class="fu">::</span><span class="fu">attach_bathymetry</span><span class="op">(</span><span class="va">env</span>, <span class="va">bathy</span>, <span class="st">"DEPTH"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu">distance_to_isobath</span><span class="op">(</span><span class="va">env</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">100</span>, <span class="fl">200</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

@@ -64,7 +64,7 @@ that produces one row per location and time step."></head><body>
 
     <div class="ref-description section level2">
     <p>Deliberately internal, and a deliberate duplicate of
-<code><a href="https://camilleross.org/datamatch/reference/covariate_columns.html" class="external-link">datamatch::covariate_columns()</a></code>, which is identical. Exporting it would mask
+<code>datamatch::covariate_columns()</code>, which is identical. Exporting it would mask
 datamatch's whenever both packages are attached, for no gain: callers who want
 it have it from datamatch already. It is not imported from there because
 datamatch is a suggested rather than a hard dependency — everything in this
@@ -96,7 +96,7 @@ as datamatch's access functions return</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>&lt;var&gt;_source</code> is included and <code>&lt;var&gt;_depth</code> is not, matching
-<code><a href="https://camilleross.org/datamatch/reference/covariate_columns.html" class="external-link">datamatch::covariate_columns()</a></code>. A source tag travels with the variable it
+<code>datamatch::covariate_columns()</code>. A source tag travels with the variable it
 describes and survives resampling as a categorical; a depth is the model
 level a derived bottom value was taken from, and the mean of two of those is
 not the depth any value came from. <code>.datamatch_source</code> is datamatch's

@@ -14,6 +14,7 @@
 <url><loc>https://camilleross.org/derivoce/reference/box_anomaly.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/bridge_gaps.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/buoyancy_frequency.html</loc></url>
+<url><loc>https://camilleross.org/derivoce/reference/calendar_unit.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/cell_anomaly.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/cell_size.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/check_box.html</loc></url>
@@ -51,6 +52,7 @@
 <url><loc>https://camilleross.org/derivoce/reference/eddy_patches.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/eke.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/elapsed_days.html</loc></url>
+<url><loc>https://camilleross.org/derivoce/reference/elapsed_per.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/eml_attributes.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/eml_col_classes.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/eml_custom_units.html</loc></url>
@@ -106,7 +108,6 @@
 <url><loc>https://camilleross.org/derivoce/reference/source_unit.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/step_front_distance.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/step_rows.html</loc></url>
-<url><loc>https://camilleross.org/derivoce/reference/step_spacing.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/step_time_days.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/summarise_window.html</loc></url>
 <url><loc>https://camilleross.org/derivoce/reference/temporal_gradient.html</loc></url>

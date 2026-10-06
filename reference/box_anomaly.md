@@ -37,7 +37,9 @@ box_anomaly(
   `"climatology"` (the default) removes a separate mean per calendar
   month, so only departures from the usual conditions for that month
   survive. `"record"` removes one mean over the whole series, leaving
-  the seasonal cycle in. `"none"` returns the box mean itself.
+  the seasonal cycle in. `"none"` returns the box mean itself. A
+  climatology needs several years: a calendar month seen only once is
+  its own mean, so its anomaly is exactly zero and the function warns.
 
 - name:
 

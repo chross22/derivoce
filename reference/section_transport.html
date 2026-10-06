@@ -136,9 +136,11 @@ midpoint, bilinearly. The default spacing is half a grid cell, so the section
 is not under-resolved relative to the data it is drawn on.</p>
 <p>Sample points on land or outside the domain have no velocity. They are
 dropped rather than counted as zero flow, since zero would understate the
-transport while looking like a measurement. If fewer than <code>min_coverage</code> of
-the points survive, the step returns <code>NA</code>: a transport integrated over half a
-section is not that section's transport.</p>
+transport while looking like a measurement. The flow over the surviving points
+is scaled to the full length of the section, which assumes the missing part
+carries what the rest does. If fewer than <code>min_coverage</code> of the points
+survive, the step returns <code>NA</code>: a transport integrated over half a section is
+not that section's transport.</p>
     </div>
     <div class="section level2">
     <h2 id="what-this-is-not">What this is not<a class="anchor" aria-label="anchor" href="#what-this-is-not"></a></h2>
