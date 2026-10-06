@@ -5,27 +5,19 @@
 #' sampled a month later, not the ones sampled during it, so the lagged value can
 #' carry more signal than the concurrent one.
 #'
-#' @section Lag by calendar units, not by position:
-#' `by` decides what `n` counts, and the distinction matters:
+#' @section Lag by calendar units:
+#' `by` is required and says what `n` counts: `"hour"`, `"day"`, `"month"` or
+#' `"year"`. `n = 3` with `by = "month"` finds the step stamped exactly three calendar
+#' months earlier, and returns `NA` if there is no such step.
 #'
-#' \itemize{
-#'   \item `"step"` (the default) counts **positions in the series**. `n = 1` is
-#'     the previous time step, whatever period that represents. This is only
-#'     unambiguous when the steps are evenly spaced and complete.
-#'   \item `"day"`, `"month"`, `"year"` count **calendar time**. `n = 3` with
-#'     `by = "month"` finds the step stamped exactly three calendar months
-#'     earlier, and returns `NA` if there is no such step.
-#' }
-#'
-#' Prefer a calendar unit whenever the lag has a biological meaning. "Three
+#' There is no default and no option to count positions in the series. "Three
 #' months ago" is a statement about the organism; "three steps ago" is a
 #' statement about how the data happened to be fetched, and the two stop agreeing
-#' the moment a month is missing from the record.
-#'
-#' A gap makes them disagree silently. In a monthly series missing April,
-#' `by = "step"` treats March as May's predecessor, so a one-step lag quietly
-#' becomes a two-month one. `by = "month"` returns `NA` for May instead, because
-#' April genuinely is not there.
+#' the moment a month is missing. In a monthly series missing April, a position
+#' count would treat March as May's predecessor and quietly turn a one-month lag
+#' into a two-month one. A calendar lag returns `NA` for May instead, because
+#' April genuinely is not there. With no default, the unit is chosen on purpose:
+#' a guess would be right for a daily record and wrong for a monthly one.
 #'
 #' Calendar lags are matched on the exact `YEAR`/`MONTH`/`DAY` stamp. For monthly
 #' products, whose day is always 1, that is exact. For daily products,
@@ -36,17 +28,11 @@
 #' steps, which is what gridded products give.
 #'
 #' @section Reproducing the published lag:
-#' Ross et al. (2023) used a **one-month** lag of sea surface temperature. On a
-#' complete monthly series that is `n = 1` either way, but the faithful form is
-#' the calendar one:
+#' Ross et al. (2023) used a **one-month** lag of sea surface temperature:
 #'
 #' ```
 #' lag_covariate(env, "SST", n = 1, by = "month")
 #' ```
-#'
-#' The two part company the moment a month is missing from the record, where
-#' `by = "step"` reaches back to whatever step precedes the gap and calls it one
-#' month. Use `by = "month"` when the intent is the published lag.
 #'
 #' @section Several lags at once:
 #' `n` may be a vector, which adds one column per lag. This is what an
@@ -60,19 +46,17 @@
 #'
 #' With `by = "year"` this gives the same calendar month in each preceding year,
 #' so the seasonal cycle is held fixed and what remains is the interannual
-#' signal. That is usually the intended comparison, and it is not what
-#' `by = "step"` with `n = 12` gives on a record with any month missing.
+#' signal.
 #'
 #' @param env_dat an `sf` POINT object with one row per location and time step,
 #'   as datamatch's access functions return
 #' @param vars covariate columns to lag; `NULL` does all of them
 #' @param n how far to look back, counted in `by` units. A vector adds one
 #'   column per lag.
-#' @param by what `n` counts: `"step"` (the default), `"day"`, `"month"`, or
-#'   `"year"`
-#' @param suffix suffix for the new columns. The default includes `n`, and the
-#'   unit too unless it is `"step"`, so `SST_lag1` and `SST_lag1month` cannot be
-#'   confused for each other. Supply one entry per lag when `n` has several.
+#' @param by what `n` counts: `"hour"`, `"day"`, `"month"` or `"year"`.
+#'   Required.
+#' @param suffix suffix for the new columns. The default names both `n` and the
+#'   unit, as in `SST_lag1month`. Supply one entry per lag when `n` has several.
 #' @return `env_dat` with a lagged column per covariate and lag. Steps with no
 #'   predecessor are `NA`.
 #' @references
@@ -81,10 +65,7 @@
 #' *Marine Ecology Progress Series* **703**, 1-16. \doi{10.3354/meps14204}
 #' @examples
 #' \dontrun{
-#' env <- lag_covariate(env, "SST")                      # SST_lag1, previous step
-#' env <- lag_covariate(env, "CHL", n = 2)               # CHL_lag2
-#'
-#' # Calendar lags, which say what they mean
+#' env <- lag_covariate(env, "SST", by = "month")        # SST_lag1month
 #' env <- lag_covariate(env, "CHL", n = 3, by = "month") # CHL_lag3month
 #' env <- lag_covariate(env, "SST", n = 1, by = "year")  # same month last year
 #' env <- lag_covariate(env, "SST", n = 30, by = "day")  # daily products
@@ -93,10 +74,8 @@
 #' env <- lag_covariate(env, "SST", n = 1:3, by = "year")
 #' }
 #' @export
-lag_covariate <- function(env_dat, vars = NULL, n = 1,
-                          by = c("step", "day", "month", "year"),
-                          suffix = NULL) {
-  by <- match.arg(by)
+lag_covariate <- function(env_dat, vars = NULL, n = 1, by, suffix = NULL) {
+  by <- calendar_unit(if (missing(by)) NULL else by, "lag_covariate")
   vars <- resolve_vars(env_dat, vars, kind = "temporal")
   if (!is.numeric(n) || length(n) < 1 || anyNA(n) || any(n < 1) ||
       any(n != round(n))) {
@@ -106,7 +85,7 @@ lag_covariate <- function(env_dat, vars = NULL, n = 1,
     stop("`suffix` must have one entry per lag when `n` has several, or be ",
          "NULL to name them automatically.", call. = FALSE)
   }
-  suffixes <- suffix %||% paste0("_lag", n, if (by != "step") by else "")
+  suffixes <- suffix %||% paste0("_lag", n, by)
 
   steps <- time_steps(env_dat)
   location <- location_key(env_dat)
@@ -135,6 +114,40 @@ lag_covariate <- function(env_dat, vars = NULL, n = 1,
   env_dat
 }
 
+#' The calendar unit a time function counts in
+#'
+#' Every function that looks back in time counts in calendar units, never in
+#' positions in the series, and none has a default unit. Positions are what a gap
+#' silently corrupts, and a default unit would be right for one cadence and wrong
+#' for another, so the caller must say which.
+#'
+#' @param by the value the caller supplied, or `NULL` if none was given
+#' @param fn name of the calling function, for the message
+#' @return `"hour"`, `"day"`, `"month"` or `"year"`
+#' @keywords internal
+calendar_unit <- function(by, fn) {
+  units <- c("hour", "day", "month", "year")
+  if (is.null(by)) {
+    stop(fn, "() needs `by`, the calendar unit to count in: \"hour\", ",
+         "\"day\", \"month\" or \"year\".",
+         "\n  There is no default, because the right unit depends on the data ",
+         "(a daily record and a monthly one differ) and a wrong guess would be ",
+         "silent.", call. = FALSE)
+  }
+  if (identical(by, "step")) {
+    stop(fn, "() no longer counts positions in the series (`by = \"step\"`).",
+         "\n  Across a gap a position count reaches the wrong month without ",
+         "saying so. Use a calendar unit: \"hour\", \"day\", \"month\" or ",
+         "\"year\".",
+         call. = FALSE)
+  }
+  if (!is.character(by) || length(by) != 1 || !by %in% units) {
+    stop(fn, "(): `by` must be one of \"hour\", \"day\", \"month\" or \"year\".",
+         call. = FALSE)
+  }
+  by
+}
+
 #' Which earlier step each step draws its lagged value from
 #'
 #' Returns one index per time step, or `NA` where the lag lands outside the
@@ -143,22 +156,22 @@ lag_covariate <- function(env_dat, vars = NULL, n = 1,
 #'
 #' @param steps a time-step table from [time_steps()]
 #' @param n how far back, in `by` units
-#' @param by `"step"`, `"day"`, `"month"`, or `"year"`
+#' @param by `"hour"`, `"day"`, `"month"`, or `"year"`
 #' @return integer vector of source step indices, `NA` where there is none
 #' @keywords internal
 lag_source_step <- function(steps, n, by) {
-  count <- nrow(steps)
-
-  if (identical(by, "step")) {
-    source <- seq_len(count) - n
-    source[source < 1] <- NA_integer_
-    return(source)
-  }
-
   # On a sub-daily record a calendar lag means the same hour, one day or one
   # month before; without the hour in the key, every hour of a day would draw
   # from whichever hour happened to be listed first.
   hour <- if ("HOUR" %in% names(steps)) steps$HOUR else 0L
+
+  if (identical(by, "hour")) {
+    # Whole hours since a fixed origin, so a lag crosses midnight, month ends and
+    # leap days without any calendar reasoning.
+    current <- as.numeric(as.Date(paste(steps$YEAR, steps$MONTH, steps$DAY,
+                                        sep = "-"))) * 24 + hour
+    return(match(current - n, current))
+  }
 
   if (identical(by, "day")) {
     # Real dates, so month lengths and leap years take care of themselves.

@@ -12,7 +12,7 @@ front_frequency(
   scope = c("record", "step"),
   per = c("km", "m"),
   n = NULL,
-  by = c("step", "day", "month", "year"),
+  by = NULL,
   name = NULL
 )
 }
@@ -34,7 +34,8 @@ cutoff per time step}
 
 \item{n}{length of the trailing window, or \code{NULL} for the whole record}
 
-\item{by}{\code{"step"}, \code{"day"}, \code{"month"} or \code{"year"}, as in \code{\link[=rolling_covariate]{rolling_covariate()}}}
+\item{by}{what \code{n} counts, \code{"hour"}, \code{"day"}, \code{"month"} or \code{"year"}, as in
+\code{\link[=rolling_covariate]{rolling_covariate()}}. Required when \code{n} is given, and unused otherwise.}
 
 \item{name}{name for the new column}
 }

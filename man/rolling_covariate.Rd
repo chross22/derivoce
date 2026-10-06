@@ -8,7 +8,7 @@ rolling_covariate(
   env_dat,
   vars = NULL,
   n = 3,
-  by = c("step", "day", "month", "year"),
+  by,
   stat = c("mean", "sd", "min", "max", "sum", "median", "range"),
   min_obs = 1L,
   suffix = NULL
@@ -22,8 +22,8 @@ as datamatch's access functions return}
 
 \item{n}{length of the window, in \code{by} units, including the current step}
 
-\item{by}{\code{"step"} to count positions in the record, or \code{"day"}, \code{"month"},
-\code{"year"} to count calendar time}
+\item{by}{what \code{n} counts: \code{"hour"}, \code{"day"}, \code{"month"} or \code{"year"}.
+Required.}
 
 \item{stat}{one or more of \code{"mean"}, \code{"sd"}, \code{"min"}, \code{"max"}, \code{"sum"},
 \code{"median"}, \code{"range"}}
@@ -49,18 +49,14 @@ On a record finer than monthly, \code{"month"} and \code{"year"} windows reach b
 calendar month but stop at the current step, so a daily record's monthly
 maximum on the 10th covers the 1st to the 10th, never the days after it.
 }
-\section{Steps or calendar time}{
+\section{Calendar time}{
 
-\code{by = "step"} counts positions in the record and \code{by = "day"}, \code{"month"} or
-\code{"year"} count calendar time, exactly as in \code{\link[=lag_covariate]{lag_covariate()}}. The two agree
-until the record has a gap and then disagree silently: on a monthly series
-missing April, a three-\emph{step} window at June covers March, May and June,
-while a three-\emph{month} window covers April, May and June and finds only two of
-them.
-
-Which is right depends on the question. "The mean of the last three months"
-is a statement about the ocean and wants \code{by = "month"}. "The mean of the
-last three observations" is a statement about the record.
+\code{by} is required and says what \code{n} counts: \code{"hour"}, \code{"day"}, \code{"month"} or
+\code{"year"}, as in \code{\link[=lag_covariate]{lag_covariate()}}. There is no option to count positions in the record and
+no default unit. On a monthly series missing April, a three-\emph{step} window at
+June would cover March, May and June and call it three months. A calendar
+window covers April, May and June and finds only two of them, which \code{min_obs}
+can then reject.
 }
 
 \section{Windows that are not full}{

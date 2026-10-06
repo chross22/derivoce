@@ -98,7 +98,7 @@ and `YEAR`/`MONTH`/`DAY` columns.
 Keeping input and output shapes identical is what lets the functions compose:
 
 ```r
-env |> horizontal_gradient("SST") |> lag_covariate("SST")
+env |> horizontal_gradient("SST") |> lag_covariate("SST", by = "month")
 ```
 
 Internally, spatial operations need a grid, so each time step is rasterized,
@@ -347,17 +347,18 @@ land or at the waterline has no meaningful stratification rate.
 A water mass warming quickly is a different habitat from one sitting at the same
 temperature.
 
-**How:** `(C[t] - C[t-1]) / Δt`, built on `lag_covariate()`.
+**How:** `(C[t] - C[t-1]) / Δt`, where `t-1` is the step stamped exactly one
+calendar `by` earlier (built on `lag_covariate()`), so a gap gives `NA`.
 
-`Δt` depends on `per`:
+`Δt` depends on `per`, which defaults to `by`:
 
-- `"step"` (default) — change per time step, `Δt = 1`. Correct when steps are
-  evenly spaced, which monthly products are in index terms.
-- `"day"` — divides by the actual number of days between steps, from the calendar
-  dates. Month lengths vary from 28 to 31 days, an 11% spread, so this differs
-  from `"step"` by more than rounding.
-- `"month"` — divides by days, then by 30.4375 (the mean Gregorian month), giving
-  a nominal per-month rate on an even footing.
+- `per = by` — exactly one calendar unit, `Δt = 1`. A monthly gradient is
+  change per month with no calendar arithmetic at all.
+- a different unit — divides the actual elapsed days between the two steps by the
+  length of that unit: 1 day, 30.4375 days for a month (the mean Gregorian
+  month), 365.25 for a year, 1/24 for an hour. Month lengths vary from 28 to 31
+  days, an 11% spread, so `per = "day"` on a monthly gradient differs from a
+  constant divisor by more than rounding.
 
 The first time step has no predecessor and is `NA`.
 
@@ -433,11 +434,12 @@ January, February and March. Ending the window before the current step would be
 defensible for a strictly predictive covariate, but it is not what "the last
 three months" means, and it would make the one-step window empty.
 
-**Steps or calendar time**, exactly as in `lag_covariate()`, and computed on the
+**Calendar time only**, exactly as in `lag_covariate()`, and computed on the
 same month counter so a window and a lag of the same size agree about what a
-month is. The two only disagree once the record has a gap, and then silently: on
-a monthly series missing April, a three-*step* window at June covers March, May
-and June, while a three-*month* window covers April, May and June and finds only
+month is. Counting positions in the record was removed, because a gap makes it
+wrong silently: on a monthly series missing April, a three-*step* window at June
+would cover March, May and June, while a three-*month* window covers April, May
+and June and finds only
 two of them. Which is right depends on whether the question is about the ocean
 or about the record.
 
@@ -1381,7 +1383,7 @@ derivative.** `upscale_grid()` on an `SST_grad` column is an average of real
 gradients; `horizontal_gradient()` on a downscaled `SST` is not.
 
 **Temporal downscaling.** `downscale_time(method = "linear")` places a constant
-slope between each pair of source steps, so `temporal_gradient(per = "day")`
+slope between each pair of source steps, so `temporal_gradient(by = "month", per = "day")`
 returns that slope — a property of the interpolation, exactly constant within
 each source interval and discontinuous at the joins. `method = "step"` is more
 honest here and more obviously wrong-looking, which is the point: it gives zero

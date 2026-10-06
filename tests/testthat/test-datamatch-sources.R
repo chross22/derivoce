@@ -57,14 +57,14 @@ test_that("naming the factor explicitly is an error that explains itself", {
   env <- datamatch_env(2000:2001)
 
   expect_error(cell_anomaly(env, "SST_source"), "not numeric")
-  expect_error(rolling_covariate(env, "SST_source"), "not numeric")
+  expect_error(rolling_covariate(env, "SST_source", by = "month"), "not numeric")
   expect_error(decompose_covariate(env, "SST_source"), "not numeric")
 })
 
 test_that("static terrain warns in the new temporal derivations", {
   env <- datamatch_env(2000:2002)
 
-  expect_warning(rolling_covariate(env, "DEPTH", n = 3), "[Ss]tatic")
+  expect_warning(rolling_covariate(env, "DEPTH", n = 3, by = "month"), "[Ss]tatic")
   expect_warning(cell_anomaly(env, "DEPTH"), "[Ss]tatic")
   expect_warning(decompose_covariate(env, "DEPTH", components = "trend"),
                  "[Ss]tatic")
@@ -83,7 +83,7 @@ test_that("a climate index is still a legitimate temporal covariate", {
 
   expect_no_warning(out <- decompose_covariate(env, "NAO"))
   expect_false(any(is.na(out$NAO_trend)))
-  expect_no_warning(rolling_covariate(env, "AMOC", n = 3, stat = "mean"))
+  expect_no_warning(rolling_covariate(env, "AMOC", n = 3, stat = "mean", by = "month"))
 })
 
 test_that("index_series recovers the climate indices datamatch broadcast", {
@@ -230,7 +230,7 @@ test_that("every temporal derivation works on an unstructured mesh", {
   mesh <- mesh_env()
 
   expect_no_error(lag_covariate(mesh, "SST", n = 1, by = "month"))
-  expect_no_error(rolling_covariate(mesh, "SST", n = 3, stat = "mean"))
+  expect_no_error(rolling_covariate(mesh, "SST", n = 3, stat = "mean", by = "month"))
   expect_no_error(integrate_covariate(mesh, "SST"))
   expect_no_error(cell_anomaly(mesh, "SST"))
   expect_no_error(decompose_covariate(mesh, "SST"))
@@ -321,14 +321,16 @@ test_that("HOUR is a time column, not a covariate", {
   expect_false("HOUR_anom" %in% names(suppressWarnings(cell_anomaly(env))))
 })
 
-test_that("a one-step lag on hourly data is the previous hour", {
+test_that("an hourly lag on sub-daily data is the instant that many hours earlier", {
   env <- hourly_env()
 
-  out <- lag_covariate(env, "WSPD", n = 1, by = "step")
+  out <- lag_covariate(env, "WSPD", n = 6, by = "hour")
 
-  expect_equal(wind_at(out, 2, 6)$WSPD_lag1, wind_at(env, 2, 0)$WSPD)
+  expect_equal(wind_at(out, 2, 6)$WSPD_lag6hour, wind_at(env, 2, 0)$WSPD)
   # And across the day boundary: hour 0 draws from the last hour of yesterday.
-  expect_equal(wind_at(out, 2, 0)$WSPD_lag1, wind_at(env, 1, 18)$WSPD)
+  expect_equal(wind_at(out, 2, 0)$WSPD_lag6hour, wind_at(env, 1, 18)$WSPD)
+  # A lag the record cannot supply is missing, not slid to the nearest step.
+  expect_true(all(is.na(wind_at(out, 2, 6)$WSPD_lag4hour %||% NA)))
 })
 
 test_that("a calendar-day lag lands on the same hour of the previous day", {

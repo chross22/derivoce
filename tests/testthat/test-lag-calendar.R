@@ -18,14 +18,22 @@ at <- function(env, column, y, m, d = 1) {
   unique(env[[column]][env$YEAR == y & env$MONTH == m & env$DAY == d])
 }
 
-test_that("by = 'step' is unchanged, and remains the default", {
+test_that("a unit is required, and counting positions is refused", {
   env <- stamped(2020, 1:6)
 
-  result <- lag_covariate(env, "SST")
+  expect_error(lag_covariate(env, "SST"), "needs `by`")
+  expect_error(lag_covariate(env, "SST", by = "step"), "no longer counts positions")
+  expect_error(lag_covariate(env, "SST", by = "fortnight"), "must be one of")
+})
 
-  expect_true("SST_lag1" %in% names(result))
-  expect_equal(at(result, "SST_lag1", 2020, 5), stamp(2020, 4))
-  expect_true(is.na(at(result, "SST_lag1", 2020, 1)))
+test_that("the default name carries the unit", {
+  env <- stamped(2020, 1:6)
+
+  result <- lag_covariate(env, "SST", by = "month")
+
+  expect_true("SST_lag1month" %in% names(result))
+  expect_equal(at(result, "SST_lag1month", 2020, 5), stamp(2020, 4))
+  expect_true(is.na(at(result, "SST_lag1month", 2020, 1)))
 })
 
 test_that("month lags count calendar months and cross the year boundary", {
@@ -57,19 +65,20 @@ test_that("day lags use real dates", {
   expect_true(is.na(at(result, "SST_lag7day", 2020, 1, 3)))
 })
 
-test_that("a gap in the record separates 'step' from 'month'", {
-  # This is the whole reason the argument exists. April is missing, so May's
-  # previous *step* is March: a one-step lag is quietly a two-month one, and
-  # nothing in the output says so.
+test_that("a gap in the record gives NA, never a lag from the wrong month", {
+  # April is missing. A position count would take March as May's predecessor, so
+  # a one-month lag would quietly be a two-month one. The calendar lag has no
+  # April to draw from and says so.
   env <- stamped(2020, c(1, 2, 3, 5, 6))
 
-  by_step <- lag_covariate(env, "SST", n = 1, by = "step")
   by_month <- lag_covariate(env, "SST", n = 1, by = "month")
 
-  expect_equal(at(by_step, "SST_lag1", 2020, 5), stamp(2020, 3))
   expect_true(is.na(at(by_month, "SST_lag1month", 2020, 5)))
-  # Where there is no gap the two agree.
+  # Where there is no gap the lag is the previous month.
   expect_equal(at(by_month, "SST_lag1month", 2020, 3), stamp(2020, 2))
+  # And a two-month lag from May lands on March, the month that is really there.
+  by_two <- lag_covariate(env, "SST", n = 2, by = "month")
+  expect_equal(at(by_two, "SST_lag2month", 2020, 5), stamp(2020, 3))
 })
 
 test_that("a vector of lags gives an autoregressive set", {
@@ -99,9 +108,9 @@ test_that("suffixes are named per lag, or supplied per lag", {
 test_that("n is validated", {
   env <- stamped(2020, 1:6)
 
-  expect_error(lag_covariate(env, "SST", n = 0), "at least 1")
-  expect_error(lag_covariate(env, "SST", n = 1.5), "whole number")
-  expect_error(lag_covariate(env, "SST", n = NA), "whole number")
+  expect_error(lag_covariate(env, "SST", n = 0, by = "month"), "at least 1")
+  expect_error(lag_covariate(env, "SST", n = 1.5, by = "month"), "whole number")
+  expect_error(lag_covariate(env, "SST", n = NA, by = "month"), "whole number")
 })
 
 test_that("the source-step map is computable from the step table alone", {
@@ -110,7 +119,6 @@ test_that("the source-step map is computable from the step table alone", {
   steps <- data.frame(YEAR = c(2020, 2020, 2020, 2020),
                       MONTH = c(1, 2, 3, 5), DAY = 1L)
 
-  expect_equal(lag_source_step(steps, 1, "step"), c(NA, 1, 2, 3))
   # April is absent, so May (row 4) has no one-month predecessor.
   expect_equal(lag_source_step(steps, 1, "month"), c(NA, 1, 2, NA))
   # Two months before May is March, which is row 3 rather than row 2. Position

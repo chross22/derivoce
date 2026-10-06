@@ -83,8 +83,8 @@ env <- datamatch::accessCopernicus(
 env <- env |>
   horizontal_gradient("SST") |>          # SST_grad, degrees C per km
   vertical_gradient() |>                 # SST - BOTT, the defaults
-  temporal_gradient("SST") |>
-  lag_covariate("SST") |>                # SST_lag1
+  temporal_gradient("SST", by = "month") |>
+  lag_covariate("SST", by = "month") |>  # SST_lag1month
   integrate_covariate("SST")             # SST_int
 ```
 

@@ -4,12 +4,7 @@
 \alias{temporal_gradient}
 \title{Temporal gradient of a covariate}
 \usage{
-temporal_gradient(
-  env_dat,
-  vars = NULL,
-  per = c("step", "day", "month"),
-  suffix = "_tgrad"
-)
+temporal_gradient(env_dat, vars = NULL, by, per = by, suffix = "_tgrad")
 }
 \arguments{
 \item{env_dat}{an \code{sf} POINT object with one row per location and time step,
@@ -17,8 +12,14 @@ as datamatch's access functions return}
 
 \item{vars}{covariate columns to differentiate; \code{NULL} does all of them}
 
-\item{per}{time unit for the rate: \code{"step"} (default, change per time step),
-\code{"day"}, or \code{"month"}}
+\item{by}{the calendar unit to look back by: \code{"hour"}, \code{"day"}, \code{"month"} or
+\code{"year"}. Required, with no default, for the reasons given in
+\code{\link[=lag_covariate]{lag_covariate()}}.}
+
+\item{per}{time unit the rate is expressed in: \code{"hour"}, \code{"day"}, \code{"month"}
+or \code{"year"}. Defaults to \code{by}, so a monthly lag gives the change per month
+exactly. A different unit divides by the actual elapsed days, using a mean
+month of 30.4375 days and a year of 365.25.}
 
 \item{suffix}{suffix for the new columns}
 }
@@ -26,16 +27,19 @@ as datamatch's access functions return}
 \code{env_dat} with a \verb{<var>_tgrad} column per covariate
 }
 \description{
-Rate of change between consecutive time steps at each location — how fast
-conditions are shifting, as distinct from what they currently are. A water mass
-warming rapidly is a different habitat from one sitting at the same temperature.
+Rate of change since the previous calendar \code{by}, at each location: how fast
+conditions are shifting, as distinct from what they currently are. A water
+mass warming rapidly is a different habitat from one sitting at the same
+temperature.
 }
 \details{
-The first time step has no predecessor and is \code{NA}.
+The "previous" step is the one stamped exactly one \code{by} earlier, as in
+\code{\link[=lag_covariate]{lag_covariate()}}, so a gap gives \code{NA} and not a rate that quietly spans two
+months. A step with no such predecessor, including the first, is \code{NA}.
 }
 \examples{
 \dontrun{
-env <- temporal_gradient(env, "SST")                 # change per time step
-env <- temporal_gradient(env, "SST", per = "day")    # degrees C per day
+env <- temporal_gradient(env, "SST", by = "month")                 # per month
+env <- temporal_gradient(env, "SST", by = "month", per = "day")    # degrees C per day
 }
 }

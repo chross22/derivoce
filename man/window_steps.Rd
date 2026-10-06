@@ -13,7 +13,7 @@ window_steps(steps, i, n, by)
 
 \item{n}{window length in \code{by} units, including step \code{i}}
 
-\item{by}{\code{"step"}, \code{"day"}, \code{"month"}, or \code{"year"}}
+\item{by}{\code{"hour"}, \code{"day"}, \code{"month"}, or \code{"year"}}
 }
 \value{
 the indices of the contributing steps

@@ -1,5 +1,28 @@
 # derivoce (development version)
 
+## Calendar time only
+
+Every function that looks back in time now counts in calendar units, and none
+has a default unit. Counting positions in the record (`by = "step"`) is removed:
+across a gap it reaches the wrong month without saying so, so a "one-month" lag
+could silently be a two-month one.
+
+* `lag_covariate()`, `rolling_covariate()` and `temporal_gradient()` require
+  `by`, one of `"hour"`, `"day"`, `"month"` or `"year"`. `front_frequency()`
+  requires it when `n` is given. Omitting it, or passing `"step"`, is an error
+  that says why. This is a breaking change: calls that relied on the old default
+  must now name the unit.
+* Default column names always carry the unit: `SST_lag1month`, `SST_mean3month`.
+  Previously a position count gave `SST_lag1` and `SST_mean3`.
+* `temporal_gradient()` takes the lag unit as `by` and expresses the rate `per`
+  that unit by default, which makes a monthly gradient exactly per month. A step
+  with no predecessor one calendar unit earlier is `NA`, where a gap used to
+  give a rate quietly spanning two months. `per = "month"` also no longer
+  divides by 30.4375 days when `by = "month"`, which had made it about 5% off.
+* `"hour"` is a calendar unit, for sub-daily records that used to be lagged by
+  position.
+* `integrate_covariate()` with a numeric `window` still counts steps.
+
 ## Silent wrong values
 
 Four functions returned a plausible number where the right answer was a warning

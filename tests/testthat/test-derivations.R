@@ -46,20 +46,32 @@ test_that("current speed is the Pythagorean magnitude", {
 
 # ---- temporal derivations --------------------------------------------------
 
-test_that("per = 'day' divides by real calendar days, not by step", {
-  # January to February is 31 days; February to March is 29 in 2020. A per-step
+test_that("per = 'day' divides by real calendar days, not by the month", {
+  # January to February is 31 days; February to March is 29 in 2020. A per-month
   # rate cannot tell them apart, which is the whole reason `per` exists.
   env <- make_env(function(lon, lat, year, month) month * 10, months = 1:3)
 
-  per_step <- temporal_gradient(env, "SST", per = "step")$SST_tgrad
-  per_day <- temporal_gradient(env, "SST", per = "day")$SST_tgrad
+  per_month <- temporal_gradient(env, "SST", by = "month")$SST_tgrad
+  per_day <- temporal_gradient(env, "SST", by = "month", per = "day")$SST_tgrad
 
-  expect_true(all(abs(stats::na.omit(per_step) - 10) < 1e-9))
+  expect_true(all(abs(stats::na.omit(per_month) - 10) < 1e-9))
 
   jan_feb <- as.numeric(as.Date("2020-02-01") - as.Date("2020-01-01"))
   feb_mar <- as.numeric(as.Date("2020-03-01") - as.Date("2020-02-01"))
   expect_equal(sort(unique(round(stats::na.omit(per_day), 9))),
                sort(round(c(10 / jan_feb, 10 / feb_mar), 9)))
+})
+
+test_that("a temporal gradient across a gap is NA, not a rate over two months", {
+  # April is missing, so May has no predecessor one calendar month back. A
+  # per-position rate would have divided the Mar-to-May change as though it were
+  # one step.
+  env <- make_env(function(lon, lat, year, month) month * 10, months = c(1, 2, 3, 5, 6))
+
+  result <- temporal_gradient(env, "SST", by = "month")
+
+  expect_true(all(is.na(result$SST_tgrad[result$MONTH == 5])))
+  expect_true(all(result$SST_tgrad[result$MONTH == 6] == 10))
 })
 
 test_that("the integration window resets at the year boundary, or does not", {
@@ -89,12 +101,12 @@ test_that("lags survive a shuffled time step", {
   set.seed(1)
   shuffled[rows, ] <- shuffled[rows, ][sample(length(rows)), ]
 
-  plain <- lag_covariate(env, "SST")
-  mixed <- lag_covariate(shuffled, "SST")
+  plain <- lag_covariate(env, "SST", by = "month")
+  mixed <- lag_covariate(shuffled, "SST", by = "month")
 
   stamp <- function(z) paste(location_key(z), z$YEAR, z$MONTH, z$DAY)
-  expect_equal(plain$SST_lag1, mixed$SST_lag1[match(stamp(plain), stamp(mixed))])
-  expect_gt(sum(is.finite(plain$SST_lag1)), 0)
+  expect_equal(plain$SST_lag1month, mixed$SST_lag1month[match(stamp(plain), stamp(mixed))])
+  expect_gt(sum(is.finite(plain$SST_lag1month)), 0)
 })
 
 # ---- vertical gradient -----------------------------------------------------

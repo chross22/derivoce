@@ -16,27 +16,27 @@ enriched_env <- function() {
 test_that("lagging a static covariate warns", {
   env <- enriched_env()
 
-  expect_warning(result <- lag_covariate(env, "DEPTH"), "Static covariate")
+  expect_warning(result <- lag_covariate(env, "DEPTH", by = "month"), "Static covariate")
 
   # The warning is the point, but the computation still runs and still returns
   # what it promises: the lag of a static column is that column, except in the
   # first step, which has no predecessor.
   later <- env$MONTH > 1
-  expect_equal(result$DEPTH_lag1[later], env$DEPTH[later])
-  expect_true(all(is.na(result$DEPTH_lag1[!later])))
+  expect_equal(result$DEPTH_lag1month[later], env$DEPTH[later])
+  expect_true(all(is.na(result$DEPTH_lag1month[!later])))
 })
 
 test_that("integrating and differencing a static covariate warn too", {
   env <- enriched_env()
 
   expect_warning(integrate_covariate(env, "DEPTH"), "Static covariate")
-  expect_warning(temporal_gradient(env, "DEPTH"), "Static covariate")
+  expect_warning(temporal_gradient(env, "DEPTH", by = "month"), "Static covariate")
 })
 
 test_that("a temporal operation on a real covariate does not warn", {
   env <- enriched_env()
 
-  expect_no_warning(lag_covariate(env, "SST"))
+  expect_no_warning(lag_covariate(env, "SST", by = "month"))
   expect_no_warning(integrate_covariate(env, "SST"))
 })
 
@@ -63,20 +63,20 @@ test_that("the two degeneracies are checked independently", {
   env <- enriched_env()
 
   # Static in time, fine in space.
-  expect_warning(lag_covariate(env, "DEPTH"), "Static covariate")
+  expect_warning(lag_covariate(env, "DEPTH", by = "month"), "Static covariate")
   expect_no_warning(horizontal_gradient(env, "DEPTH"))
 
   # Uniform in space, fine in time.
   expect_warning(horizontal_gradient(env, "NAO"), "Spatially uniform")
-  expect_no_warning(lag_covariate(env, "NAO"))
+  expect_no_warning(lag_covariate(env, "NAO", by = "month"))
 })
 
 test_that("a wrapper warns once, not once per internal call", {
   env <- enriched_env()
 
-  # temporal_gradient() calls lag_covariate() internally and distance_to_front()
+  # temporal_gradient(, by = "month") calls lag_covariate(, by = "month") internally and distance_to_front()
   # calls horizontal_gradient(); neither should double up.
-  expect_warning(temporal_gradient(env, "DEPTH"), "Static covariate")
+  expect_warning(temporal_gradient(env, "DEPTH", by = "month"), "Static covariate")
   expect_warning(distance_to_front(env, "NAO"), "Spatially uniform")
 })
 
@@ -85,14 +85,14 @@ test_that("a single time step does not trigger the static warning", {
   # would fire on every well-formed single-step object.
   env <- make_env(months = 1)
 
-  expect_no_warning(lag_covariate(env, "SST"))
+  expect_no_warning(lag_covariate(env, "SST", by = "month"))
 })
 
 test_that("an explicitly named non-numeric column is an error", {
   env <- enriched_env()
 
   expect_error(horizontal_gradient(env, "SST_source"), "not numeric")
-  expect_error(lag_covariate(env, "SST_source"), "not numeric")
+  expect_error(lag_covariate(env, "SST_source", by = "month"), "not numeric")
 })
 
 test_that("vars = NULL skips non-numeric columns instead of failing", {
@@ -100,10 +100,10 @@ test_that("vars = NULL skips non-numeric columns instead of failing", {
 
   # The caller did not name SST_source, so sweeping it up and erroring would
   # make the NULL default unusable on any gap-filled object.
-  result <- suppressWarnings(lag_covariate(env))
+  result <- suppressWarnings(lag_covariate(env, by = "month"))
 
-  expect_true("SST_lag1" %in% names(result))
-  expect_false("SST_source_lag1" %in% names(result))
+  expect_true("SST_lag1month" %in% names(result))
+  expect_false("SST_source_lag1month" %in% names(result))
 })
 
 test_that("vars = NULL still warns about the degenerate columns it swept up", {
@@ -111,7 +111,7 @@ test_that("vars = NULL still warns about the degenerate columns it swept up", {
 
   # This is the case the warning is really aimed at: the caller asked for
   # "everything" without knowing everything now includes seafloor terrain.
-  expect_warning(lag_covariate(env), "Static covariate")
+  expect_warning(lag_covariate(env, by = "month"), "Static covariate")
 })
 
 test_that("a missing column is still an error, and names the alternatives", {
@@ -127,6 +127,6 @@ test_that("an all-NA column is not reported as degenerate", {
   env <- make_env(months = 1:3)
   env$EMPTY <- NA_real_
 
-  expect_no_warning(lag_covariate(env, "EMPTY"))
+  expect_no_warning(lag_covariate(env, "EMPTY", by = "month"))
   expect_no_warning(horizontal_gradient(env, "EMPTY"))
 })

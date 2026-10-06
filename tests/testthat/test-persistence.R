@@ -99,7 +99,7 @@ test_that("the whole record gives one static value per cell", {
 test_that("a window makes it vary through the record", {
   env <- front_field(c(-69, -69, -69, -68.5, -68.5, -68.5))
 
-  result <- front_frequency(env, "SST", scope = "step", n = 2)
+  result <- front_frequency(env, "SST", scope = "step", n = 2, by = "month")
 
   x <- longitudes(env)
   at_first <- abs(x - -69) < 0.06
@@ -155,6 +155,6 @@ test_that("bad arguments are rejected", {
   env <- front_field(rep(-69, 3))
   expect_error(front_frequency(env, "SST", threshold = -1), "positive")
   expect_error(front_frequency(env, "SST", quantile = 1), "between 0 and 1")
-  expect_error(front_frequency(env, "SST", n = 0), "at least 1")
+  expect_error(front_frequency(env, "SST", n = 0, by = "month"), "at least 1")
   expect_error(front_frequency(env, "NOPE"), "NOPE")
 })

@@ -113,23 +113,21 @@ data.frame(
 
 `CHL_int` is the running sum from January, which is what a copepod integrates.
 
-Note `by = "month"`. Counting *steps* is only unambiguous when the series is
-complete: in a monthly record missing April, a one-step lag makes March the
-predecessor of May and says nothing about it. Counting calendar months returns
-`NA` there instead.
+`by` is required and counts calendar time. In a monthly record missing April,
+counting positions would make March the predecessor of May and say nothing about
+it, so that option does not exist: a calendar month with no April to look back to
+returns `NA`.
 
 ```{r lag-gap}
 gappy <- env[env$MONTH != 4, ]
 
-by_step <- lag_covariate(gappy, "SST", n = 1, by = "step")
 by_month <- lag_covariate(gappy, "SST", n = 1, by = "month")
 
-c(step = mean(is.na(by_step$SST_lag1)),
-  month = mean(is.na(by_month$SST_lag1month)))
+mean(is.na(by_month$SST_lag1month))
 ```
 
-The calendar version has more `NA` because May genuinely has no April to look
-back to. That is the honest answer.
+The proportion of `NA` is higher than for a complete record because May
+genuinely has no April to look back to. That is the honest answer.
 
 A vector of lags builds an autoregressive set in one call:
 
@@ -153,10 +151,8 @@ The window is trailing and inclusive, so March covers January to March. Early
 steps have less history than the window asks for; `min_obs` decides whether they
 get a summary of what is there or an `NA`.
 
-`by = "month"` counts calendar time and `by = "step"` counts positions in the
-record. They agree exactly until the series has a gap, and then diverge
-silently — which is why the distinction is an argument rather than an
-assumption.
+`by` counts calendar time, as in `lag_covariate()`. A gap in the record shortens
+the window rather than reaching back to an earlier month.
 
 ## Distance to a front
 
@@ -513,7 +509,7 @@ between months, so lagging it returns the column unchanged:
 
 ```{r degenerate}
 env$DEPTH <- 100 + 20 * (sf::st_coordinates(env)[, 1] + 70)
-result <- tryCatch(lag_covariate(env, "DEPTH"),
+result <- tryCatch(lag_covariate(env, "DEPTH", by = "month"),
                    warning = function(w) conditionMessage(w))
 cat(substr(result, 1, 180))
 ```

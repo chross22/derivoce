@@ -122,7 +122,7 @@ test_that("temporal gradient measures change between consecutive steps", {
   env <- make_env(function(lon, lat, year, month) rep(month * 2, length(lon)),
                   months = 1:4)
 
-  result <- temporal_gradient(env, "SST")
+  result <- temporal_gradient(env, "SST", by = "month")
 
   # The first step has no predecessor.
   expect_true(all(is.na(result$SST_tgrad[result$MONTH == 1])))
@@ -134,7 +134,7 @@ test_that("temporal gradient can be expressed per day", {
   env <- make_env(function(lon, lat, year, month) rep(month * 31, length(lon)),
                   months = 1:2)
 
-  result <- temporal_gradient(env, "SST", per = "day")
+  result <- temporal_gradient(env, "SST", per = "day", by = "month")
 
   # Jan 1 to Feb 1 is 31 days, and the field rose by 31, so 1 per day.
   expect_equal(result$SST_tgrad[result$MONTH == 2], rep(1, sum(result$MONTH == 2)))

@@ -11,7 +11,7 @@ lag_source_step(steps, n, by)
 
 \item{n}{how far back, in \code{by} units}
 
-\item{by}{\code{"step"}, \code{"day"}, \code{"month"}, or \code{"year"}}
+\item{by}{\code{"hour"}, \code{"day"}, \code{"month"}, or \code{"year"}}
 }
 \value{
 integer vector of source step indices, \code{NA} where there is none

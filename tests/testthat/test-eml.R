@@ -108,10 +108,10 @@ test_that("a supplied unit is used for the source column itself", {
 test_that("suffixes are matched longest-first, not greedily", {
   env <- eml_field()
   env <- distance_to_front(env, "SST")
-  env <- rolling_covariate(env, "SST", n = 2, stat = "mean")
+  env <- rolling_covariate(env, "SST", n = 2, stat = "mean", by = "month")
 
   front <- eml_attributes(env, "SST_front_dist")
-  roll <- eml_attributes(env, "SST_mean2", units = c(SST = "celsius"))
+  roll <- eml_attributes(env, "SST_mean2month", units = c(SST = "celsius"))
 
   expect_equal(front$unit, "kilometer")
   expect_match(front$attributeDefinition, "front")

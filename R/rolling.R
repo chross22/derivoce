@@ -12,17 +12,13 @@
 #' calendar month but stop at the current step, so a daily record's monthly
 #' maximum on the 10th covers the 1st to the 10th, never the days after it.
 #'
-#' @section Steps or calendar time:
-#' `by = "step"` counts positions in the record and `by = "day"`, `"month"` or
-#' `"year"` count calendar time, exactly as in [lag_covariate()]. The two agree
-#' until the record has a gap and then disagree silently: on a monthly series
-#' missing April, a three-*step* window at June covers March, May and June,
-#' while a three-*month* window covers April, May and June and finds only two of
-#' them.
-#'
-#' Which is right depends on the question. "The mean of the last three months"
-#' is a statement about the ocean and wants `by = "month"`. "The mean of the
-#' last three observations" is a statement about the record.
+#' @section Calendar time:
+#' `by` is required and says what `n` counts: `"hour"`, `"day"`, `"month"` or
+#' `"year"`, as in [lag_covariate()]. There is no option to count positions in the record and
+#' no default unit. On a monthly series missing April, a three-*step* window at
+#' June would cover March, May and June and call it three months. A calendar
+#' window covers April, May and June and finds only two of them, which `min_obs`
+#' can then reject.
 #'
 #' @section Windows that are not full:
 #' Early steps have less history behind them than the window asks for, and a
@@ -36,8 +32,8 @@
 #'   as datamatch's access functions return
 #' @param vars covariate columns, or `NULL` for all numeric ones
 #' @param n length of the window, in `by` units, including the current step
-#' @param by `"step"` to count positions in the record, or `"day"`, `"month"`,
-#'   `"year"` to count calendar time
+#' @param by what `n` counts: `"hour"`, `"day"`, `"month"` or `"year"`.
+#'   Required.
 #' @param stat one or more of `"mean"`, `"sd"`, `"min"`, `"max"`, `"sum"`,
 #'   `"median"`, `"range"`
 #' @param min_obs fewest non-missing values a window must hold to be summarised
@@ -53,12 +49,11 @@
 #' }
 #' @seealso [integrate_covariate()], [lag_covariate()], [cell_anomaly()]
 #' @export
-rolling_covariate <- function(env_dat, vars = NULL, n = 3,
-                              by = c("step", "day", "month", "year"),
+rolling_covariate <- function(env_dat, vars = NULL, n = 3, by,
                               stat = c("mean", "sd", "min", "max", "sum",
                                        "median", "range"),
                               min_obs = 1L, suffix = NULL) {
-  by <- match.arg(by)
+  by <- calendar_unit(if (missing(by)) NULL else by, "rolling_covariate")
   stat <- match.arg(stat, several.ok = TRUE)
   vars <- resolve_vars(env_dat, vars, kind = "temporal")
 
@@ -69,8 +64,7 @@ rolling_covariate <- function(env_dat, vars = NULL, n = 3,
     stop("`suffix` must have one entry per statistic, or be NULL to name them ",
          "automatically.", call. = FALSE)
   }
-  unit <- if (by == "step") "" else by
-  suffixes <- suffix %||% paste0("_", stat, n, unit)
+  suffixes <- suffix %||% paste0("_", stat, n, by)
 
   steps <- time_steps(env_dat)
   location <- location_key(env_dat)
@@ -141,18 +135,17 @@ summarise_window <- function(z, stat) {
 #' @param steps a time-step table from [time_steps()]
 #' @param i the step the window ends at
 #' @param n window length in `by` units, including step `i`
-#' @param by `"step"`, `"day"`, `"month"`, or `"year"`
+#' @param by `"hour"`, `"day"`, `"month"`, or `"year"`
 #' @return the indices of the contributing steps
 #' @keywords internal
 window_steps <- function(steps, i, n, by) {
-  if (identical(by, "step")) return(seq(max(1L, i - n + 1L), i))
-
-  if (identical(by, "day")) {
+  if (by %in% c("hour", "day")) {
     # In days with an hour fraction where there is one, so on a sub-daily
     # record the window trails from this instant rather than sweeping in
     # later hours of the current day.
     when <- step_time_days(steps)
-    return(which(when <= when[i] & when > when[i] - n))
+    span <- if (identical(by, "hour")) n / 24 else n
+    return(which(when <= when[i] & when > when[i] - span))
   }
 
   # Calendar months reach back from this step's month, but never forward in

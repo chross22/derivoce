@@ -41,7 +41,8 @@
 #'   cutoff per time step
 #' @param per distance unit for the gradient, `"km"` or `"m"`
 #' @param n length of the trailing window, or `NULL` for the whole record
-#' @param by `"step"`, `"day"`, `"month"` or `"year"`, as in [rolling_covariate()]
+#' @param by what `n` counts, `"hour"`, `"day"`, `"month"` or `"year"`, as in
+#'   [rolling_covariate()]. Required when `n` is given, and unused otherwise.
 #' @param name name for the new column
 #' @return `env_dat` with a frequency column between 0 and 1
 #' @examples
@@ -56,11 +57,9 @@
 #' @export
 front_frequency <- function(env_dat, var, threshold = NULL, quantile = 0.9,
                             scope = c("record", "step"), per = c("km", "m"),
-                            n = NULL, by = c("step", "day", "month", "year"),
-                            name = NULL) {
+                            n = NULL, by = NULL, name = NULL) {
   scope <- match.arg(scope)
   per <- match.arg(per)
-  by <- match.arg(by)
   resolve_vars(env_dat, var)
 
   if (!is.null(threshold) && threshold <= 0) {
@@ -75,6 +74,8 @@ front_frequency <- function(env_dat, var, threshold = NULL, quantile = 0.9,
     stop("`n` must be a single whole number of at least 1, or NULL for the ",
          "whole record.", call. = FALSE)
   }
+
+  if (!is.null(n)) by <- calendar_unit(by, "front_frequency")
 
   frontal <- frontal_indicator(env_dat, var, threshold, quantile, scope, per)
 

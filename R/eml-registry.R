@@ -173,10 +173,10 @@ eml_suffix_registry <- function() {
     list(pattern = "_frac$",
          definition = "Fraction of the water present originating from the named endmember, by temperature-salinity mixing.",
          unit = function(source, units) "dimensionless"),
-    list(pattern = "_lag[0-9]+(step|day|month|year)?$",
+    list(pattern = "_lag[0-9]+(step|hour|day|month|year)?$",
          definition = "Covariate lagged by a fixed number of positions or of calendar units.",
          unit = function(source, units) derived_unit(source, units)),
-    list(pattern = "_(mean|sd|min|max|sum|median|range)[0-9]+(day|month|year)?$",
+    list(pattern = "_(mean|sd|min|max|sum|median|range)[0-9]+(hour|day|month|year)?$",
          definition = "Summary of a trailing window ending at, and including, the current time step.",
          unit = function(source, units) derived_unit(source, units))
   )

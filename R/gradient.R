@@ -182,36 +182,45 @@ vertical_gradient <- function(env_dat, surface = "SST", bottom = "BOTT",
 
 #' Temporal gradient of a covariate
 #'
-#' Rate of change between consecutive time steps at each location — how fast
-#' conditions are shifting, as distinct from what they currently are. A water mass
-#' warming rapidly is a different habitat from one sitting at the same temperature.
+#' Rate of change since the previous calendar `by`, at each location: how fast
+#' conditions are shifting, as distinct from what they currently are. A water
+#' mass warming rapidly is a different habitat from one sitting at the same
+#' temperature.
 #'
-#' The first time step has no predecessor and is `NA`.
+#' The "previous" step is the one stamped exactly one `by` earlier, as in
+#' [lag_covariate()], so a gap gives `NA` and not a rate that quietly spans two
+#' months. A step with no such predecessor, including the first, is `NA`.
 #'
 #' @param env_dat an `sf` POINT object with one row per location and time step,
 #'   as datamatch's access functions return
 #' @param vars covariate columns to differentiate; `NULL` does all of them
-#' @param per time unit for the rate: `"step"` (default, change per time step),
-#'   `"day"`, or `"month"`
+#' @param by the calendar unit to look back by: `"hour"`, `"day"`, `"month"` or
+#'   `"year"`. Required, with no default, for the reasons given in
+#'   [lag_covariate()].
+#' @param per time unit the rate is expressed in: `"hour"`, `"day"`, `"month"`
+#'   or `"year"`. Defaults to `by`, so a monthly lag gives the change per month
+#'   exactly. A different unit divides by the actual elapsed days, using a mean
+#'   month of 30.4375 days and a year of 365.25.
 #' @param suffix suffix for the new columns
 #' @return `env_dat` with a `<var>_tgrad` column per covariate
 #' @examples
 #' \dontrun{
-#' env <- temporal_gradient(env, "SST")                 # change per time step
-#' env <- temporal_gradient(env, "SST", per = "day")    # degrees C per day
+#' env <- temporal_gradient(env, "SST", by = "month")                 # per month
+#' env <- temporal_gradient(env, "SST", by = "month", per = "day")    # degrees C per day
 #' }
 #' @export
-temporal_gradient <- function(env_dat, vars = NULL,
-                              per = c("step", "day", "month"), suffix = "_tgrad") {
-  per <- match.arg(per)
+temporal_gradient <- function(env_dat, vars = NULL, by, per = by,
+                              suffix = "_tgrad") {
+  by <- calendar_unit(if (missing(by)) NULL else by, "temporal_gradient")
+  per <- calendar_unit(per, "temporal_gradient")
   # No `kind` here on purpose: the lag_covariate() call below resolves the same
   # vars as "temporal" and issues the one warning. Setting it here too would
   # warn twice for a single user-facing call.
   vars <- resolve_vars(env_dat, vars)
 
-  lagged <- lag_covariate(env_dat, vars, n = 1, suffix = "__prev")
+  lagged <- lag_covariate(env_dat, vars, n = 1, by = by, suffix = "__prev")
   steps <- time_steps(env_dat)
-  elapsed <- step_spacing(steps, per = per)
+  elapsed <- elapsed_per(steps, by, per)
 
   for (v in vars) {
     change <- lagged[[v]] - lagged[[paste0(v, "__prev")]]
@@ -221,17 +230,21 @@ temporal_gradient <- function(env_dat, vars = NULL,
   env_dat
 }
 
-#' Elapsed time between consecutive steps
+#' Elapsed time between each step and the one a calendar unit earlier
 #'
 #' @param steps a time-step table from `time_steps()`
-#' @param per `"step"`, `"day"`, or `"month"`
-#' @return numeric vector, one per step; the first is `NA`
+#' @param by the calendar unit one step looks back by
+#' @param per the unit the elapsed time is expressed in
+#' @return numeric vector, one per step; `NA` where there is no such step. It is
+#'   exactly 1 when `per` equals `by`.
 #' @keywords internal
-step_spacing <- function(steps, per = "step") {
-  if (per == "step") return(c(NA_real_, rep(1, nrow(steps) - 1)))
+elapsed_per <- function(steps, by, per) {
+  source <- lag_source_step(steps, 1, by)
+  if (identical(by, per)) return(ifelse(is.na(source), NA_real_, 1))
 
-  days <- c(NA_real_, diff(step_time_days(steps)))
-  if (per == "day") days else days / 30.4375  # mean month length
+  days <- step_time_days(steps)
+  unit_days <- c(hour = 1 / 24, day = 1, month = 30.4375, year = 365.25)
+  (days - days[source]) / unit_days[[per]]
 }
 
 #' Index of each row's time step within the ordered step table

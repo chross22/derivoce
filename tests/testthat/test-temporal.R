@@ -2,23 +2,23 @@ test_that("lag_covariate returns the previous step's value at the same location"
   env <- make_env(function(lon, lat, year, month) rep(month * 10, length(lon)),
                   months = 1:4)
 
-  result <- lag_covariate(env, "SST")
+  result <- lag_covariate(env, "SST", by = "month")
 
-  expect_true("SST_lag1" %in% names(result))
-  expect_true(all(is.na(result$SST_lag1[result$MONTH == 1])))
-  expect_equal(result$SST_lag1[result$MONTH == 2], rep(10, sum(result$MONTH == 2)))
-  expect_equal(result$SST_lag1[result$MONTH == 4], rep(30, sum(result$MONTH == 4)))
+  expect_true("SST_lag1month" %in% names(result))
+  expect_true(all(is.na(result$SST_lag1month[result$MONTH == 1])))
+  expect_equal(result$SST_lag1month[result$MONTH == 2], rep(10, sum(result$MONTH == 2)))
+  expect_equal(result$SST_lag1month[result$MONTH == 4], rep(30, sum(result$MONTH == 4)))
 })
 
 test_that("lags of more than one step look further back", {
   env <- make_env(function(lon, lat, year, month) rep(month * 10, length(lon)),
                   months = 1:4)
 
-  result <- lag_covariate(env, "SST", n = 2)
+  result <- lag_covariate(env, "SST", n = 2, by = "month")
 
-  expect_true("SST_lag2" %in% names(result))
-  expect_true(all(is.na(result$SST_lag2[result$MONTH %in% 1:2])))
-  expect_equal(result$SST_lag2[result$MONTH == 4], rep(20, sum(result$MONTH == 4)))
+  expect_true("SST_lag2month" %in% names(result))
+  expect_true(all(is.na(result$SST_lag2month[result$MONTH %in% 1:2])))
+  expect_equal(result$SST_lag2month[result$MONTH == 4], rep(20, sum(result$MONTH == 4)))
 })
 
 test_that("lagged values follow location, not row order", {
@@ -31,15 +31,15 @@ test_that("lagged values follow location, not row order", {
   second <- which(env$MONTH == 2)
   env[second, ] <- env[sample(second), ]
 
-  result <- lag_covariate(env, "SST")
+  result <- lag_covariate(env, "SST", by = "month")
   rows <- which(result$MONTH == 2)
 
   # Each February value is exactly 1 more than its own January value.
-  expect_equal(result$SST[rows] - result$SST_lag1[rows], rep(1, length(rows)))
+  expect_equal(result$SST[rows] - result$SST_lag1month[rows], rep(1, length(rows)))
 })
 
 test_that("lag_covariate rejects a lag below one", {
-  expect_error(lag_covariate(make_env(), "SST", n = 0), "at least 1")
+  expect_error(lag_covariate(make_env(), "SST", n = 0, by = "month"), "at least 1")
 })
 
 test_that("integrate_covariate accumulates from the start of each year", {

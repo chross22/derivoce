@@ -4,13 +4,7 @@
 \alias{lag_covariate}
 \title{Lagged covariate values}
 \usage{
-lag_covariate(
-  env_dat,
-  vars = NULL,
-  n = 1,
-  by = c("step", "day", "month", "year"),
-  suffix = NULL
-)
+lag_covariate(env_dat, vars = NULL, n = 1, by, suffix = NULL)
 }
 \arguments{
 \item{env_dat}{an \code{sf} POINT object with one row per location and time step,
@@ -21,12 +15,11 @@ as datamatch's access functions return}
 \item{n}{how far to look back, counted in \code{by} units. A vector adds one
 column per lag.}
 
-\item{by}{what \code{n} counts: \code{"step"} (the default), \code{"day"}, \code{"month"}, or
-\code{"year"}}
+\item{by}{what \code{n} counts: \code{"hour"}, \code{"day"}, \code{"month"} or \code{"year"}.
+Required.}
 
-\item{suffix}{suffix for the new columns. The default includes \code{n}, and the
-unit too unless it is \code{"step"}, so \code{SST_lag1} and \code{SST_lag1month} cannot be
-confused for each other. Supply one entry per lag when \code{n} has several.}
+\item{suffix}{suffix for the new columns. The default names both \code{n} and the
+unit, as in \code{SST_lag1month}. Supply one entry per lag when \code{n} has several.}
 }
 \value{
 \code{env_dat} with a lagged column per covariate and lag. Steps with no
@@ -38,28 +31,20 @@ Populations respond to conditions with a delay. A bloom feeds the animals
 sampled a month later, not the ones sampled during it, so the lagged value can
 carry more signal than the concurrent one.
 }
-\section{Lag by calendar units, not by position}{
+\section{Lag by calendar units}{
 
-\code{by} decides what \code{n} counts, and the distinction matters:
+\code{by} is required and says what \code{n} counts: \code{"hour"}, \code{"day"}, \code{"month"} or
+\code{"year"}. \code{n = 3} with \code{by = "month"} finds the step stamped exactly three calendar
+months earlier, and returns \code{NA} if there is no such step.
 
-\itemize{
-\item \code{"step"} (the default) counts \strong{positions in the series}. \code{n = 1} is
-the previous time step, whatever period that represents. This is only
-unambiguous when the steps are evenly spaced and complete.
-\item \code{"day"}, \code{"month"}, \code{"year"} count \strong{calendar time}. \code{n = 3} with
-\code{by = "month"} finds the step stamped exactly three calendar months
-earlier, and returns \code{NA} if there is no such step.
-}
-
-Prefer a calendar unit whenever the lag has a biological meaning. "Three
+There is no default and no option to count positions in the series. "Three
 months ago" is a statement about the organism; "three steps ago" is a
 statement about how the data happened to be fetched, and the two stop agreeing
-the moment a month is missing from the record.
-
-A gap makes them disagree silently. In a monthly series missing April,
-\code{by = "step"} treats March as May's predecessor, so a one-step lag quietly
-becomes a two-month one. \code{by = "month"} returns \code{NA} for May instead, because
-April genuinely is not there.
+the moment a month is missing. In a monthly series missing April, a position
+count would treat March as May's predecessor and quietly turn a one-month lag
+into a two-month one. A calendar lag returns \code{NA} for May instead, because
+April genuinely is not there. With no default, the unit is chosen on purpose:
+a guess would be right for a daily record and wrong for a monthly one.
 
 Calendar lags are matched on the exact \code{YEAR}/\code{MONTH}/\code{DAY} stamp. For monthly
 products, whose day is always 1, that is exact. For daily products,
@@ -72,16 +57,10 @@ steps, which is what gridded products give.
 
 \section{Reproducing the published lag}{
 
-Ross et al. (2023) used a \strong{one-month} lag of sea surface temperature. On a
-complete monthly series that is \code{n = 1} either way, but the faithful form is
-the calendar one:
+Ross et al. (2023) used a \strong{one-month} lag of sea surface temperature:
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{lag_covariate(env, "SST", n = 1, by = "month")
 }\if{html}{\out{</div>}}
-
-The two part company the moment a month is missing from the record, where
-\code{by = "step"} reaches back to whatever step precedes the gap and calls it one
-month. Use \code{by = "month"} when the intent is the published lag.
 }
 
 \section{Several lags at once}{
@@ -96,16 +75,12 @@ entered together as predictors.
 
 With \code{by = "year"} this gives the same calendar month in each preceding year,
 so the seasonal cycle is held fixed and what remains is the interannual
-signal. That is usually the intended comparison, and it is not what
-\code{by = "step"} with \code{n = 12} gives on a record with any month missing.
+signal.
 }
 
 \examples{
 \dontrun{
-env <- lag_covariate(env, "SST")                      # SST_lag1, previous step
-env <- lag_covariate(env, "CHL", n = 2)               # CHL_lag2
-
-# Calendar lags, which say what they mean
+env <- lag_covariate(env, "SST", by = "month")        # SST_lag1month
 env <- lag_covariate(env, "CHL", n = 3, by = "month") # CHL_lag3month
 env <- lag_covariate(env, "SST", n = 1, by = "year")  # same month last year
 env <- lag_covariate(env, "SST", n = 30, by = "day")  # daily products
